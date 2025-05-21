@@ -7,6 +7,11 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_name = $_SESSION['name'];
 $user_id = $_SESSION['user_id'];
+
+// Pastikan variabel terdefinisi untuk menghindari error
+$wishlist_items = isset($wishlist_items) ? $wishlist_items : [];
+$total_pages = isset($total_pages) ? $total_pages : 1;
+$page = isset($page) ? $page : 1;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -14,10 +19,11 @@ $user_id = $_SESSION['user_id'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Wishlist - Campus Hub</title>
+    <title>My Wishlist - Code Camp</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="assets/css/custom.css">
+    <link rel="icon" href="assets/images/logo/logo_mobile.png" type="image/x-icon">
 </head>
 
 <body class="bg-gray-50 font-sans">
@@ -36,7 +42,7 @@ $user_id = $_SESSION['user_id'];
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Home</a>
                     <a href="index.php?action=bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Bootcamps</a>
-                    <a href="views/about/index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">About Us</a>
+                    
                     <a href="index.php?action=my_bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">My Bootcamps</a>
                     <a href="index.php?action=wishlist" class="text-blue-600 font-medium">Wishlist</a>
                 </nav>
@@ -46,13 +52,9 @@ $user_id = $_SESSION['user_id'];
                     <!-- User Profile Icon -->
                     <div class="relative">
                         <button id="profileButton" class="flex items-center focus:outline-none">
-                            <?php if (file_exists("assets/images/users/{$user_id}.jpg")): ?>
-                                <img src="assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-blue-100">
-                            <?php else: ?>
-                                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-blue-100">
-                                    <?php echo substr($user_name, 0, 1); ?>
-                                </div>
-                            <?php endif; ?>
+                            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-blue-100">
+                                <?php echo strtoupper(substr($user_name, 0, 1)); ?>
+                            </div>
                         </button>
                         <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
                             <a href="views/auth/dashboard/dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
@@ -75,7 +77,7 @@ $user_id = $_SESSION['user_id'];
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-white rounded-md shadow-md">
                     <a href="index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Home</a>
                     <a href="index.php?action=bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
-                    <a href="views/about/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">About Us</a>
+                    
                     <a href="index.php?action=my_bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Bootcamps</a>
                     <a href="index.php?action=wishlist" class="block px-3 py-2 rounded-md text-blue-600 bg-blue-50 font-medium">Wishlist</a>
                     
@@ -124,19 +126,14 @@ $user_id = $_SESSION['user_id'];
                         <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative">
                             <!-- Remove from wishlist button -->
                             <button class="remove-wishlist absolute top-3 right-3 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 z-10 transition-colors focus:outline-none"
-                                    data-bootcamp-id="<?php echo $item['bootcamp_id']; ?>">
+                                    data-bootcamp-id="<?php echo htmlspecialchars($item['bootcamp_id']); ?>">
                                 <i class="fas fa-heart text-red-500 text-lg"></i>
                             </button>
 
-                            <?php if (!empty($item['image'])): ?>
-                                <img src="assets/images/bootcamps/<?php echo htmlspecialchars($item['image']); ?>" 
-                                     alt="<?php echo htmlspecialchars($item['title']); ?>" 
-                                     class="w-full h-48 object-cover">
-                            <?php else: ?>
-                                <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                    <span class="text-gray-500">No image available</span>
-                                </div>
-                            <?php endif; ?>
+                            <!-- Ubah gambar bootcamp ke ngoding.jpg -->
+                            <img src="assets/images/ngoding.jpg" 
+                                 alt="<?php echo htmlspecialchars($item['title']); ?>" 
+                                 class="w-full h-48 object-cover">
 
                             <div class="p-6">
                                 <h3 class="text-xl font-bold text-gray-800 mb-2">
@@ -144,20 +141,15 @@ $user_id = $_SESSION['user_id'];
                                 </h3>
 
                                 <p class="text-gray-600 mb-4 line-clamp-2 h-12">
-                                    <?php echo htmlspecialchars(substr($item['description'], 0, 100)) . '...'; ?>
+                                    <?php echo htmlspecialchars(substr($item['description'], 0, 55)) . '...'; ?>
                                 </p>
 
                                 <div class="flex items-center mb-4">
-                                    <?php if (!empty($item['instructor_photo'])): ?>
-                                        <img src="assets/images/instructors/<?php echo htmlspecialchars($item['instructor_photo']); ?>" 
-                                             alt="Instructor" class="w-8 h-8 rounded-full mr-2">
-                                    <?php else: ?>
-                                        <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
-                                            <span class="text-gray-600 text-xs">
-                                                <?php echo substr($item['instructor_name'], 0, 1); ?>
-                                            </span>
-                                        </div>
-                                    <?php endif; ?>
+                                    <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
+                                        <span class="text-gray-600 text-xs font-medium">
+                                            <?php echo strtoupper(substr($item['instructor_name'], 0, 1)); ?>
+                                        </span>
+                                    </div>
                                     <span class="text-sm text-gray-700">
                                         <?php echo htmlspecialchars($item['instructor_name']); ?>
                                     </span>
@@ -180,7 +172,7 @@ $user_id = $_SESSION['user_id'];
 
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <?php if (!empty($item['discount_price']) && $item['discount_price'] > $item['price']): ?>
+                                        <?php if (isset($item['discount_price']) && !empty($item['discount_price']) && $item['discount_price'] > $item['price']): ?>
                                             <span class="text-gray-500 line-through text-sm">
                                                 Rp <?php echo number_format($item['discount_price'], 0, ',', '.'); ?>
                                             </span><br>
@@ -190,11 +182,11 @@ $user_id = $_SESSION['user_id'];
                                         </span>
                                     </div>
                                     <div class="flex space-x-2">
-                                        <a href="index.php?action=bootcamp_detail&id=<?php echo $item['bootcamp_id']; ?>" 
+                                        <a href="index.php?action=bootcamp_detail&id=<?php echo htmlspecialchars($item['bootcamp_id']); ?>" 
                                             class="px-3 py-1 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors">
                                             Detail
                                         </a>
-                                        <a href="index.php?action=checkout&id=<?php echo $item['bootcamp_id']; ?>" 
+                                        <a href="index.php?action=checkout&id=<?php echo htmlspecialchars($item['bootcamp_id']); ?>" 
                                             class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                                             Enroll
                                         </a>
@@ -250,8 +242,8 @@ $user_id = $_SESSION['user_id'];
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div>
                     <div class="flex items-center mb-4">
-                        <span class="text-white font-bold text-xl">Campus</span>
-                        <span class="bg-white text-blue-600 px-2 py-1 rounded font-bold text-xl">Hub</span>
+                        <img src="assets/images/logo.png" alt="Logo" class="h-16 hidden md:block">
+                        <img src="assets/images/logo/logo_mobile.png" alt="Logo" class="md:hidden h-12">
                     </div>
                     <p class="text-blue-200 mb-4">Find the best bootcamps to develop your skills and accelerate your career in the tech world.</p>
                     <p class="text-blue-200">123 Education St, Malang<br>East Java, Indonesia, 65145</p>
@@ -272,7 +264,7 @@ $user_id = $_SESSION['user_id'];
                     <ul class="space-y-2">
                         <li><a href="index.php" class="text-blue-200 hover:text-white">Home</a></li>
                         <li><a href="index.php?action=bootcamps" class="text-blue-200 hover:text-white">Bootcamps</a></li>
-                        <li><a href="views/about/index.php" class="text-blue-200 hover:text-white">About Us</a></li>
+                        
                         <li><a href="#" class="text-blue-200 hover:text-white">FAQ</a></li>
                         <li><a href="#" class="text-blue-200 hover:text-white">Contact Us</a></li>
                     </ul>
@@ -280,7 +272,7 @@ $user_id = $_SESSION['user_id'];
             </div>
 
             <div class="border-t border-blue-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-blue-200 text-sm">&copy; 2025 Campus Hub. All Rights Reserved.</p>
+                <p class="text-blue-200 text-sm">&copy; 2025 Code Camp. All Rights Reserved.</p>
 
                 <div class="flex space-x-4 mt-4 md:mt-0">
                     <a href="#" class="text-blue-200 hover:text-white">

@@ -39,7 +39,7 @@ $phone = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Home</a>
                     <a href="index.php?action=bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Bootcamps</a>
-                    <a href="views/about/index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">About Us</a>
+                   
                     <a href="index.php?action=my_bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">My Bootcamps</a>
                     <a href="index.php?action=wishlist" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Wishlist</a>
                 </nav>

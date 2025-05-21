@@ -56,7 +56,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Home</a>
                     <a href="index.php?action=bootcamps" class="text-blue-600 font-medium">Bootcamps</a>
-                    <a href="views/about/index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">About Us</a>
+                   
                     <?php if ($is_logged_in): ?>
                         <a href="index.php?action=my_bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">My Bootcamps</a>
                         <a href="index.php?action=wishlist" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Wishlist</a>
@@ -103,7 +103,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-white rounded-md shadow-md">
                     <a href="index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Home</a>
                     <a href="index.php?action=bootcamps" class="block px-3 py-2 rounded-md text-blue-600 bg-blue-50 font-medium">Bootcamps</a>
-                    <a href="views/about/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">About Us</a>
+                  
                     
                     <?php if ($is_logged_in): ?>
                         <a href="index.php?action=my_bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Bootcamps</a>
@@ -188,9 +188,10 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
             <!-- Bootcamp Header with Image -->
             <div class="relative">
                 <?php if (!empty($this->bootcamp->image)): ?>
-                    <img src="assets/images/bootcamps/<?php echo htmlspecialchars($this->bootcamp->image); ?>" 
-                         alt="<?php echo htmlspecialchars($this->bootcamp->title); ?>" 
-                         class="w-full h-64 md:h-80 object-cover">
+                    <!-- Ubah gambar bootcamp ke ngoding.jpg -->
+                            <img src="assets/images/ngoding.jpg" 
+                                 alt="<?php echo htmlspecialchars($item['title']); ?>" 
+                                 class="w-full h-48 object-cover">
                 <?php else: ?>
                     <div class="w-full h-64 md:h-80 bg-gray-200 flex items-center justify-center">
                         <span class="text-gray-500">No image available</span>
@@ -302,9 +303,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                         
                         <div class="flex items-center">
                             <?php if (!empty($this->bootcamp->instructor_photo)): ?>
-                                <img src="assets/images/instructors/<?php echo htmlspecialchars($this->bootcamp->instructor_photo); ?>" 
-                                     alt="<?php echo htmlspecialchars($this->bootcamp->instructor_name); ?>" 
-                                     class="w-16 h-16 rounded-full mr-4 object-cover">
+                                
                             <?php else: ?>
                                 <div class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center mr-4">
                                     <span class="text-gray-600 text-xl font-medium">
@@ -443,7 +442,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                     <ul class="space-y-2">
                         <li><a href="index.php" class="text-blue-200 hover:text-white">Home</a></li>
                         <li><a href="index.php?action=bootcamps" class="text-blue-200 hover:text-white">Bootcamps</a></li>
-                        <li><a href="views/about/index.php" class="text-blue-200 hover:text-white">About Us</a></li>
+                   
                         <li><a href="#" class="text-blue-200 hover:text-white">FAQ</a></li>
                         <li><a href="#" class="text-blue-200 hover:text-white">Contact Us</a></li>
                     </ul>

@@ -66,7 +66,7 @@ $name = $_SESSION['name'];
                 <nav class="hidden md:flex space-x-8">
                     <a href="../../../index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Home</a>
                     <a href="../../../views/bootcamp/index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Bootcamps</a>
-                    <a href="../../../views/about/index.php" class="text-white hover:text-blue-200 transition-colors duration-300">About Us</a>
+                 
                 </nav>
 
                 <!-- User Account -->
@@ -103,7 +103,7 @@ $name = $_SESSION['name'];
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-blue-800 rounded-md">
                     <a href="../../../index.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">Home</a>
                     <a href="../../../views/bootcamp/index.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">Bootcamps</a>
-                    <a href="../../../views/about/index.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">About Us</a>
+                  
 
                     <div class="border-t border-blue-700 my-2 pt-2">
                         <a href="dashboard.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">My Profile</a>

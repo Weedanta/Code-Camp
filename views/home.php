@@ -35,7 +35,7 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="assets/css/custom.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    <link rel="icon" href="../../../assets/images/logo/logo_mobile.png" type="image/x-icon">
+    <link rel="icon" href="assets/images/logo/logo_mobile.png" type="image/x-icon">
 </head>
 
 <body class="bg-gray-50 font-sans">
@@ -54,7 +54,7 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-blue-600 font-medium">Home</a>
                     <a href="index.php?action=bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Bootcamps</a>
-                    <a href="views/about/index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">About Us</a>
+                    
                     <?php if ($is_logged_in): ?>
                         <a href="index.php?action=my_bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">My Bootcamps</a>
                         <a href="index.php?action=wishlist" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Wishlist</a>
@@ -67,13 +67,9 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                         <!-- User Profile Icon When Logged In -->
                         <div class="relative">
                             <button id="profileButton" class="flex items-center focus:outline-none">
-                                <?php if (file_exists("assets/images/users/{$user_id}.jpg")): ?>
-                                    <img src="assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-blue-100">
-                                <?php else: ?>
-                                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-blue-100">
-                                        <?php echo substr($user_name, 0, 1); ?>
-                                    </div>
-                                <?php endif; ?>
+                                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-blue-100">
+                                    <?php echo strtoupper(substr($user_name, 0, 1)); ?>
+                                </div>
                             </button>
                             <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
                                 <a href="views/auth/dashboard/dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
@@ -96,12 +92,12 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
 
-            <!-- Mobile Menu (Single Implementation) -->
+            <!-- Mobile Menu -->
             <div id="mobile-menu" class="md:hidden hidden w-full mt-2">
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-white rounded-md shadow-md">
                     <a href="index.php" class="block px-3 py-2 rounded-md text-blue-600 font-medium">Home</a>
                     <a href="index.php?action=bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
-                    <a href="views/about/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">About Us</a>
+                    
 
                     <?php if ($is_logged_in): ?>
                         <a href="index.php?action=my_bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Bootcamps</a>
@@ -161,11 +157,7 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php foreach ($categories as $category): ?>
                     <a href="index.php?action=bootcamp_category&id=<?php echo $category['id']; ?>" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
                         <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                            <?php if (!empty($category['icon'])): ?>
-                                <img src="assets/images/icons/<?php echo htmlspecialchars($category['icon']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>" class="w-8 h-8">
-                            <?php else: ?>
-                                <i class="fas fa-graduation-cap text-blue-600"></i>
-                            <?php endif; ?>
+                            <i class="fas fa-graduation-cap text-blue-600"></i>
                         </div>
                         <h3 class="font-medium"><?php echo htmlspecialchars($category['name']); ?></h3>
                     </a>
@@ -182,15 +174,10 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <?php foreach ($featured_bootcamps as $bootcamp): ?>
                     <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
-                        <?php if (!empty($bootcamp['image'])): ?>
-                            <img src="assets/images/bootcamps/<?php echo htmlspecialchars($bootcamp['image']); ?>" 
-                                 alt="<?php echo htmlspecialchars($bootcamp['title']); ?>" 
-                                 class="w-full h-48 object-cover">
-                        <?php else: ?>
-                            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                <span class="text-gray-500">No image available</span>
-                            </div>
-                        <?php endif; ?>
+                        <!-- Ubah semua gambar bootcamp ke ngoding.jpg -->
+                        <img src="assets/images/ngoding.jpg" 
+                             alt="<?php echo htmlspecialchars($bootcamp['title']); ?>" 
+                             class="w-full h-48 object-cover">
 
                         <div class="p-6">
                             <h3 class="text-xl font-bold mb-2">
@@ -201,16 +188,11 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                             </p>
 
                             <div class="flex items-center mb-4">
-                                <?php if (!empty($bootcamp['instructor_photo'])): ?>
-                                    <img src="assets/images/instructors/<?php echo htmlspecialchars($bootcamp['instructor_photo']); ?>" 
-                                         alt="Instructor" class="w-8 h-8 rounded-full mr-2">
-                                <?php else: ?>
-                                    <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
-                                        <span class="text-gray-600 text-xs">
-                                            <?php echo substr($bootcamp['instructor_name'], 0, 1); ?>
-                                        </span>
-                                    </div>
-                                <?php endif; ?>
+                                <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
+                                    <span class="text-gray-600 text-xs font-medium">
+                                        <?php echo strtoupper(substr($bootcamp['instructor_name'], 0, 1)); ?>
+                                    </span>
+                                </div>
                                 <span class="text-sm text-gray-700">
                                     Instructor: <?php echo htmlspecialchars($bootcamp['instructor_name']); ?>
                                 </span>
@@ -309,7 +291,7 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <p class="italic mb-4">"Bootcamp UI/UX Design di Code Camp sangat membantu saya memulai karir sebagai UI/UX Designer. Materinya komprehensif dan instrukturnya sangat berpengalaman."</p>
                     <div class="flex items-center">
-                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">A</div>
+                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3 text-white font-medium">A</div>
                         <div>
                             <div class="font-medium">Ahmad Rizki</div>
                             <div class="text-sm text-blue-300">UI/UX Designer</div>
@@ -327,7 +309,7 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <p class="italic mb-4">"Saya telah mengikuti bootcamp Data Analysis dan hasilnya luar biasa. Sekarang saya bisa menganalisis data dengan lebih efektif dan mendapatkan insight yang berharga."</p>
                     <div class="flex items-center">
-                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">S</div>
+                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3 text-white font-medium">S</div>
                         <div>
                             <div class="font-medium">Sari Indah</div>
                             <div class="text-sm text-blue-300">Data Analyst</div>
@@ -345,7 +327,7 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <p class="italic mb-4">"Bootcamp Digital Marketing sangat praktis dan relevan dengan kebutuhan industri saat ini. Sekarang saya bisa menjalankan kampanye marketing yang lebih efektif."</p>
                     <div class="flex items-center">
-                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">B</div>
+                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3 text-white font-medium">B</div>
                         <div>
                             <div class="font-medium">Budi Santoso</div>
                             <div class="text-sm text-blue-300">Digital Marketer</div>
@@ -403,7 +385,7 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                     <ul class="space-y-2">
                         <li><a href="index.php" class="text-blue-200 hover:text-white">Home</a></li>
                         <li><a href="index.php?action=bootcamps" class="text-blue-200 hover:text-white">Bootcamp</a></li>
-                        <li><a href="views/about/index.php" class="text-blue-200 hover:text-white">About Us</a></li>
+                        
                         <li><a href="#" class="text-blue-200 hover:text-white">FAQ</a></li>
                         <li><a href="#" class="text-blue-200 hover:text-white">Contact Us</a></li>
                     </ul>
