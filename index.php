@@ -1,35 +1,37 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Code Camp - Temukan Bootcamp IT Terbaik</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/custom.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 </head>
+
 <body class="bg-gray-50 font-sans">
     <!-- Header/Navigation -->
     <header class="bg-white shadow-sm">
-        <div class="container mx-auto px-4 py-3">
+        <div class="container mx-auto px-4 py-2">
             <div class="flex justify-between items-center">
                 <div class="flex items-center">
                     <a href="index.php" class="flex items-center">
-                        <span class="text-blue-600 font-bold text-xl">Campus</span>
-                        <span class="bg-blue-600 text-white px-2 py-1 rounded font-bold text-xl">Hub</span>
+                        <img src="/assets/images/logo.png" alt="Logo" class="h-16 hidden md:block">
+                        <img src="/assets/images/logo/logo_mobile.png" alt="Logo" class="md:hidden h-12">
                     </a>
                 </div>
-                
+
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-blue-600 font-medium">Home</a>
                     <a href="views/bootcamp/index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Bootcamps</a>
                     <a href="views/about/index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">About Us</a>
                 </nav>
-                
+
                 <div class="flex space-x-3">
-                    <a href="views/auth/login.php" class="px-4 py-2 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors duration-300">Login</a>
-                    <a href="views/auth/register.php" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-300">Sign Up</a>
-                    
+                    <a href="index.php?action=login" class="px-4 py-2 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors duration-300">Login</a>
+                    <a href="index.php?action=signup" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-300">Sign Up</a>
+
                     <!-- Mobile menu button -->
                     <button class="md:hidden text-gray-700 focus:outline-none" id="mobile-menu-button">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -37,17 +39,16 @@
                         </svg>
                     </button>
                 </div>
-            </div>
-            
-            <!-- Mobile menu -->
-            <div class="md:hidden hidden" id="mobile-menu">
-                <div class="px-2 pt-2 pb-3 space-y-1">
-                    <a href="index.php" class="block px-3 py-2 rounded-md text-blue-600 font-medium">Home</a>
-                    <a href="views/bootcamp/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
-                    <a href="views/about/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">About Us</a>
+
+                <!-- Mobile menu -->
+                <div class="md:hidden hidden" id="mobile-menu">
+                    <div class="px-2 pt-2 pb-3 space-y-1">
+                        <a href="index.php" class="block px-3 py-2 rounded-md text-blue-600 font-medium">Home</a>
+                        <a href="views/bootcamp/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
+                        <a href="views/about/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">About Us</a>
+                    </div>
                 </div>
             </div>
-        </div>
     </header>
 
     <!-- Hero Section -->
@@ -58,7 +59,7 @@
                     <h1 class="text-3xl md:text-4xl font-bold mb-4">Wujudkan Potensimu Melalui Pengalaman yang Tak Terbatas!</h1>
                     <p class="mb-6">Kembangkan dirimu sekarang juga melalui program terbaik dari bootcamp terpercaya.</p>
                     <a href="views/bootcamp/index.php" class="inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors duration-300">Mulai Sekarang</a>
-                    
+
                     <div class="flex mt-8 space-x-8">
                         <div class="text-center">
                             <div class="text-2xl font-bold">20+</div>
@@ -85,42 +86,37 @@
     <section class="py-12 bg-white">
         <div class="container mx-auto px-4">
             <h2 class="text-center text-2xl font-bold mb-8">KATEGORI</h2>
-            
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-center">
                 <a href="views/bootcamp/category.php?id=1" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
                     <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="assets/images/icons/webdev.png" alt="Web Dev" class="w-8 h-8">
+                        <img src="assets/images/icons/Web.png" alt="Web Dev" class="w-8 h-8">
                     </div>
                     <h3 class="font-medium">Web Dev</h3>
                 </a>
-                
+
                 <a href="views/bootcamp/category.php?id=2" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
-                    <div class="w-16 h-16 mx-auto mb-3 bg-pink-100 rounded-full flex items-center justify-center group-hover:bg-pink-200 transition-colors duration-300">
+                    <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
                         <img src="assets/images/icons/datascience.png" alt="Data Sci" class="w-8 h-8">
                     </div>
                     <h3 class="font-medium">Data Sci</h3>
                 </a>
-                
+
                 <a href="views/bootcamp/category.php?id=3" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
-                    <div class="w-16 h-16 mx-auto mb-3 bg-red-100 rounded-full flex items-center justify-center group-hover:bg-red-200 transition-colors duration-300">
-                        <img src="assets/images/icons/uiux.png" alt="UI/UX" class="w-8 h-8">
+                    <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
+                        <img src="assets/images/icons/UIUX.png" alt="UI/UX" class="w-8 h-8">
                     </div>
                     <h3 class="font-medium">UI/UX Design</h3>
                 </a>
-                
+
                 <a href="views/bootcamp/category.php?id=4" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
-                    <div class="w-16 h-16 mx-auto mb-3 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors duration-300">
-                        <img src="assets/images/icons/mobiledev.png" alt="Mobile Dev" class="w-8 h-8">
+                    <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
+                        <img src="assets/images/icons/Mobile.png" alt="Mobile Dev" class="w-8 h-8">
                     </div>
                     <h3 class="font-medium">Mobile Dev</h3>
                 </a>
+
                 
-                <a href="views/bootcamp/category.php?id=5" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
-                    <div class="w-16 h-16 mx-auto mb-3 bg-yellow-100 rounded-full flex items-center justify-center group-hover:bg-yellow-200 transition-colors duration-300">
-                        <img src="assets/images/icons/ai.png" alt="AI" class="w-8 h-8">
-                    </div>
-                    <h3 class="font-medium">Artificial Intelligence</h3>
-                </a>
             </div>
         </div>
     </section>
@@ -129,21 +125,21 @@
     <section class="py-12 bg-gray-50">
         <div class="container mx-auto px-4">
             <h2 class="text-center text-2xl font-bold mb-8">Jelajahi Acara Unggulan</h2>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Bootcamp Card 1 -->
                 <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
                     <img src="assets/images/bootcamps/uiux-design.jpg" alt="UI/UX Design" class="w-full h-48 object-cover">
-                    
+
                     <div class="p-6">
                         <h3 class="text-xl font-bold mb-2">Figma UI UX Design</h3>
                         <p class="text-gray-600 mb-4">Belajar cara buat UI UX design pakai figma di bootcamp ini bareng mentor expert!</p>
-                        
+
                         <div class="flex items-center mb-4">
                             <img src="assets/images/instructors/john.jpg" alt="Instructor" class="w-8 h-8 rounded-full mr-2">
                             <span class="text-sm text-gray-700">Instructor: John Doe</span>
                         </div>
-                        
+
                         <div class="flex justify-between text-sm text-gray-500 mb-4">
                             <div>
                                 <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -158,27 +154,27 @@
                                 3 bulan
                             </div>
                         </div>
-                        
+
                         <div class="flex items-center justify-between">
                             <span class="text-blue-600 font-bold">Rp 2.500.000</span>
                             <a href="views/bootcamp/detail.php?id=1" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-300">Detail</a>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Bootcamp Card 2 -->
                 <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
                     <img src="assets/images/bootcamps/language.jpg" alt="Foreign Language" class="w-full h-48 object-cover">
-                    
+
                     <div class="p-6">
                         <h3 class="text-xl font-bold mb-2">Maximize Our Language Skills</h3>
                         <p class="text-gray-600 mb-4">Tingkatkan kemampuan bahasa asing Anda dengan bootcamp intensif yang praktis dan interaktif!</p>
-                        
+
                         <div class="flex items-center mb-4">
                             <img src="assets/images/instructors/sarah.jpg" alt="Instructor" class="w-8 h-8 rounded-full mr-2">
                             <span class="text-sm text-gray-700">Instructor: Sarah Johnson</span>
                         </div>
-                        
+
                         <div class="flex justify-between text-sm text-gray-500 mb-4">
                             <div>
                                 <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -193,27 +189,27 @@
                                 2 bulan
                             </div>
                         </div>
-                        
+
                         <div class="flex items-center justify-between">
                             <span class="text-blue-600 font-bold">Rp 1.800.000</span>
                             <a href="views/bootcamp/detail.php?id=2" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-300">Detail</a>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Bootcamp Card 3 -->
                 <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
                     <img src="assets/images/bootcamps/iot.jpg" alt="IoT" class="w-full h-48 object-cover">
-                    
+
                     <div class="p-6">
                         <h3 class="text-xl font-bold mb-2">Pengembangan IoT</h3>
                         <p class="text-gray-600 mb-4">Pelajari cara mengembangkan solusi Internet of Things dari awal hingga implementasi!</p>
-                        
+
                         <div class="flex items-center mb-4">
                             <img src="assets/images/instructors/michael.jpg" alt="Instructor" class="w-8 h-8 rounded-full mr-2">
                             <span class="text-sm text-gray-700">Instructor: Michael Lee</span>
                         </div>
-                        
+
                         <div class="flex justify-between text-sm text-gray-500 mb-4">
                             <div>
                                 <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -228,7 +224,7 @@
                                 4 bulan
                             </div>
                         </div>
-                        
+
                         <div class="flex items-center justify-between">
                             <span class="text-blue-600 font-bold">Rp 3.000.000</span>
                             <a href="views/bootcamp/detail.php?id=3" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-300">Detail</a>
@@ -236,7 +232,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Pagination -->
             <div class="flex justify-center mt-8">
                 <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors duration-300">
@@ -244,13 +240,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
                 </button>
-                
+
                 <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full bg-blue-600 text-white">1</button>
                 <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50 transition-colors duration-300">2</button>
                 <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50 transition-colors duration-300">3</button>
                 <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50 transition-colors duration-300">4</button>
                 <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50 transition-colors duration-300">5</button>
-                
+
                 <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors duration-300">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -272,7 +268,7 @@
                     <p class="text-blue-200 mb-4">Temukan bootcamp IT terbaik untuk mengembangkan keterampilan dan mempercepat karier Anda dalam dunia teknologi.</p>
                     <p class="text-blue-200">Jl. Pendidikan No. 123, Malang<br>Jawa Timur, Indonesia, 65145</p>
                 </div>
-                
+
                 <div>
                     <h3 class="text-lg font-bold mb-4">Kategori</h3>
                     <ul class="space-y-2">
@@ -283,7 +279,7 @@
                         <li><a href="#" class="text-blue-200 hover:text-white">Artificial Intelligence</a></li>
                     </ul>
                 </div>
-                
+
                 <div>
                     <h3 class="text-lg font-bold mb-4">Informasi</h3>
                     <ul class="space-y-2">
@@ -295,10 +291,10 @@
                     </ul>
                 </div>
             </div>
-            
+
             <div class="border-t border-blue-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
                 <p class="text-blue-200 text-sm">&copy; 2025 CodeCamp. All Rights Reserved.</p>
-                
+
                 <div class="flex space-x-4 mt-4 md:mt-0">
                     <a href="#" class="text-blue-200 hover:text-white">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -330,10 +326,11 @@
         // Mobile menu toggle
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
-        
+
         mobileMenuButton.addEventListener('click', () => {
             mobileMenu.classList.toggle('hidden');
         });
     </script>
 </body>
+
 </html>
