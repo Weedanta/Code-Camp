@@ -136,6 +136,95 @@ class AuthController {
         return false;
     }
 
+    // Upload foto profil
+    public function uploadProfilePhoto($file) {
+        // Memastikan user sudah login
+        session_start();
+        if (!isset($_SESSION['user_id'])) {
+            return false;
+        }
+
+        // Validasi file
+        if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+            return false;
+        }
+
+        // Mendapatkan ekstensi file
+        $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        
+        // Validasi ekstensi file (hanya izinkan jpg, jpeg, png)
+        $allowed_extensions = array('jpg', 'jpeg', 'png');
+        if (!in_array($file_extension, $allowed_extensions)) {
+            return false;
+        }
+
+        // Set direktori upload
+        $upload_dir = 'assets/images/users/';
+        
+        // Buat direktori jika belum ada
+        if (!file_exists($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
+        
+        // Set nama file (gunakan ID user)
+        $filename = $_SESSION['user_id'] . '.jpg';
+        $upload_path = $upload_dir . $filename;
+
+        // Resize dan compress gambar
+        $this->resizeAndSaveImage($file['tmp_name'], $upload_path, 300, 300);
+
+        return true;
+    }
+
+    // Fungsi untuk resize dan compress gambar
+    private function resizeAndSaveImage($source, $destination, $width, $height) {
+        // Get image info
+        list($orig_width, $orig_height, $image_type) = getimagesize($source);
+        
+        // Create image resource based on type
+        switch ($image_type) {
+            case IMAGETYPE_JPEG:
+                $image = imagecreatefromjpeg($source);
+                break;
+            case IMAGETYPE_PNG:
+                $image = imagecreatefrompng($source);
+                break;
+            default:
+                return false;
+        }
+        
+        // Calculate dimensions while maintaining aspect ratio
+        $ratio_orig = $orig_width / $orig_height;
+        
+        if ($width / $height > $ratio_orig) {
+            $width = $height * $ratio_orig;
+        } else {
+            $height = $width / $ratio_orig;
+        }
+        
+        // Create a new image with the new dimensions
+        $new_image = imagecreatetruecolor($width, $height);
+        
+        // Handle transparency for PNG
+        if ($image_type == IMAGETYPE_PNG) {
+            imagecolortransparent($new_image, imagecolorallocate($new_image, 0, 0, 0));
+            imagealphablending($new_image, false);
+            imagesavealpha($new_image, true);
+        }
+        
+        // Resize the image
+        imagecopyresampled($new_image, $image, 0, 0, 0, 0, $width, $height, $orig_width, $orig_height);
+        
+        // Save the new image
+        imagejpeg($new_image, $destination, 80); // 80 is the quality (0-100)
+        
+        // Free up memory
+        imagedestroy($image);
+        imagedestroy($new_image);
+        
+        return true;
+    }
+
     // Update password
     public function updatePassword() {
         // Memastikan request adalah POST
@@ -183,6 +272,12 @@ class AuthController {
 
         // Hapus akun
         if ($this->user->delete()) {
+            // Hapus foto profil jika ada
+            $profile_photo = 'assets/images/users/' . $_SESSION['user_id'] . '.jpg';
+            if (file_exists($profile_photo)) {
+                unlink($profile_photo);
+            }
+            
             // Logout setelah menghapus akun
             $this->logout();
             return true;

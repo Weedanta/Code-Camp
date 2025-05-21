@@ -1,0 +1,115 @@
+/* Custom styles untuk Campus Hub */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Animation styles */
+.hover-scale {
+    transition: transform 0.3s ease;
+}
+
+.hover-scale:hover {
+    transform: scale(1.03);
+}
+
+/* Form styles */
+.form-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Card effects */
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Custom button styles */
+.btn-primary-custom {
+    background-color: #3b82f6;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.btn-primary-custom:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+.btn-primary-custom:active {
+    transform: translateY(1px);
+}
+
+/* Blue gradient background for sections */
+.bg-blue-gradient {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+}
+
+/* Custom focus styles */
+input:focus, 
+textarea:focus, 
+select:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Additional mobile menu styles */
+@media (max-width: 768px) {
+    .mobile-menu-active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}
+
+/* Custom styles for auth pages */
+.auth-container {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.auth-side-image {
+    background-color: #1e3a8a;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-side-image::before,
+.auth-side-image::after {
+    content: '';
+    position: absolute;
+    background-color: #3b82f6;
+    border-radius: 50%;
+}
+
+.auth-side-image::before {
+    width: 300px;
+    height: 300px;
+    bottom: -150px;
+    right: -150px;
+    opacity: 0.3;
+}
+
+.auth-side-image::after {
+    width: 200px;
+    height: 200px;
+    top: -100px;
+    left: -100px;
+    opacity: 0.2;
+}
+
+.password-toggle:focus {
+    outline: none;
+}

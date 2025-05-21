@@ -1,0 +1,164 @@
+<?php
+// Memulai session
+session_start();
+
+// Cek apakah user sudah login
+if (!isset($_SESSION['user_id'])) {
+    // Jika belum login, redirect ke halaman login
+    header('Location: index.php?action=login');
+    exit();
+}
+
+// Ambil data user dari session
+$user_id = $_SESSION['user_id'];
+$name = $_SESSION['name'];
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Account - Campus Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .sidebar-item {
+            padding: 12px 16px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        .sidebar-item:hover, .sidebar-item.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+        }
+        .circle-bg {
+            position: absolute;
+            bottom: -150px;
+            left: -150px;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background-color: #0284c7;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    <header class="bg-blue-900 shadow-md">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <a href="index.php" class="flex items-center">
+                    <span class="text-white font-bold text-xl">Campus</span>
+                    <span class="bg-white text-blue-600 px-2 py-1 rounded font-bold text-xl">Hub</span>
+                </a>
+                
+                <nav class="hidden md:flex space-x-8">
+                    <a href="index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Home</a>
+                    <a href="#" class="text-white hover:text-blue-200 transition-colors duration-300">MyEvents</a>
+                    <a href="#" class="text-white hover:text-blue-200 transition-colors duration-300">About Us</a>
+                </nav>
+                
+                <!-- User Profile Icon -->
+                <div class="relative">
+                    <button id="profileButton" class="flex items-center focus:outline-none">
+                        <?php if (file_exists("assets/images/users/{$user_id}.jpg")): ?>
+                            <img src="assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white">
+                        <?php else: ?>
+                            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-white">
+                                <?php echo substr($name, 0, 1); ?>
+                            </div>
+                        <?php endif; ?>
+                    </button>
+                    <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
+                        <a href="dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                        <a href="index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- Sidebar -->
+            <div class="md:w-1/4">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">Profile Akun</h2>
+                    <div class="space-y-2">
+                        <a href="dashboard.php" class="sidebar-item block text-gray-700 font-medium">Info Personal</a>
+                        <a href="views/auth/change_password.php" class="sidebar-item block text-gray-700 font-medium">Password</a>
+                        <a href="views/auth/delete_account.php" class="sidebar-item active block text-gray-700 font-medium text-red-500">Hapus Akun</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Delete Account Section -->
+            <div class="md:w-3/4">
+                <div class="bg-white rounded-lg shadow-md p-6 relative overflow-hidden">
+                    <div class="circle-bg"></div>
+                    
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">Hapus Akun</h2>
+                    <p class="text-gray-600 mb-6">Once you delete your account, there is no going back. Please be certain.</p>
+                    
+                    <!-- Warning Box -->
+                    <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+                        <div class="flex">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <div>
+                                <p class="font-bold">Warning: This action cannot be undone.</p>
+                                <p>When you delete your account, all of your data will be permanently removed. This includes your profile information, photo, and activity history.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Delete Account Form -->
+                    <form action="index.php?action=delete_account" method="post" id="deleteAccountForm" class="space-y-4">
+                        <div class="flex items-center mb-4">
+                            <input type="checkbox" id="confirm_delete" name="confirm_delete" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded" required>
+                            <label for="confirm_delete" class="ml-2 block text-gray-700">I understand that this action is irreversible.</label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <a href="dashboard.php" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition duration-200">
+                                Cancel
+                            </a>
+                            <button type="submit" class="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-200">
+                                Delete Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle profile dropdown
+        document.getElementById('profileButton').addEventListener('click', function() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const profileButton = document.getElementById('profileButton');
+            const profileDropdown = document.getElementById('profileDropdown');
+            
+            if (!profileButton.contains(event.target) && !profileDropdown.contains(event.target)) {
+                profileDropdown.classList.add('hidden');
+            }
+        });
+
+        // Confirmation before submitting
+        document.getElementById('deleteAccountForm').addEventListener('submit', function(event) {
+            if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                event.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
