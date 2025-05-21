@@ -110,7 +110,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                     </div>
                 </div>
                 <div class="md:w-1/2 mt-8 md:mt-0 animate__animated animate__fadeInRight">
-                    <img src="assets/images/hero-image.png" alt="Coding Bootcamp" class="rounded-lg shadow-lg w-full h-auto">
+                    <img src="../assets/images/hero-image.png" alt="Coding Bootcamp" class="rounded-lg shadow-lg ml-12 w-auto h-auto">
                 </div>
             </div>
         </div>
@@ -124,28 +124,28 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-center">
                 <a href="views/bootcamp/category.php?id=1" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
                     <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="assets/images/icons/Web.png" alt="Web Dev" class="w-8 h-8">
+                        <img src="../assets/images/icons/Web.png" alt="Web Dev" class="w-8 h-8">
                     </div>
                     <h3 class="font-medium">Web Dev</h3>
                 </a>
 
                 <a href="views/bootcamp/category.php?id=2" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
                     <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="assets/images/icons/datascience.png" alt="Data Sci" class="w-8 h-8">
+                        <img src="../assets/images/icons/datascience.png" alt="Data Sci" class="w-8 h-8">
                     </div>
                     <h3 class="font-medium">Data Sci</h3>
                 </a>
 
                 <a href="views/bootcamp/category.php?id=3" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
                     <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="assets/images/icons/UIUX.png" alt="UI/UX" class="w-8 h-8">
+                        <img src="../assets/images/icons/UIUX.png" alt="UI/UX" class="w-8 h-8">
                     </div>
                     <h3 class="font-medium">UI/UX Design</h3>
                 </a>
 
                 <a href="views/bootcamp/category.php?id=4" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
                     <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="assets/images/icons/Mobile.png" alt="Mobile Dev" class="w-8 h-8">
+                        <img src="../assets/images/icons/Mobile.png" alt="Mobile Dev" class="w-8 h-8">
                     </div>
                     <h3 class="font-medium">Mobile Dev</h3>
                 </a>

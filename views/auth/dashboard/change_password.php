@@ -5,7 +5,7 @@ session_start();
 // Cek apakah user sudah login
 if (!isset($_SESSION['user_id'])) {
     // Jika belum login, redirect ke halaman login
-    header('Location: index.php?action=login');
+    header('Location: ../../../index.php?action=login');
     exit();
 }
 
@@ -20,6 +20,7 @@ $name = $_SESSION['name'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Change Password - Campus Hub</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../../assets/css/custom.css">
     <style>
         .sidebar-item {
             padding: 12px 16px;
@@ -47,13 +48,13 @@ $name = $_SESSION['name'];
     <header class="bg-blue-900 shadow-md">
         <div class="container mx-auto px-4 py-3">
             <div class="flex justify-between items-center">
-                <a href="index.php" class="flex items-center">
+                <a href="../../../index.php" class="flex items-center">
                     <span class="text-white font-bold text-xl">Campus</span>
                     <span class="bg-white text-blue-600 px-2 py-1 rounded font-bold text-xl">Hub</span>
                 </a>
                 
                 <nav class="hidden md:flex space-x-8">
-                    <a href="index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Home</a>
+                    <a href="../../../index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Home</a>
                     <a href="#" class="text-white hover:text-blue-200 transition-colors duration-300">MyEvents</a>
                     <a href="#" class="text-white hover:text-blue-200 transition-colors duration-300">About Us</a>
                 </nav>
@@ -61,8 +62,8 @@ $name = $_SESSION['name'];
                 <!-- User Profile Icon -->
                 <div class="relative">
                     <button id="profileButton" class="flex items-center focus:outline-none">
-                        <?php if (file_exists("assets/images/users/{$user_id}.jpg")): ?>
-                            <img src="assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white">
+                        <?php if (file_exists("../../../assets/images/users/{$user_id}.jpg")): ?>
+                            <img src="../../../assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white">
                         <?php else: ?>
                             <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-white">
                                 <?php echo substr($name, 0, 1); ?>
@@ -72,7 +73,7 @@ $name = $_SESSION['name'];
                     <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
                         <a href="dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
                         <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
-                        <a href="index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
+                        <a href="../../../index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
                     </div>
                 </div>
             </div>
@@ -88,8 +89,8 @@ $name = $_SESSION['name'];
                     <h2 class="text-xl font-bold text-gray-800 mb-6">Profile Akun</h2>
                     <div class="space-y-2">
                         <a href="dashboard.php" class="sidebar-item block text-gray-700 font-medium">Info Personal</a>
-                        <a href="views/auth/change_password.php" class="sidebar-item active block text-gray-700 font-medium">Password</a>
-                        <a href="#" class="sidebar-item block text-gray-700 font-medium text-red-500">Hapus Akun</a>
+                        <a href="change_password.php" class="sidebar-item active block text-gray-700 font-medium">Password</a>
+                        <a href="delete_account.php" class="sidebar-item block text-gray-700 font-medium text-red-500">Hapus Akun</a>
                     </div>
                 </div>
             </div>
@@ -126,7 +127,7 @@ $name = $_SESSION['name'];
                     <?php endif; ?>
                     
                     <!-- Password Change Form -->
-                    <form action="index.php?action=update_password" method="post" id="passwordForm">
+                    <form action="../../../index.php?action=update_password" method="post" id="passwordForm">
                         <div class="mb-4">
                             <label for="current_password" class="block text-gray-700 font-medium mb-1">Password Saat Ini</label>
                             <div class="relative">

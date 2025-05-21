@@ -5,7 +5,7 @@ session_start();
 // Cek apakah user sudah login
 if (!isset($_SESSION['user_id'])) {
     // Jika belum login, redirect ke halaman login
-    header('Location: index.php?action=login');
+    header('Location: ../../../index.php?action=login');
     exit();
 }
 
@@ -22,6 +22,7 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Campus Hub</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../../assets/css/custom.css">
     <style>
         .profile-img {
             width: 120px;
@@ -57,13 +58,13 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
     <header class="bg-blue-900 shadow-md">
         <div class="container mx-auto px-4 py-3">
             <div class="flex justify-between items-center">
-                <a href="index.php" class="flex items-center">
+                <a href="../../../index.php" class="flex items-center">
                     <span class="text-white font-bold text-xl">Campus</span>
                     <span class="bg-white text-blue-600 px-2 py-1 rounded font-bold text-xl">Hub</span>
                 </a>
                 
                 <nav class="hidden md:flex space-x-8">
-                    <a href="index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Home</a>
+                    <a href="../../../index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Home</a>
                     <a href="#" class="text-white hover:text-blue-200 transition-colors duration-300">MyEvents</a>
                     <a href="#" class="text-white hover:text-blue-200 transition-colors duration-300">About Us</a>
                 </nav>
@@ -71,8 +72,8 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                 <!-- User Profile Icon -->
                 <div class="relative">
                     <button id="profileButton" class="flex items-center focus:outline-none">
-                        <?php if (file_exists("assets/images/users/{$user_id}.jpg")): ?>
-                            <img src="assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white">
+                        <?php if (file_exists("../../../assets/images/users/{$user_id}.jpg")): ?>
+                            <img src="../../../assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white">
                         <?php else: ?>
                             <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-white">
                                 <?php echo substr($name, 0, 1); ?>
@@ -82,7 +83,7 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                     <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
                         <a href="dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
                         <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
-                        <a href="index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
+                        <a href="../../../index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
                     </div>
                 </div>
             </div>
@@ -97,9 +98,9 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-xl font-bold text-gray-800 mb-6">Profile Akun</h2>
                     <div class="space-y-2">
-                        <a href="#" class="sidebar-item active block text-gray-700 font-medium">Info Personal</a>
-                        <a href="#" class="sidebar-item block text-gray-700 font-medium">Password</a>
-                        <a href="#" class="sidebar-item block text-gray-700 font-medium text-red-500">Hapus Akun</a>
+                        <a href="dashboard.php" class="sidebar-item active block text-gray-700 font-medium">Info Personal</a>
+                        <a href="change_password.php" class="sidebar-item block text-gray-700 font-medium">Password</a>
+                        <a href="delete_account.php" class="sidebar-item block text-gray-700 font-medium text-red-500">Hapus Akun</a>
                     </div>
                 </div>
             </div>
@@ -119,6 +120,8 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                                 $success = $_GET['success'];
                                 if($success == 'profile_updated') {
                                     echo "Profil berhasil diperbarui!";
+                                } elseif($success == 'photo_updated') {
+                                    echo "Foto profil berhasil diperbarui!";
                                 }
                             ?>
                         </div>
@@ -130,6 +133,8 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                                 $error = $_GET['error'];
                                 if($error == 'update_failed') {
                                     echo "Gagal memperbarui profil. Silakan coba lagi.";
+                                } elseif($error == 'photo_upload_failed') {
+                                    echo "Gagal mengunggah foto. Periksa format file (JPG/PNG) dan ukuran.";
                                 }
                             ?>
                         </div>
@@ -138,20 +143,23 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                     <div class="flex flex-col md:flex-row gap-6">
                         <!-- Profile Picture -->
                         <div class="text-center">
-                            <?php if (file_exists("assets/images/users/{$user_id}.jpg")): ?>
-                                <img src="assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile Picture" class="profile-img mx-auto">
+                            <?php if (file_exists("../../../assets/images/users/{$user_id}.jpg")): ?>
+                                <img src="../../../assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile Picture" class="profile-img mx-auto">
                             <?php else: ?>
                                 <div class="profile-img mx-auto bg-blue-500 flex items-center justify-center text-white text-3xl">
                                     <?php echo substr($name, 0, 1); ?>
                                 </div>
                             <?php endif; ?>
                             
-                            
+                            <form id="uploadForm" action="../../../index.php?action=upload_photo" method="post" enctype="multipart/form-data" class="mt-3">
+                                <label for="profile_photo" class="text-blue-600 hover:underline cursor-pointer">Change Photo</label>
+                                <input type="file" id="profile_photo" name="profile_photo" class="hidden" accept="image/*">
+                            </form>
                         </div>
                         
                         <!-- Profile Info Form -->
                         <div class="flex-grow">
-                            <form action="index.php?action=update_profile" method="post">
+                            <form action="../../../index.php?action=update_profile" method="post">
                                 <div class="mb-4">
                                     <label for="name" class="block text-gray-700 font-medium mb-1">Nama</label>
                                     <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($name); ?>" 

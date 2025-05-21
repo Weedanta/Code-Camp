@@ -58,25 +58,25 @@ switch ($action) {
         
     case 'update_profile':
         if ($auth->updateProfile()) {
-            header('Location: dashboard.php?success=profile_updated');
+            header('Location: views/auth/dashboard/dashboard.php?success=profile_updated');
         } else {
-            header('Location: dashboard.php?error=update_failed');
+            header('Location: views/auth/dashboard/dashboard.php?error=update_failed');
         }
         break;
 
     case 'upload_photo':
         if ($auth->uploadProfilePhoto($_FILES['profile_photo'])) {
-            header('Location: dashboard.php?success=photo_updated');
+            header('Location: views/auth/dashboard/dashboard.php?success=photo_updated');
         } else {
-            header('Location: dashboard.php?error=photo_upload_failed');
+            header('Location: views/auth/dashboard/dashboard.php?error=photo_upload_failed');
         }
         break;
         
     case 'update_password':
         if ($auth->updatePassword()) {
-            header('Location: dashboard.php?success=password_updated');
+            header('Location: views/auth/dashboard/dashboard.php?success=password_updated');
         } else {
-            header('Location: dashboard.php?error=password_update_failed');
+            header('Location: views/auth/dashboard/dashboard.php?error=password_update_failed');
         }
         break;
         
@@ -84,7 +84,7 @@ switch ($action) {
         if ($auth->deleteAccount()) {
             header('Location: index.php?action=login&success=account_deleted');
         } else {
-            header('Location: dashboard.php?error=delete_failed');
+            header('Location: views/auth/dashboard/dashboard.php?error=delete_failed');
         }
         break;
         
