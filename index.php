@@ -1,18 +1,28 @@
 <?php
-// Memanggil AuthController
+// Memanggil AuthController dan other controllers
 require_once 'controllers/AuthController.php';
+require_once 'controllers/BootcampController.php';
+require_once 'controllers/WishlistController.php';
+require_once 'controllers/OrderController.php';
+require_once 'controllers/ReviewController.php';
 
-// Inisialisasi controller
+// Inisialisasi controllers
 $auth = new AuthController();
+$bootcamp = new BootcampController();
+$wishlist = new WishlistController();
+$order = new OrderController();
+$review = new ReviewController();
 
 // Router sederhana
 $action = isset($_GET['action']) ? $_GET['action'] : 'home';
 
 switch ($action) {
+    // Home/Default Route
     case 'home':
         include_once 'views/home.php';
         break;
         
+    // Authentication Routes
     case 'login':
         $auth->showLoginPage();
         break;
@@ -86,6 +96,95 @@ switch ($action) {
         } else {
             header('Location: views/auth/dashboard/dashboard.php?error=delete_failed');
         }
+        break;
+        
+    // Bootcamp Routes
+    case 'bootcamps':
+        $bootcamp->index();
+        break;
+        
+    case 'bootcamp_category':
+        $bootcamp->category();
+        break;
+        
+    case 'bootcamp_detail':
+        $bootcamp->detail();
+        break;
+        
+    case 'bootcamp_search':
+        $bootcamp->search();
+        break;
+        
+    case 'my_bootcamps':
+        $bootcamp->myBootcamps();
+        break;
+        
+    // Wishlist Routes
+    case 'wishlist':
+        $wishlist->index();
+        break;
+        
+    case 'add_to_wishlist':
+        $wishlist->add();
+        break;
+        
+    case 'remove_from_wishlist':
+        $wishlist->remove();
+        break;
+        
+    // Order Routes
+    case 'checkout':
+        $order->checkout();
+        break;
+        
+    case 'process_order':
+        $order->processOrder();
+        break;
+        
+    case 'order_success':
+        $order->orderSuccess();
+        break;
+        
+    case 'my_orders':
+        $order->myOrders();
+        break;
+        
+    case 'order_detail':
+        $order->orderDetail();
+        break;
+
+    // Optional: Add support for order cancellation and retrying payment
+    case 'cancel_order':
+        if (isset($_POST['order_id'])) {
+            // Implement order cancellation logic
+            header('Location: index.php?action=my_orders&message=order_cancelled');
+        } else {
+            header('Location: index.php?action=my_orders');
+        }
+        break;
+        
+    case 'retry_payment':
+        if (isset($_GET['id'])) {
+            // Redirect to checkout page with the order ID
+            header('Location: index.php?action=checkout&id=' . $_GET['id']);
+        } else {
+            header('Location: index.php?action=my_orders');
+        }
+        break;
+        
+    // Review Routes
+    case 'add_review':
+        $review->addReview();
+        break;
+        
+    case 'get_bootcamp_reviews':
+        $review->getBootcampReviews();
+        break;
+        
+    // Contact/Support Route
+    case 'contact_support':
+        // Implement contact support page or redirect to about page
+        header('Location: views/about/index.php');
         break;
         
     default:

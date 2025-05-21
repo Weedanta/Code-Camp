@@ -21,9 +21,10 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - Campus Hub</title>
+    <title>Profile - Code Camp</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../../assets/css/custom.css">
+    <link rel="icon" href="../../../assets/images/logo/logo_mobile.png" type="image/x-icon">
     <style>
         .profile-img {
             width: 120px;
@@ -186,7 +187,7 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                                 </div>
                             <?php endif; ?>
 
-                            
+
                         </div>
 
                         <!-- Profile Info Form -->
@@ -231,6 +232,29 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
     </div>
 
     <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Profile dropdown toggle
+        document.getElementById('profileButton').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const profileButton = document.getElementById('profileButton');
+            const profileDropdown = document.getElementById('profileDropdown');
+
+            if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+                profileDropdown.classList.add('hidden');
+            }
+        });
+
         // Mobile menu toggle
         document.getElementById('mobile-menu-button').addEventListener('click', function() {
             const mobileMenu = document.getElementById('mobile-menu');

@@ -4,6 +4,25 @@ session_start();
 $is_logged_in = isset($_SESSION['user_id']);
 $user_name = $is_logged_in ? $_SESSION['name'] : '';
 $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
+
+// Get sample bootcamps for featured section
+require_once 'config/database.php';
+require_once 'models/Bootcamp.php';
+require_once 'models/Category.php';
+
+$database = new Database();
+$db = $database->getConnection();
+
+$bootcamp = new Bootcamp($db);
+$category = new Category($db);
+
+// Get featured bootcamps (limit to 3)
+$stmt = $bootcamp->readAll(3, 0);
+$featured_bootcamps = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get all categories
+$categoryStmt = $category->readAll();
+$categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -11,11 +30,12 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Camp - Temukan Bootcamp IT Terbaik</title>
+    <title>Campus Hub - Temukan Bootcamp IT Terbaik</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="assets/css/custom.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    <link rel="icon" href="../assets/images/logo/logo_mobile.png" type="image/x-icon">
+    <link rel="icon" href="../../../assets/images/logo/logo_mobile.png" type="image/x-icon">
 </head>
 
 <body class="bg-gray-50 font-sans">
@@ -25,7 +45,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
             <div class="flex justify-between items-center">
                 <div class="flex items-center">
                     <a href="index.php" class="flex items-center">
-                        <img src="assets/images/logo.png" alt="Logo" class="h-16 hidden md:block" draggable="false">
+                        <img src="assets/images/logo.png" alt="Logo" class="h-16 hidden md:block">
                         <img src="assets/images/logo/logo_mobile.png" alt="Logo" class="md:hidden h-12">
                     </a>
                 </div>
@@ -33,8 +53,12 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                 <!-- Desktop Menu -->
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-blue-600 font-medium">Home</a>
-                    <a href="views/bootcamp/index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Bootcamps</a>
+                    <a href="index.php?action=bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Bootcamps</a>
                     <a href="views/about/index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">About Us</a>
+                    <?php if ($is_logged_in): ?>
+                        <a href="index.php?action=my_bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">My Bootcamps</a>
+                        <a href="index.php?action=wishlist" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Wishlist</a>
+                    <?php endif; ?>
                 </nav>
 
                 <!-- User Account / Login Buttons -->
@@ -53,7 +77,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                             </button>
                             <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
                                 <a href="views/auth/dashboard/dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                                <a href="index.php?action=my_orders" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Orders</a>
                                 <a href="index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
                             </div>
                         </div>
@@ -76,13 +100,21 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
             <div id="mobile-menu" class="md:hidden hidden w-full mt-2">
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-white rounded-md shadow-md">
                     <a href="index.php" class="block px-3 py-2 rounded-md text-blue-600 font-medium">Home</a>
-                    <a href="views/bootcamp/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
+                    <a href="index.php?action=bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
                     <a href="views/about/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">About Us</a>
 
                     <?php if ($is_logged_in): ?>
+                        <a href="index.php?action=my_bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Bootcamps</a>
+                        <a href="index.php?action=wishlist" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Wishlist</a>
                         <div class="border-t border-gray-200 my-2 pt-2">
                             <a href="views/auth/dashboard/dashboard.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Profile</a>
+                            <a href="index.php?action=my_orders" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Orders</a>
                             <a href="index.php?action=logout" class="block px-3 py-2 rounded-md text-red-600 hover:bg-red-50">Logout</a>
+                        </div>
+                    <?php else: ?>
+                        <div class="border-t border-gray-200 my-2 pt-2">
+                            <a href="index.php?action=login" class="block px-3 py-2 rounded-md text-blue-600 hover:bg-blue-50">Login</a>
+                            <a href="index.php?action=signup" class="block px-3 py-2 rounded-md text-blue-600 hover:bg-blue-50">Sign Up</a>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -96,7 +128,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                 <div class="md:w-1/2 animate__animated animate__fadeInLeft">
                     <h1 class="text-3xl md:text-4xl font-bold mb-4">Wujudkan Potensimu Melalui Pengalaman yang Tak Terbatas!</h1>
                     <p class="mb-6">Kembangkan dirimu sekarang juga melalui program terbaik dari bootcamp terpercaya.</p>
-                    <a href="views/bootcamp/index.php" class="inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors duration-300">Mulai Sekarang</a>
+                    <a href="index.php?action=bootcamps" class="inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors duration-300">Mulai Sekarang</a>
 
                     <div class="flex mt-8 space-x-8">
                         <div class="text-center">
@@ -114,7 +146,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                     </div>
                 </div>
                 <div class="md:w-1/2 mt-8 md:mt-0 animate__animated animate__fadeInRight">
-                    <img src="../assets/images/hero-image.png" alt="Coding Bootcamp" class="rounded-lg shadow-lg md:ml-12 w-auto h-auto" draggable="false">
+                    <img src="../assets/images/hero-image.png" alt="Coding Bootcamp" class="rounded-lg shadow-lg md:ml-12 w-auto h-auto">
                 </div>
             </div>
         </div>
@@ -126,35 +158,18 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
             <h2 class="text-center text-2xl font-bold mb-8">KATEGORI</h2>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-center">
-                <a href="views/bootcamp/category.php?id=1" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
-                    <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="../assets/images/icons/Web.png" alt="Web Dev" class="w-8 h-8" draggable="false>
-                    </div>
-                    <h3 class="font-medium">Web Dev</h3>
-                </a>
-
-                <a href="views/bootcamp/category.php?id=2" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
-                    <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="../assets/images/icons/datascience.png" alt="Data Sci" class="w-8 h-8" draggable="false>
-                    </div>
-                    <h3 class="font-medium">Data Science</h3>
-                </a>
-
-                <a href="views/bootcamp/category.php?id=3" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
-                    <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="../assets/images/icons/UIUX.png" alt="UI/UX" class="w-8 h-8" draggable="false>
-                    </div>
-                    <h3 class="font-medium">UI/UX Design</h3>
-                </a>
-
-                <a href="views/bootcamp/category.php?id=4" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
-                    <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="../assets/images/icons/Mobile.png" alt="Mobile Dev" class="w-8 h-8" draggable="false>
-                    </div>
-                    <h3 class="font-medium">Mobile Dev</h3>
-                </a>
-
-
+                <?php foreach ($categories as $category): ?>
+                    <a href="index.php?action=bootcamp_category&id=<?php echo $category['id']; ?>" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
+                        <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
+                            <?php if (!empty($category['icon'])): ?>
+                                <img src="assets/images/icons/<?php echo htmlspecialchars($category['icon']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>" class="w-8 h-8">
+                            <?php else: ?>
+                                <i class="fas fa-graduation-cap text-blue-600"></i>
+                            <?php endif; ?>
+                        </div>
+                        <h3 class="font-medium"><?php echo htmlspecialchars($category['name']); ?></h3>
+                    </a>
+                <?php endforeach; ?>
             </div>
         </div>
     </section>
@@ -162,134 +177,197 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
     <!-- Featured Bootcamps Section -->
     <section class="py-12 bg-gray-50">
         <div class="container mx-auto px-4">
-            <h2 class="text-center text-2xl font-bold mb-8">Jelajahi Acara Unggulan</h2>
+            <h2 class="text-center text-2xl font-bold mb-8">Jelajahi Bootcamp Unggulan</h2>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Bootcamp Card 1 -->
-                <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <img src="assets/images/bootcamps/uiux-design.jpg" alt="UI/UX Design" class="w-full h-48 object-cover">
-
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold mb-2">Figma UI UX Design</h3>
-                        <p class="text-gray-600 mb-4">Belajar cara buat UI UX design pakai figma di bootcamp ini bareng mentor expert!</p>
-
-                        <div class="flex items-center mb-4">
-                            <img src="assets/images/instructors/john.jpg" alt="Instructor" class="w-8 h-8 rounded-full mr-2">
-                            <span class="text-sm text-gray-700">Instructor: John Doe</span>
-                        </div>
-
-                        <div class="flex justify-between text-sm text-gray-500 mb-4">
-                            <div>
-                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                10 Maret 2025
+                <?php foreach ($featured_bootcamps as $bootcamp): ?>
+                    <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <?php if (!empty($bootcamp['image'])): ?>
+                            <img src="assets/images/bootcamps/<?php echo htmlspecialchars($bootcamp['image']); ?>" 
+                                 alt="<?php echo htmlspecialchars($bootcamp['title']); ?>" 
+                                 class="w-full h-48 object-cover">
+                        <?php else: ?>
+                            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                <span class="text-gray-500">No image available</span>
                             </div>
-                            <div>
-                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                3 bulan
+                        <?php endif; ?>
+
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2">
+                                <?php echo htmlspecialchars($bootcamp['title']); ?>
+                            </h3>
+                            <p class="text-gray-600 mb-4">
+                                <?php echo htmlspecialchars(substr($bootcamp['description'], 0, 100)) . '...'; ?>
+                            </p>
+
+                            <div class="flex items-center mb-4">
+                                <?php if (!empty($bootcamp['instructor_photo'])): ?>
+                                    <img src="assets/images/instructors/<?php echo htmlspecialchars($bootcamp['instructor_photo']); ?>" 
+                                         alt="Instructor" class="w-8 h-8 rounded-full mr-2">
+                                <?php else: ?>
+                                    <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
+                                        <span class="text-gray-600 text-xs">
+                                            <?php echo substr($bootcamp['instructor_name'], 0, 1); ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+                                <span class="text-sm text-gray-700">
+                                    Instructor: <?php echo htmlspecialchars($bootcamp['instructor_name']); ?>
+                                </span>
+                            </div>
+
+                            <div class="flex justify-between text-sm text-gray-500 mb-4">
+                                <div>
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <?php echo date('d M Y', strtotime($bootcamp['start_date'])); ?>
+                                </div>
+                                <div>
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <?php echo htmlspecialchars($bootcamp['duration']); ?>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <?php if (!empty($bootcamp['discount_price']) && $bootcamp['discount_price'] > $bootcamp['price']): ?>
+                                        <span class="text-gray-500 line-through text-sm">
+                                            Rp <?php echo number_format($bootcamp['discount_price'], 0, ',', '.'); ?>
+                                        </span><br>
+                                    <?php endif; ?>
+                                    <span class="text-blue-600 font-bold">
+                                        Rp <?php echo number_format($bootcamp['price'], 0, ',', '.'); ?>
+                                    </span>
+                                </div>
+                                <a href="index.php?action=bootcamp_detail&id=<?php echo $bootcamp['id']; ?>" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                    Detail
+                                </a>
                             </div>
                         </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
 
-                        <div class="flex items-center justify-between">
-                            <span class="text-blue-600 font-bold">Rp 2.500.000</span>
-                            <a href="views/bootcamp/detail.php?id=1" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-300">Detail</a>
+            <!-- View All Button -->
+            <div class="text-center mt-8">
+                <a href="index.php?action=bootcamps" class="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors duration-300">
+                    Lihat Semua Bootcamp
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Us Section -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-center text-2xl font-bold mb-8">Mengapa Memilih Code Camp?</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-award text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Bootcamp Berkualitas</h3>
+                    <p class="text-gray-600">Semua bootcamp kami dipilih dengan ketat dan disusun oleh instruktur berpengalaman di bidangnya.</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-rocket text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Belajar dengan Kecepatan Anda</h3>
+                    <p class="text-gray-600">Akses bootcamp kapan saja dan di mana saja sesuai dengan jadwal dan kecepatan belajar Anda.</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-friends text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Komunitas Pendukung</h3>
+                    <p class="text-gray-600">Dapatkan dukungan dari komunitas pembelajar dan mentor yang selalu siap membantu Anda.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-12 bg-blue-900 text-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-center text-2xl font-bold mb-8">Apa Kata Mereka?</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-blue-800 p-6 rounded-lg">
+                    <div class="text-yellow-400 mb-4">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="italic mb-4">"Bootcamp UI/UX Design di Code Camp sangat membantu saya memulai karir sebagai UI/UX Designer. Materinya komprehensif dan instrukturnya sangat berpengalaman."</p>
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">A</div>
+                        <div>
+                            <div class="font-medium">Ahmad Rizki</div>
+                            <div class="text-sm text-blue-300">UI/UX Designer</div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Bootcamp Card 2 -->
-                <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <img src="assets/images/bootcamps/language.jpg" alt="Foreign Language" class="w-full h-48 object-cover">
-
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold mb-2">Maximize Our Language Skills</h3>
-                        <p class="text-gray-600 mb-4">Tingkatkan kemampuan bahasa asing Anda dengan bootcamp intensif yang praktis dan interaktif!</p>
-
-                        <div class="flex items-center mb-4">
-                            <img src="assets/images/instructors/sarah.jpg" alt="Instructor" class="w-8 h-8 rounded-full mr-2">
-                            <span class="text-sm text-gray-700">Instructor: Sarah Johnson</span>
-                        </div>
-
-                        <div class="flex justify-between text-sm text-gray-500 mb-4">
-                            <div>
-                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                15 April 2025
-                            </div>
-                            <div>
-                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                2 bulan
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <span class="text-blue-600 font-bold">Rp 1.800.000</span>
-                            <a href="views/bootcamp/detail.php?id=2" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-300">Detail</a>
+                
+                <div class="bg-blue-800 p-6 rounded-lg">
+                    <div class="text-yellow-400 mb-4">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="italic mb-4">"Saya telah mengikuti bootcamp Data Analysis dan hasilnya luar biasa. Sekarang saya bisa menganalisis data dengan lebih efektif dan mendapatkan insight yang berharga."</p>
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">S</div>
+                        <div>
+                            <div class="font-medium">Sari Indah</div>
+                            <div class="text-sm text-blue-300">Data Analyst</div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Bootcamp Card 3 -->
-                <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <img src="assets/images/bootcamps/iot.jpg" alt="IoT" class="w-full h-48 object-cover">
-
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold mb-2">Pengembangan IoT</h3>
-                        <p class="text-gray-600 mb-4">Pelajari cara mengembangkan solusi Internet of Things dari awal hingga implementasi!</p>
-
-                        <div class="flex items-center mb-4">
-                            <img src="assets/images/instructors/michael.jpg" alt="Instructor" class="w-8 h-8 rounded-full mr-2">
-                            <span class="text-sm text-gray-700">Instructor: Michael Lee</span>
-                        </div>
-
-                        <div class="flex justify-between text-sm text-gray-500 mb-4">
-                            <div>
-                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                20 Mei 2025
-                            </div>
-                            <div>
-                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                4 bulan
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <span class="text-blue-600 font-bold">Rp 3.000.000</span>
-                            <a href="views/bootcamp/detail.php?id=3" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-300">Detail</a>
+                
+                <div class="bg-blue-800 p-6 rounded-lg">
+                    <div class="text-yellow-400 mb-4">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <p class="italic mb-4">"Bootcamp Digital Marketing sangat praktis dan relevan dengan kebutuhan industri saat ini. Sekarang saya bisa menjalankan kampanye marketing yang lebih efektif."</p>
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">B</div>
+                        <div>
+                            <div class="font-medium">Budi Santoso</div>
+                            <div class="text-sm text-blue-300">Digital Marketer</div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <!-- Pagination -->
-            <div class="flex justify-center mt-8">
-                <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors duration-300">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </button>
-
-                <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full bg-blue-600 text-white">1</button>
-                <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50 transition-colors duration-300">2</button>
-                <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50 transition-colors duration-300">3</button>
-                <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50 transition-colors duration-300">4</button>
-                <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50 transition-colors duration-300">5</button>
-
-                <button class="w-8 h-8 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors duration-300">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </button>
+    <!-- CTA Section -->
+    <section class="py-20 bg-gray-50">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold mb-4">Siap Untuk Memulai Perjalanan Belajar Anda?</h2>
+            <p class="text-gray-600 mb-8 max-w-2xl mx-auto">Bergabunglah dengan ribuan pembelajar lainnya dan kembangkan keterampilan Anda melalui bootcamp berkualitas tinggi.</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="index.php?action=bootcamps" class="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors duration-300">
+                    Jelajahi Bootcamp
+                </a>
+                <a href="index.php?action=signup" class="px-6 py-3 border border-blue-600 text-blue-600 font-medium rounded-md hover:bg-blue-50 transition-colors duration-300">
+                    Daftar Sekarang
+                </a>
             </div>
         </div>
     </section>
@@ -300,8 +378,8 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div>
                     <div class="flex items-center mb-4">
-                        <span class="text-white font-bold text-xl">Campus</span>
-                        <span class="bg-white text-blue-600 px-2 py-1 rounded font-bold text-xl">Hub</span>
+                        <img src="assets/images/logo.png" alt="Logo" class="h-16 hidden md:block">
+                        <img src="assets/images/logo/logo_mobile.png" alt="Logo" class="md:hidden h-12">
                     </div>
                     <p class="text-blue-200 mb-4">Temukan bootcamp IT terbaik untuk mengembangkan keterampilan dan mempercepat karier Anda dalam dunia teknologi.</p>
                     <p class="text-blue-200">Jl. Pendidikan No. 123, Malang<br>Jawa Timur, Indonesia, 65145</p>
@@ -310,20 +388,22 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                 <div>
                     <h3 class="text-lg font-bold mb-4">Kategori</h3>
                     <ul class="space-y-2">
-                        <li><a href="#" class="text-blue-200 hover:text-white">Web Dev</a></li>
-                        <li><a href="#" class="text-blue-200 hover:text-white">Data Science</a></li>
-                        <li><a href="#" class="text-blue-200 hover:text-white">UI/UX Design</a></li>
-                        <li><a href="#" class="text-blue-200 hover:text-white">Mobile Development</a></li>
-                        <li><a href="#" class="text-blue-200 hover:text-white">Artificial Intelligence</a></li>
+                        <?php foreach (array_slice($categories, 0, 5) as $category): ?>
+                            <li>
+                                <a href="index.php?action=bootcamp_category&id=<?php echo $category['id']; ?>" class="text-blue-200 hover:text-white">
+                                    <?php echo htmlspecialchars($category['name']); ?>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
                     </ul>
                 </div>
 
                 <div>
                     <h3 class="text-lg font-bold mb-4">Informasi</h3>
                     <ul class="space-y-2">
-                        <li><a href="#" class="text-blue-200 hover:text-white">Home</a></li>
-                        <li><a href="#" class="text-blue-200 hover:text-white">Bootcamp</a></li>
-                        <li><a href="#" class="text-blue-200 hover:text-white">About Us</a></li>
+                        <li><a href="index.php" class="text-blue-200 hover:text-white">Home</a></li>
+                        <li><a href="index.php?action=bootcamps" class="text-blue-200 hover:text-white">Bootcamp</a></li>
+                        <li><a href="views/about/index.php" class="text-blue-200 hover:text-white">About Us</a></li>
                         <li><a href="#" class="text-blue-200 hover:text-white">FAQ</a></li>
                         <li><a href="#" class="text-blue-200 hover:text-white">Contact Us</a></li>
                     </ul>
@@ -331,63 +411,54 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
             </div>
 
             <div class="border-t border-blue-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-blue-200 text-sm">&copy; 2025 CodeCamp. All Rights Reserved.</p>
+                <p class="text-blue-200 text-sm">&copy; 2025 Code Camp. All Rights Reserved.</p>
 
                 <div class="flex space-x-4 mt-4 md:mt-0">
                     <a href="#" class="text-blue-200 hover:text-white">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.407.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.73 0 1.323-.593 1.323-1.325V1.325C24 .593 23.407 0 22.675 0z"></path>
-                        </svg>
+                        <i class="fab fa-facebook-f"></i>
                     </a>
                     <a href="#" class="text-blue-200 hover:text-white">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M23.954 4.569c-.885.389-1.83.654-2.825.775 1.014-.611 1.794-1.574 2.163-2.723-.951.555-2.005.959-3.127 1.184-.896-.959-2.173-1.559-3.591-1.559-2.717 0-4.92 2.203-4.92 4.917 0 .39.045.765.127 1.124C7.691 8.094 4.066 6.13 1.64 3.161c-.427.722-.666 1.561-.666 2.457 0 1.705.867 3.214 2.19 4.097-.807-.025-1.566-.248-2.228-.616v.061c0 2.385 1.693 4.374 3.946 4.828-.413.111-.849.171-1.296.171-.314 0-.615-.03-.916-.086.631 1.953 2.445 3.377 4.604 3.417-1.68 1.319-3.809 2.105-6.102 2.105-.39 0-.779-.023-1.17-.067 2.189 1.394 4.768 2.209 7.557 2.209 9.054 0 13.999-7.496 13.999-13.986 0-.209 0-.42-.015-.63.961-.689 1.8-1.56 2.46-2.548l-.047-.02z"></path>
-                        </svg>
+                        <i class="fab fa-twitter"></i>
                     </a>
                     <a href="#" class="text-blue-200 hover:text-white">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"></path>
-                        </svg>
+                        <i class="fab fa-instagram"></i>
                     </a>
                     <a href="#" class="text-blue-200 hover:text-white">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M19.7 3H4.3A1.3 1.3 0 003 4.3v15.4A1.3 1.3 0 004.3 21h15.4a1.3 1.3 0 001.3-1.3V4.3A1.3 1.3 0 0019.7 3zM8.339 18.338H5.667v-8.59h2.672v8.59zM7.004 8.574a1.548 1.548 0 11-.002-3.096 1.548 1.548 0 01.002 3.096zm11.335 9.764H15.67v-4.177c0-.996-.017-2.278-1.387-2.278-1.389 0-1.601 1.086-1.601 2.206v4.249h-2.667v-8.59h2.559v1.174h.037c.356-.675 1.227-1.387 2.526-1.387 2.703 0 3.203 1.779 3.203 4.092v4.711z"></path>
-                        </svg>
+                        <i class="fab fa-linkedin-in"></i>
                     </a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <script src="assets/js/main.js"></script>
     <script>
-    // Mobile menu toggle
-    document.getElementById('mobile-menu-button').addEventListener('click', function() {
-        const mobileMenu = document.getElementById('mobile-menu');
-        mobileMenu.classList.toggle('hidden');
-    });
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
 
-    // Profile dropdown toggle
-    <?php if ($is_logged_in): ?>
-    document.getElementById('profileButton').addEventListener('click', function(e) {
-        e.stopPropagation();
-        const dropdown = document.getElementById('profileDropdown');
-        dropdown.classList.toggle('hidden');
-    });
+        // Profile dropdown toggle (if logged in)
+        <?php if ($is_logged_in): ?>
+        document.getElementById('profileButton').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        });
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        const profileButton = document.getElementById('profileButton');
-        const profileDropdown = document.getElementById('profileDropdown');
-        
-        if (profileButton && profileDropdown) {
-            if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
-                profileDropdown.classList.add('hidden');
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const profileButton = document.getElementById('profileButton');
+            const profileDropdown = document.getElementById('profileDropdown');
+            
+            if (profileButton && profileDropdown) {
+                if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+                    profileDropdown.classList.add('hidden');
+                }
             }
-        }
-    });
-    <?php endif; ?>
-</script>
+        });
+        <?php endif; ?>
+    </script>
 </body>
 
 </html>
