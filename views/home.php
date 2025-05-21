@@ -11,10 +11,11 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Hub - Temukan Bootcamp IT Terbaik</title>
+    <title>Code Camp - Temukan Bootcamp IT Terbaik</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/custom.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link rel="icon" href="../assets/images/logo/logo_mobile.png" type="image/x-icon">
 </head>
 
 <body class="bg-gray-50 font-sans">
@@ -24,7 +25,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
             <div class="flex justify-between items-center">
                 <div class="flex items-center">
                     <a href="index.php" class="flex items-center">
-                        <img src="assets/images/logo.png" alt="Logo" class="h-16 hidden md:block">
+                        <img src="assets/images/logo.png" alt="Logo" class="h-16 hidden md:block" draggable="false">
                         <img src="assets/images/logo/logo_mobile.png" alt="Logo" class="md:hidden h-12">
                     </a>
                 </div>
@@ -113,7 +114,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                     </div>
                 </div>
                 <div class="md:w-1/2 mt-8 md:mt-0 animate__animated animate__fadeInRight">
-                    <img src="../assets/images/hero-image.png" alt="Coding Bootcamp" class="rounded-lg shadow-lg md:ml-12 w-auto h-auto">
+                    <img src="../assets/images/hero-image.png" alt="Coding Bootcamp" class="rounded-lg shadow-lg md:ml-12 w-auto h-auto" draggable="false">
                 </div>
             </div>
         </div>
@@ -127,28 +128,28 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-center">
                 <a href="views/bootcamp/category.php?id=1" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
                     <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="../assets/images/icons/Web.png" alt="Web Dev" class="w-8 h-8">
+                        <img src="../assets/images/icons/Web.png" alt="Web Dev" class="w-8 h-8" draggable="false>
                     </div>
                     <h3 class="font-medium">Web Dev</h3>
                 </a>
 
                 <a href="views/bootcamp/category.php?id=2" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
                     <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="../assets/images/icons/datascience.png" alt="Data Sci" class="w-8 h-8">
+                        <img src="../assets/images/icons/datascience.png" alt="Data Sci" class="w-8 h-8" draggable="false>
                     </div>
-                    <h3 class="font-medium">Data Sci</h3>
+                    <h3 class="font-medium">Data Science</h3>
                 </a>
 
                 <a href="views/bootcamp/category.php?id=3" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
                     <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="../assets/images/icons/UIUX.png" alt="UI/UX" class="w-8 h-8">
+                        <img src="../assets/images/icons/UIUX.png" alt="UI/UX" class="w-8 h-8" draggable="false>
                     </div>
                     <h3 class="font-medium">UI/UX Design</h3>
                 </a>
 
                 <a href="views/bootcamp/category.php?id=4" class="p-4 hover:shadow-md rounded-lg transition-shadow duration-300 group">
                     <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-                        <img src="../assets/images/icons/Mobile.png" alt="Mobile Dev" class="w-8 h-8">
+                        <img src="../assets/images/icons/Mobile.png" alt="Mobile Dev" class="w-8 h-8" draggable="false>
                     </div>
                     <h3 class="font-medium">Mobile Dev</h3>
                 </a>

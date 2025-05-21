@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Campus Hub</title>
+    <title>Login - Code Camp</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="../../assets/images/logo/logo_mobile.png" type="image/x-icon">
     <style>
         body, html {
             height: 100%;
@@ -172,7 +173,7 @@
         <div class="brand-side">
             <div class="relative z-10">
                 <div class="text-4xl font-bold text-white flex items-center">
-                    <img src="../../assets/images/logo.png" alt="logo" class="lg:h-40 md:h-32 h-24 mr-2">
+                    <img src="../../assets/images/logo.png" alt="logo" class="lg:h-40 md:h-32 h-24 mr-2" draggable="false">
                 </div>
             </div>
         </div>
