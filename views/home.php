@@ -20,22 +20,24 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
 <body class="bg-gray-50 font-sans">
     <!-- Header/Navigation -->
     <header class="bg-white shadow-sm">
-        <div class="container mx-auto px-4 py-2">
+        <div class="container mx-auto px-4 py-1">
             <div class="flex justify-between items-center">
                 <div class="flex items-center">
                     <a href="index.php" class="flex items-center">
-                        <img src="/assets/images/logo.png" alt="Logo" class="h-16 hidden md:block">
-                        <img src="/assets/images/logo/logo_mobile.png" alt="Logo" class="md:hidden h-12">
+                        <img src="assets/images/logo.png" alt="Logo" class="h-16 hidden md:block">
+                        <img src="assets/images/logo/logo_mobile.png" alt="Logo" class="md:hidden h-12">
                     </a>
                 </div>
 
+                <!-- Desktop Menu -->
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-blue-600 font-medium">Home</a>
                     <a href="views/bootcamp/index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Bootcamps</a>
                     <a href="views/about/index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">About Us</a>
                 </nav>
 
-                <div class="flex space-x-3">
+                <!-- User Account / Login Buttons -->
+                <div class="flex items-center space-x-3">
                     <?php if ($is_logged_in): ?>
                         <!-- User Profile Icon When Logged In -->
                         <div class="relative">
@@ -49,7 +51,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                                 <?php endif; ?>
                             </button>
                             <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
-                                <a href="dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                                <a href="views/auth/dashboard/dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
                                 <a href="index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
                             </div>
@@ -60,27 +62,28 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                         <a href="index.php?action=signup" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-300">Sign Up</a>
                     <?php endif; ?>
 
-                    <!-- Mobile menu -->
-                    <div class="md:hidden hidden" id="mobile-menu">
-                        <div class="px-2 pt-2 pb-3 space-y-1">
-                            <a href="index.php" class="block px-3 py-2 rounded-md text-blue-600 font-medium">Home</a>
-                            <a href="#" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Events</a>
-                            <a href="#" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">About Us</a>
-                            <?php if ($is_logged_in): ?>
-                                <a href="dashboard.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Profile</a>
-                                <a href="index.php?action=logout" class="block px-3 py-2 rounded-md text-red-600 hover:bg-red-50">Logout</a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+                    <!-- Mobile Menu Toggle Button -->
+                    <button id="mobile-menu-button" class="md:hidden flex items-center p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
                 </div>
+            </div>
 
-                <!-- Mobile menu -->
-                <div class="md:hidden hidden" id="mobile-menu">
-                    <div class="px-2 pt-2 pb-3 space-y-1">
-                        <a href="index.php" class="block px-3 py-2 rounded-md text-blue-600 font-medium">Home</a>
-                        <a href="views/bootcamp/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
-                        <a href="views/about/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">About Us</a>
-                    </div>
+            <!-- Mobile Menu (Single Implementation) -->
+            <div id="mobile-menu" class="md:hidden hidden w-full mt-2">
+                <div class="px-2 pt-2 pb-3 space-y-1 bg-white rounded-md shadow-md">
+                    <a href="index.php" class="block px-3 py-2 rounded-md text-blue-600 font-medium">Home</a>
+                    <a href="views/bootcamp/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
+                    <a href="views/about/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">About Us</a>
+
+                    <?php if ($is_logged_in): ?>
+                        <div class="border-t border-gray-200 my-2 pt-2">
+                            <a href="views/auth/dashboard/dashboard.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Profile</a>
+                            <a href="index.php?action=logout" class="block px-3 py-2 rounded-md text-red-600 hover:bg-red-50">Logout</a>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
     </header>
@@ -110,7 +113,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                     </div>
                 </div>
                 <div class="md:w-1/2 mt-8 md:mt-0 animate__animated animate__fadeInRight">
-                    <img src="../assets/images/hero-image.png" alt="Coding Bootcamp" class="rounded-lg shadow-lg ml-12 w-auto h-auto">
+                    <img src="../assets/images/hero-image.png" alt="Coding Bootcamp" class="rounded-lg shadow-lg md:ml-12 w-auto h-auto">
                 </div>
             </div>
         </div>
@@ -357,14 +360,33 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
 
     <script src="assets/js/main.js"></script>
     <script>
-        // Mobile menu toggle
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-button').addEventListener('click', function() {
         const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenu.classList.toggle('hidden');
+    });
 
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-    </script>
+    // Profile dropdown toggle
+    <?php if ($is_logged_in): ?>
+    document.getElementById('profileButton').addEventListener('click', function(e) {
+        e.stopPropagation();
+        const dropdown = document.getElementById('profileDropdown');
+        dropdown.classList.toggle('hidden');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const profileButton = document.getElementById('profileButton');
+        const profileDropdown = document.getElementById('profileDropdown');
+        
+        if (profileButton && profileDropdown) {
+            if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+                profileDropdown.classList.add('hidden');
+            }
+        }
+    });
+    <?php endif; ?>
+</script>
 </body>
 
 </html>

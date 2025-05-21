@@ -15,6 +15,7 @@ $name = $_SESSION['name'];
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,10 +28,13 @@ $name = $_SESSION['name'];
             border-radius: 6px;
             transition: all 0.3s ease;
         }
-        .sidebar-item:hover, .sidebar-item.active {
+
+        .sidebar-item:hover,
+        .sidebar-item.active {
             background-color: rgba(59, 130, 246, 0.1);
             color: #2563eb;
         }
+
         .circle-bg {
             position: absolute;
             bottom: -150px;
@@ -43,37 +47,68 @@ $name = $_SESSION['name'];
         }
     </style>
 </head>
+
 <body class="bg-gray-50">
-    <!-- Navbar -->
+    <!-- Navbar untuk change_password.php dan delete_account.php -->
     <header class="bg-blue-900 shadow-md">
-        <div class="container mx-auto px-4 py-3">
-            <div class="flex justify-between items-center">
-                <a href="../../../index.php" class="flex items-center">
-                    <span class="text-white font-bold text-xl">Campus</span>
-                    <span class="bg-white text-blue-600 px-2 py-1 rounded font-bold text-xl">Hub</span>
-                </a>
-                
+        <div class="container mx-auto px-4 py-2">
+            <div class="flex items-center justify-between w-full">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="../../../index.php" class="flex items-center">
+                        <img src="../../../assets/images/logo.png" alt="Logo" class="h-16 hidden md:block">
+                        <img src="../../../assets/images/logo/logo_mobile.png" alt="Logo" class="md:hidden h-12">
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
                 <nav class="hidden md:flex space-x-8">
                     <a href="../../../index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Home</a>
-                    <a href="#" class="text-white hover:text-blue-200 transition-colors duration-300">MyEvents</a>
-                    <a href="#" class="text-white hover:text-blue-200 transition-colors duration-300">About Us</a>
+                    <a href="../../../views/bootcamp/index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Bootcamps</a>
+                    <a href="../../../views/about/index.php" class="text-white hover:text-blue-200 transition-colors duration-300">About Us</a>
                 </nav>
-                
-                <!-- User Profile Icon -->
-                <div class="relative">
-                    <button id="profileButton" class="flex items-center focus:outline-none">
-                        <?php if (file_exists("../../../assets/images/users/{$user_id}.jpg")): ?>
-                            <img src="../../../assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white">
-                        <?php else: ?>
-                            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-white">
-                                <?php echo substr($name, 0, 1); ?>
-                            </div>
-                        <?php endif; ?>
+
+                <!-- User Account -->
+                <div class="flex items-center space-x-3">
+                    <!-- User Profile Icon -->
+                    <div class="relative">
+                        <button id="profileButton" class="flex items-center focus:outline-none">
+                            <?php if (file_exists("../../../assets/images/users/{$user_id}.jpg")): ?>
+                                <img src="../../../assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white">
+                            <?php else: ?>
+                                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-white">
+                                    <?php echo substr($name, 0, 1); ?>
+                                </div>
+                            <?php endif; ?>
+                        </button>
+                        <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
+                            <a href="dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                            <a href="change_password.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Change Password</a>
+                            <a href="../../../index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Menu Toggle Button -->
+                    <button id="mobile-menu-button" class="md:hidden flex items-center p-2 rounded-md text-white hover:bg-blue-800 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
                     </button>
-                    <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
-                        <a href="dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
-                        <a href="../../../index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="md:hidden hidden w-full mt-2">
+                <div class="px-2 pt-2 pb-3 space-y-1 bg-blue-800 rounded-md">
+                    <a href="../../../index.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">Home</a>
+                    <a href="../../../views/bootcamp/index.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">Bootcamps</a>
+                    <a href="../../../views/about/index.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">About Us</a>
+
+                    <div class="border-t border-blue-700 my-2 pt-2">
+                        <a href="dashboard.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">My Profile</a>
+                        <a href="change_password.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">Change Password</a>
+                        <a href="delete_account.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">Delete Account</a>
+                        <a href="../../../index.php?action=logout" class="block px-3 py-2 rounded-md text-white hover:bg-red-800">Logout</a>
                     </div>
                 </div>
             </div>
@@ -94,15 +129,15 @@ $name = $_SESSION['name'];
                     </div>
                 </div>
             </div>
-            
+
             <!-- Delete Account Section -->
             <div class="md:w-3/4">
                 <div class="bg-white rounded-lg shadow-md p-6 relative overflow-hidden">
                     <div class="circle-bg"></div>
-                    
+
                     <h2 class="text-xl font-bold text-gray-800 mb-2">Hapus Akun</h2>
                     <p class="text-gray-600 mb-6">Once you delete your account, there is no going back. Please be certain.</p>
-                    
+
                     <!-- Warning Box -->
                     <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6">
                         <div class="flex">
@@ -115,14 +150,14 @@ $name = $_SESSION['name'];
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Delete Account Form -->
                     <form action="../../../index.php?action=delete_account" method="post" id="deleteAccountForm" class="space-y-4">
                         <div class="flex items-center mb-4">
                             <input type="checkbox" id="confirm_delete" name="confirm_delete" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded" required>
                             <label for="confirm_delete" class="ml-2 block text-gray-700">I understand that this action is irreversible.</label>
                         </div>
-                        
+
                         <div class="flex items-center justify-between">
                             <a href="dashboard.php" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition duration-200">
                                 Cancel
@@ -148,7 +183,7 @@ $name = $_SESSION['name'];
         document.addEventListener('click', function(event) {
             const profileButton = document.getElementById('profileButton');
             const profileDropdown = document.getElementById('profileDropdown');
-            
+
             if (!profileButton.contains(event.target) && !profileDropdown.contains(event.target)) {
                 profileDropdown.classList.add('hidden');
             }
@@ -160,6 +195,30 @@ $name = $_SESSION['name'];
                 event.preventDefault();
             }
         });
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Profile dropdown toggle
+        document.getElementById('profileButton').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const profileButton = document.getElementById('profileButton');
+            const profileDropdown = document.getElementById('profileDropdown');
+
+            if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+                profileDropdown.classList.add('hidden');
+            }
+        });
     </script>
 </body>
+
 </html>
