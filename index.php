@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="assets/css/custom.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 font-sans">
     <!-- Header/Navigation -->
     <header class="bg-white shadow-sm">
         <div class="container mx-auto px-4 py-3">
@@ -75,7 +75,7 @@
                     </div>
                 </div>
                 <div class="md:w-1/2 mt-8 md:mt-0 animate__animated animate__fadeInRight">
-                    <img src="assets/images/hero-image.jpg" alt="Coding Bootcamp" class="rounded-lg shadow-lg">
+                    <img src="assets/images/hero-image.png" alt="Coding Bootcamp" class="rounded-lg shadow-lg w-full h-auto">
                 </div>
             </div>
         </div>
