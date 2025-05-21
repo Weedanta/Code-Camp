@@ -20,7 +20,7 @@ switch ($action) {
     case 'process_login':
         if ($auth->login()) {
             // Jika login berhasil, redirect ke halaman dashboard
-            header('Location: views/home.php');
+            header('Location: index.php');
         } else {
             // Jika login gagal, kembali ke halaman login dengan pesan error
             header('Location: index.php?action=login&error=invalid');
