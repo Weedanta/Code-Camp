@@ -16,11 +16,27 @@ class AuthController {
 
     // Menampilkan halaman login
     public function showLoginPage() {
+        // Cek apakah user sudah login
+        session_start();
+        if (isset($_SESSION['user_id'])) {
+            // Jika sudah login, redirect ke home
+            header('Location: index.php');
+            exit();
+        }
+        
         include_once 'views/auth/login.php';
     }
 
     // Menampilkan halaman signup
     public function showSignupPage() {
+        // Cek apakah user sudah login
+        session_start();
+        if (isset($_SESSION['user_id'])) {
+            // Jika sudah login, redirect ke home
+            header('Location: index.php');
+            exit();
+        }
+        
         include_once 'views/auth/signup.php';
     }
 
@@ -284,6 +300,26 @@ class AuthController {
         }
         
         return false;
+    }
+
+    // Fungsi helper untuk mengecek apakah user sudah login
+    public function isLoggedIn() {
+        session_start();
+        return isset($_SESSION['user_id']);
+    }
+
+    // Fungsi helper untuk mendapatkan data user yang sedang login
+    public function getCurrentUser() {
+        session_start();
+        if (isset($_SESSION['user_id'])) {
+            return [
+                'id' => $_SESSION['user_id'],
+                'name' => $_SESSION['name'],
+                'alamat_email' => $_SESSION['alamat_email'],
+                'no_telepon' => $_SESSION['no_telepon']
+            ];
+        }
+        return null;
     }
 }
 ?>
