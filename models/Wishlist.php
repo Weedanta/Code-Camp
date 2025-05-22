@@ -70,7 +70,7 @@ class Wishlist {
         $stmt->bindParam(":bootcamp_id", $this->bootcamp_id);
 
         // Execute query
-        if($stmt->execute()) {
+        if($stmt->execute() && $stmt->rowCount() > 0) {
             return true;
         }
 
@@ -103,12 +103,26 @@ class Wishlist {
 
     // Get user's wishlist bootcamps
     public function getUserWishlist($limit = 10, $offset = 0) {
-        // Query to get wishlist bootcamps with bootcamp details
-        $query = "SELECT b.*, c.name as category_name, w.id as wishlist_id 
+        // Fixed Query - Pastikan semua field ada dan sesuai dengan database
+        $query = "SELECT 
+                    w.id as wishlist_id,
+                    w.created_at as wishlist_created,
+                    b.id as bootcamp_id,
+                    b.title,
+                    b.description,
+                    b.instructor_name,
+                    b.instructor_photo,
+                    b.price,
+                    b.discount_price,
+                    b.start_date,
+                    b.duration,
+                    b.image,
+                    b.status,
+                    c.name as category_name
                 FROM " . $this->table_name . " w
-                JOIN bootcamps b ON w.bootcamp_id = b.id
+                INNER JOIN bootcamps b ON w.bootcamp_id = b.id
                 LEFT JOIN categories c ON b.category_id = c.id
-                WHERE w.user_id = ?
+                WHERE w.user_id = ? AND b.status = 'active'
                 ORDER BY w.created_at DESC
                 LIMIT ? OFFSET ?";
 
@@ -116,7 +130,7 @@ class Wishlist {
         $stmt = $this->conn->prepare($query);
 
         // Bind parameters
-        $stmt->bindParam(1, $this->user_id);
+        $stmt->bindParam(1, $this->user_id, PDO::PARAM_INT);
         $stmt->bindParam(2, $limit, PDO::PARAM_INT);
         $stmt->bindParam(3, $offset, PDO::PARAM_INT);
 
@@ -128,9 +142,13 @@ class Wishlist {
 
     // Count user's wishlist items (for pagination)
     public function countUserWishlist() {
-        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE user_id = ?";
+        $query = "SELECT COUNT(*) as total 
+                FROM " . $this->table_name . " w
+                INNER JOIN bootcamps b ON w.bootcamp_id = b.id
+                WHERE w.user_id = ? AND b.status = 'active'";
+        
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(1, $this->user_id);
+        $stmt->bindParam(1, $this->user_id, PDO::PARAM_INT);
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row['total'];

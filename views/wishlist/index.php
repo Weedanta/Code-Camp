@@ -21,9 +21,52 @@ $page = isset($page) ? $page : 1;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Wishlist - Code Camp</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Font Awesome dengan integrity check -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="assets/css/custom.css">
     <link rel="icon" href="assets/images/logo/logo_mobile.png" type="image/x-icon">
+    
+    <style>
+        .wishlist-button {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 10;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .wishlist-button:hover {
+            background: #f3f4f6;
+            transform: scale(1.05);
+        }
+        
+        .wishlist-button .heart-icon {
+            color: #ef4444;
+            font-size: 18px;
+        }
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
 </head>
 
 <body class="bg-gray-50 font-sans">
@@ -42,7 +85,6 @@ $page = isset($page) ? $page : 1;
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Home</a>
                     <a href="index.php?action=bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Bootcamps</a>
-                    
                     <a href="index.php?action=my_bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">My Bootcamps</a>
                     <a href="index.php?action=wishlist" class="text-blue-600 font-medium">Wishlist</a>
                 </nav>
@@ -52,9 +94,13 @@ $page = isset($page) ? $page : 1;
                     <!-- User Profile Icon -->
                     <div class="relative">
                         <button id="profileButton" class="flex items-center focus:outline-none">
-                            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-blue-100">
-                                <?php echo strtoupper(substr($user_name, 0, 1)); ?>
-                            </div>
+                            <?php if (file_exists("assets/images/users/{$user_id}.jpg")): ?>
+                                <img src="assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-blue-100">
+                            <?php else: ?>
+                                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-blue-100">
+                                    <?php echo strtoupper(substr($user_name, 0, 1)); ?>
+                                </div>
+                            <?php endif; ?>
                         </button>
                         <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
                             <a href="views/auth/dashboard/dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
@@ -77,7 +123,6 @@ $page = isset($page) ? $page : 1;
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-white rounded-md shadow-md">
                     <a href="index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Home</a>
                     <a href="index.php?action=bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
-                    
                     <a href="index.php?action=my_bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Bootcamps</a>
                     <a href="index.php?action=wishlist" class="block px-3 py-2 rounded-md text-blue-600 bg-blue-50 font-medium">Wishlist</a>
                     
@@ -121,19 +166,21 @@ $page = isset($page) ? $page : 1;
                     </a>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="wishlistContainer">
                     <?php foreach ($wishlist_items as $item): ?>
-                        <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative">
+                        <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative" data-wishlist-id="<?php echo isset($item['id']) ? htmlspecialchars($item['id']) : htmlspecialchars($item['bootcamp_id']); ?>">
                             <!-- Remove from wishlist button -->
-                            <button class="remove-wishlist absolute top-3 right-3 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 z-10 transition-colors focus:outline-none"
-                                    data-bootcamp-id="<?php echo htmlspecialchars($item['bootcamp_id']); ?>">
-                                <i class="fas fa-heart text-red-500 text-lg"></i>
+                            <button class="wishlist-button remove-wishlist-btn" 
+                                    data-bootcamp-id="<?php echo isset($item['bootcamp_id']) ? htmlspecialchars($item['bootcamp_id']) : htmlspecialchars($item['id']); ?>"
+                                    title="Remove from wishlist">
+                                <i class="fas fa-heart heart-icon"></i>
                             </button>
 
-                            <!-- Ubah gambar bootcamp ke ngoding.jpg -->
+                            <!-- Bootcamp Image -->
                             <img src="assets/images/ngoding.jpg" 
                                  alt="<?php echo htmlspecialchars($item['title']); ?>" 
-                                 class="w-full h-48 object-cover">
+                                 class="w-full h-48 object-cover"
+                                 onerror="this.src='assets/images/ngoding.jpg'">
 
                             <div class="p-6">
                                 <h3 class="text-xl font-bold text-gray-800 mb-2">
@@ -141,7 +188,7 @@ $page = isset($page) ? $page : 1;
                                 </h3>
 
                                 <p class="text-gray-600 mb-4 line-clamp-2 h-12">
-                                    <?php echo htmlspecialchars(substr($item['description'], 0, 55)) . '...'; ?>
+                                    <?php echo htmlspecialchars(substr($item['description'], 0, 100)) . '...'; ?>
                                 </p>
 
                                 <div class="flex items-center mb-4">
@@ -182,11 +229,11 @@ $page = isset($page) ? $page : 1;
                                         </span>
                                     </div>
                                     <div class="flex space-x-2">
-                                        <a href="index.php?action=bootcamp_detail&id=<?php echo htmlspecialchars($item['bootcamp_id']); ?>" 
+                                        <a href="index.php?action=bootcamp_detail&id=<?php echo isset($item['bootcamp_id']) ? htmlspecialchars($item['bootcamp_id']) : htmlspecialchars($item['id']); ?>" 
                                             class="px-3 py-1 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors">
                                             Detail
                                         </a>
-                                        <a href="index.php?action=checkout&id=<?php echo htmlspecialchars($item['bootcamp_id']); ?>" 
+                                        <a href="index.php?action=checkout&id=<?php echo isset($item['bootcamp_id']) ? htmlspecialchars($item['bootcamp_id']) : htmlspecialchars($item['id']); ?>" 
                                             class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                                             Enroll
                                         </a>
@@ -264,7 +311,6 @@ $page = isset($page) ? $page : 1;
                     <ul class="space-y-2">
                         <li><a href="index.php" class="text-blue-200 hover:text-white">Home</a></li>
                         <li><a href="index.php?action=bootcamps" class="text-blue-200 hover:text-white">Bootcamps</a></li>
-                        
                         <li><a href="#" class="text-blue-200 hover:text-white">FAQ</a></li>
                         <li><a href="#" class="text-blue-200 hover:text-white">Contact Us</a></li>
                     </ul>
@@ -293,65 +339,142 @@ $page = isset($page) ? $page : 1;
     </footer>
 
     <script>
-        // Mobile menu toggle
-        document.getElementById('mobile-menu-button').addEventListener('click', function() {
-            const mobileMenu = document.getElementById('mobile-menu');
-            mobileMenu.classList.toggle('hidden');
-        });
+        console.log('Wishlist page loaded');
 
-        // Profile dropdown toggle
-        document.getElementById('profileButton').addEventListener('click', function(e) {
-            e.stopPropagation();
-            const dropdown = document.getElementById('profileDropdown');
-            dropdown.classList.toggle('hidden');
-        });
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing wishlist functionality');
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            const profileButton = document.getElementById('profileButton');
-            const profileDropdown = document.getElementById('profileDropdown');
-            
-            if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
-                profileDropdown.classList.add('hidden');
-            }
-        });
-
-        // Remove from wishlist
-        document.querySelectorAll('.remove-wishlist').forEach(button => {
-            button.addEventListener('click', function() {
-                const bootcampId = this.getAttribute('data-bootcamp-id');
-                const card = this.closest('.bg-white');
-                
-                const formData = new FormData();
-                formData.append('bootcamp_id', bootcampId);
-                
-                fetch('index.php?action=remove_from_wishlist', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Remove the card with animation
-                        card.style.transition = 'all 0.3s ease';
-                        card.style.opacity = '0';
-                        card.style.transform = 'scale(0.9)';
-                        
-                        setTimeout(() => {
-                            card.remove();
-                            
-                            // Check if there are no more items
-                            const remainingItems = document.querySelectorAll('.remove-wishlist').length;
-                            if (remainingItems === 0) {
-                                window.location.reload(); // Reload to show empty state
-                            }
-                        }, 300);
-                    } else {
-                        alert(data.message);
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', function() {
+                    const mobileMenu = document.getElementById('mobile-menu');
+                    if (mobileMenu) {
+                        mobileMenu.classList.toggle('hidden');
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
+                });
+            }
+
+            // Profile dropdown toggle
+            const profileButton = document.getElementById('profileButton');
+            if (profileButton) {
+                profileButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const dropdown = document.getElementById('profileDropdown');
+                    if (dropdown) {
+                        dropdown.classList.toggle('hidden');
+                    }
+                });
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const profileButton = document.getElementById('profileButton');
+                const profileDropdown = document.getElementById('profileDropdown');
+                
+                if (profileButton && profileDropdown) {
+                    if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+                        profileDropdown.classList.add('hidden');
+                    }
+                }
+            });
+
+            // Remove from wishlist functionality
+            const removeButtons = document.querySelectorAll('.remove-wishlist-btn');
+            console.log('Found', removeButtons.length, 'remove buttons');
+
+            removeButtons.forEach(function(button) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    console.log('Remove button clicked');
+                    
+                    const bootcampId = this.getAttribute('data-bootcamp-id');
+                    const wishlistCard = this.closest('[data-wishlist-id]');
+                    
+                    if (!bootcampId) {
+                        console.error('No bootcamp ID found');
+                        alert('Error: Bootcamp ID not found');
+                        return;
+                    }
+                    
+                    console.log('Removing bootcamp ID:', bootcampId);
+                    
+                    // Disable button and add loading state
+                    this.disabled = true;
+                    this.classList.add('loading');
+                    
+                    // Create form data
+                    const formData = new FormData();
+                    formData.append('bootcamp_id', bootcampId);
+                    
+                    // Send AJAX request
+                    fetch('index.php?action=remove_from_wishlist', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        return response.text().then(text => {
+                            console.log('Raw response:', text);
+                            try {
+                                return JSON.parse(text);
+                            } catch (e) {
+                                console.error('JSON parse error:', e);
+                                console.error('Response text:', text);
+                                throw new Error('Invalid JSON response');
+                            }
+                        });
+                    })
+                    .then(data => {
+                        console.log('Parsed data:', data);
+                        
+                        if (data.success) {
+                            console.log('Remove successful');
+                            
+                            if (wishlistCard) {
+                                // Add animation
+                                wishlistCard.style.transition = 'all 0.3s ease';
+                                wishlistCard.style.opacity = '0';
+                                wishlistCard.style.transform = 'scale(0.9)';
+                                
+                                setTimeout(() => {
+                                    wishlistCard.remove();
+                                    
+                                    // Check if there are no more items
+                                    const remainingItems = document.querySelectorAll('.remove-wishlist-btn').length;
+                                    console.log('Remaining items:', remainingItems);
+                                    
+                                    if (remainingItems === 0) {
+                                        console.log('No more items, reloading page');
+                                        window.location.reload();
+                                    }
+                                }, 300);
+                            }
+                        } else {
+                            console.error('Remove failed:', data.message);
+                            alert(data.message || 'Failed to remove from wishlist');
+                            
+                            // Re-enable button
+                            this.disabled = false;
+                            this.classList.remove('loading');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        alert('An error occurred while removing from wishlist. Please try again.');
+                        
+                        // Re-enable button
+                        this.disabled = false;
+                        this.classList.remove('loading');
+                    });
                 });
             });
         });

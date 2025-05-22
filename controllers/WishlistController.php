@@ -47,6 +47,9 @@ class WishlistController {
 
     // Add bootcamp to wishlist
     public function add() {
+        // Set content type to JSON
+        header('Content-Type: application/json');
+        
         // Check if user is logged in
         session_start();
         if (!isset($_SESSION['user_id'])) {
@@ -71,6 +74,16 @@ class WishlistController {
         $user_id = $_SESSION['user_id'];
         $bootcamp_id = $_POST['bootcamp_id'];
 
+        // Validate bootcamp_id
+        if (empty($bootcamp_id) || !is_numeric($bootcamp_id)) {
+            $response = [
+                'success' => false,
+                'message' => 'Invalid bootcamp ID'
+            ];
+            echo json_encode($response);
+            exit();
+        }
+
         // Add to wishlist
         $this->wishlist->user_id = $user_id;
         $this->wishlist->bootcamp_id = $bootcamp_id;
@@ -83,15 +96,19 @@ class WishlistController {
         } else {
             $response = [
                 'success' => false,
-                'message' => 'Failed to add to wishlist'
+                'message' => 'Failed to add to wishlist or already in wishlist'
             ];
         }
 
         echo json_encode($response);
+        exit();
     }
 
     // Remove bootcamp from wishlist
     public function remove() {
+        // Set content type to JSON
+        header('Content-Type: application/json');
+        
         // Check if user is logged in
         session_start();
         if (!isset($_SESSION['user_id'])) {
@@ -107,7 +124,7 @@ class WishlistController {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['bootcamp_id'])) {
             $response = [
                 'success' => false,
-                'message' => 'Invalid request'
+                'message' => 'Invalid request method or missing bootcamp ID'
             ];
             echo json_encode($response);
             exit();
@@ -115,6 +132,16 @@ class WishlistController {
 
         $user_id = $_SESSION['user_id'];
         $bootcamp_id = $_POST['bootcamp_id'];
+
+        // Validate bootcamp_id
+        if (empty($bootcamp_id) || !is_numeric($bootcamp_id)) {
+            $response = [
+                'success' => false,
+                'message' => 'Invalid bootcamp ID'
+            ];
+            echo json_encode($response);
+            exit();
+        }
 
         // Remove from wishlist
         $this->wishlist->user_id = $user_id;
@@ -128,11 +155,12 @@ class WishlistController {
         } else {
             $response = [
                 'success' => false,
-                'message' => 'Failed to remove from wishlist'
+                'message' => 'Failed to remove from wishlist or item not found'
             ];
         }
 
         echo json_encode($response);
+        exit();
     }
 }
 ?>
