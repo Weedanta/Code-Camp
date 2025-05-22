@@ -177,8 +177,11 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
 
                                     <div class="flex items-center mb-4">
                                         <?php if (!empty($bootcamp['instructor_photo'])): ?>
-                                            <img src="assets/images/instructors/<?php echo htmlspecialchars($bootcamp['instructor_photo']); ?>"
-                                                alt="Instructor" class="w-8 h-8 rounded-full mr-2">
+                                            <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
+                                                <span class="text-gray-600 text-xs">
+                                                    <?php echo substr($bootcamp['instructor_name'], 0, 1); ?>
+                                                </span>
+                                            </div>
                                         <?php else: ?>
                                             <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
                                                 <span class="text-gray-600 text-xs">
