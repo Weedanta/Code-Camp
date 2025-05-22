@@ -37,7 +37,7 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Home</a>
                     <a href="index.php?action=bootcamps" class="text-blue-600 font-medium">Bootcamps</a>
-                   
+
                     <?php if ($is_logged_in): ?>
                         <a href="index.php?action=my_bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">My Bootcamps</a>
                         <a href="index.php?action=wishlist" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Wishlist</a>
@@ -84,8 +84,8 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-white rounded-md shadow-md">
                     <a href="index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Home</a>
                     <a href="index.php?action=bootcamps" class="block px-3 py-2 rounded-md text-blue-600 bg-blue-50 font-medium">Bootcamps</a>
-                   
-                    
+
+
                     <?php if ($is_logged_in): ?>
                         <a href="index.php?action=my_bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Bootcamps</a>
                         <a href="index.php?action=wishlist" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Wishlist</a>
@@ -118,7 +118,7 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
         <div class="container mx-auto px-4">
             <form action="index.php" method="GET" class="flex flex-col md:flex-row gap-2">
                 <input type="hidden" name="action" value="bootcamp_search">
-                <input type="text" name="keyword" value="<?php echo $keyword; ?>" placeholder="Search bootcamps..." 
+                <input type="text" name="keyword" value="<?php echo $keyword; ?>" placeholder="Search bootcamps..."
                     class="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                     <i class="fas fa-search mr-2"></i> Search
@@ -137,8 +137,8 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
                     <div class="space-y-2">
                         <a href="index.php?action=bootcamps" class="block text-gray-700 hover:text-blue-600 transition-colors">All Bootcamps</a>
                         <?php foreach ($categories as $category): ?>
-                            <a href="index.php?action=bootcamp_category&id=<?php echo $category['id']; ?>" 
-                               class="block text-gray-700 hover:text-blue-600 transition-colors">
+                            <a href="index.php?action=bootcamp_category&id=<?php echo $category['id']; ?>"
+                                class="block text-gray-700 hover:text-blue-600 transition-colors">
                                 <?php echo htmlspecialchars($category['name']); ?>
                             </a>
                         <?php endforeach; ?>
@@ -164,9 +164,10 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
                         <?php foreach ($bootcamps as $bootcamp): ?>
                             <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
                                 <?php if (!empty($bootcamp['image'])): ?>
-                                    <img src="assets/images/bootcamps/<?php echo htmlspecialchars($bootcamp['image']); ?>" 
-                                         alt="<?php echo htmlspecialchars($bootcamp['title']); ?>" 
-                                         class="w-full h-48 object-cover">
+                                    <!-- Ubah gambar bootcamp ke ngoding.jpg -->
+                                    <img src="assets/images/ngoding.jpg"
+                                        alt="<?php echo htmlspecialchars($item['title']); ?>"
+                                        class="w-full h-48 object-cover">
                                 <?php else: ?>
                                     <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
                                         <span class="text-gray-500">No image available</span>
@@ -181,13 +182,16 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
                                     </div>
 
                                     <p class="text-gray-600 mb-4 line-clamp-2 h-12">
-                                        <?php echo htmlspecialchars(substr($bootcamp['description'], 0, 100)) . '...'; ?>
+                                        <?php echo htmlspecialchars(substr($bootcamp['description'], 0, 60)) . '...'; ?>
                                     </p>
 
                                     <div class="flex items-center mb-4">
                                         <?php if (!empty($bootcamp['instructor_photo'])): ?>
-                                            <img src="assets/images/instructors/<?php echo htmlspecialchars($bootcamp['instructor_photo']); ?>" 
-                                                 alt="Instructor" class="w-8 h-8 rounded-full mr-2">
+                                            <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
+                                                <span class="text-gray-600 text-xs">
+                                                    <?php echo substr($bootcamp['instructor_name'], 0, 1); ?>
+                                                </span>
+                                            </div>
                                         <?php else: ?>
                                             <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
                                                 <span class="text-gray-600 text-xs">
@@ -226,8 +230,8 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
                                                 Rp <?php echo number_format($bootcamp['price'], 0, ',', '.'); ?>
                                             </span>
                                         </div>
-                                        <a href="index.php?action=bootcamp_detail&id=<?php echo $bootcamp['id']; ?>" 
-                                           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                        <a href="index.php?action=bootcamp_detail&id=<?php echo $bootcamp['id']; ?>"
+                                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                                             Detail
                                         </a>
                                     </div>
@@ -240,8 +244,8 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
                     <?php if ($total_pages > 1): ?>
                         <div class="flex justify-center mt-8">
                             <?php if ($page > 1): ?>
-                                <a href="index.php?action=bootcamp_search&keyword=<?php echo urlencode($keyword); ?>&page=<?php echo $page - 1; ?>" 
-                                   class="w-10 h-10 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50">
+                                <a href="index.php?action=bootcamp_search&keyword=<?php echo urlencode($keyword); ?>&page=<?php echo $page - 1; ?>"
+                                    class="w-10 h-10 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                     </svg>
@@ -254,16 +258,16 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
                                         <?php echo $i; ?>
                                     </span>
                                 <?php else: ?>
-                                    <a href="index.php?action=bootcamp_search&keyword=<?php echo urlencode($keyword); ?>&page=<?php echo $i; ?>" 
-                                       class="w-10 h-10 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50">
+                                    <a href="index.php?action=bootcamp_search&keyword=<?php echo urlencode($keyword); ?>&page=<?php echo $i; ?>"
+                                        class="w-10 h-10 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50">
                                         <?php echo $i; ?>
                                     </a>
                                 <?php endif; ?>
                             <?php endfor; ?>
 
                             <?php if ($page < $total_pages): ?>
-                                <a href="index.php?action=bootcamp_search&keyword=<?php echo urlencode($keyword); ?>&page=<?php echo $page + 1; ?>" 
-                                   class="w-10 h-10 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50">
+                                <a href="index.php?action=bootcamp_search&keyword=<?php echo urlencode($keyword); ?>&page=<?php echo $page + 1; ?>"
+                                    class="w-10 h-10 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                     </svg>
@@ -307,7 +311,7 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
                     <ul class="space-y-2">
                         <li><a href="index.php" class="text-blue-200 hover:text-white">Home</a></li>
                         <li><a href="index.php?action=bootcamps" class="text-blue-200 hover:text-white">Bootcamps</a></li>
-                       
+
                         <li><a href="#" class="text-blue-200 hover:text-white">FAQ</a></li>
                         <li><a href="#" class="text-blue-200 hover:text-white">Contact Us</a></li>
                     </ul>
@@ -344,23 +348,23 @@ $keyword = isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : '';
 
         // Profile dropdown toggle (if logged in)
         <?php if ($is_logged_in): ?>
-        document.getElementById('profileButton').addEventListener('click', function(e) {
-            e.stopPropagation();
-            const dropdown = document.getElementById('profileDropdown');
-            dropdown.classList.toggle('hidden');
-        });
+            document.getElementById('profileButton').addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = document.getElementById('profileDropdown');
+                dropdown.classList.toggle('hidden');
+            });
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            const profileButton = document.getElementById('profileButton');
-            const profileDropdown = document.getElementById('profileDropdown');
-            
-            if (profileButton && profileDropdown) {
-                if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
-                    profileDropdown.classList.add('hidden');
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const profileButton = document.getElementById('profileButton');
+                const profileDropdown = document.getElementById('profileDropdown');
+
+                if (profileButton && profileDropdown) {
+                    if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+                        profileDropdown.classList.add('hidden');
+                    }
                 }
-            }
-        });
+            });
         <?php endif; ?>
     </script>
 </body>

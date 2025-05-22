@@ -37,7 +37,7 @@ $user_id = $_SESSION['user_id'];
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Home</a>
                     <a href="index.php?action=bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Bootcamps</a>
-                    
+
                     <a href="index.php?action=my_bootcamps" class="text-blue-600 font-medium">My Bootcamps</a>
                     <a href="index.php?action=wishlist" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Wishlist</a>
                 </nav>
@@ -76,10 +76,10 @@ $user_id = $_SESSION['user_id'];
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-white rounded-md shadow-md">
                     <a href="index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Home</a>
                     <a href="index.php?action=bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
-                    
+
                     <a href="index.php?action=my_bootcamps" class="block px-3 py-2 rounded-md text-blue-600 bg-blue-50 font-medium">My Bootcamps</a>
                     <a href="index.php?action=wishlist" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Wishlist</a>
-                    
+
                     <div class="border-t border-gray-200 my-2 pt-2">
                         <a href="views/auth/dashboard/dashboard.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Profile</a>
                         <a href="index.php?action=my_orders" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Orders</a>
@@ -116,7 +116,7 @@ $user_id = $_SESSION['user_id'];
             <div class="bg-white rounded-lg shadow-md p-4 mb-6">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex-grow">
-                        <input type="text" id="searchBootcamps" placeholder="Search your bootcamps..." 
+                        <input type="text" id="searchBootcamps" placeholder="Search your bootcamps..."
                             class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="flex gap-2">
@@ -134,9 +134,10 @@ $user_id = $_SESSION['user_id'];
                 <?php foreach ($bootcamps as $bootcamp): ?>
                     <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
                         <?php if (!empty($bootcamp['image'])): ?>
-                            <img src="assets/images/bootcamps/<?php echo htmlspecialchars($bootcamp['image']); ?>" 
-                                 alt="<?php echo htmlspecialchars($bootcamp['title']); ?>" 
-                                 class="w-full h-48 object-cover">
+                            <!-- Ubah gambar bootcamp ke ngoding.jpg -->
+                            <img src="assets/images/ngoding.jpg"
+                                alt="<?php echo htmlspecialchars($item['title']); ?>"
+                                class="w-full h-48 object-cover">
                         <?php else: ?>
                             <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
                                 <span class="text-gray-500">No image available</span>
@@ -154,13 +155,16 @@ $user_id = $_SESSION['user_id'];
                             </div>
 
                             <p class="text-gray-600 mb-4 line-clamp-2 h-12">
-                                <?php echo htmlspecialchars(substr($bootcamp['description'], 0, 100)) . '...'; ?>
+                                <?php echo htmlspecialchars(substr($bootcamp['description'], 0, 75)) . '...'; ?>
                             </p>
 
                             <div class="flex items-center mb-4">
                                 <?php if (!empty($bootcamp['instructor_photo'])): ?>
-                                    <img src="assets/images/instructors/<?php echo htmlspecialchars($bootcamp['instructor_photo']); ?>" 
-                                         alt="Instructor" class="w-8 h-8 rounded-full mr-2">
+                                    <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
+                                                <span class="text-gray-600 text-xs font-medium">
+                                                    <?php echo strtoupper(substr($bootcamp['instructor_name'], 0, 1)); ?>
+                                                </span>
+                                            </div>
                                 <?php else: ?>
                                     <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
                                         <span class="text-gray-600 text-xs">
@@ -185,8 +189,8 @@ $user_id = $_SESSION['user_id'];
                                     <i class="far fa-calendar-alt mr-1"></i>
                                     Started <?php echo date('M d, Y', strtotime($bootcamp['start_date'])); ?>
                                 </span>
-                                <a href="index.php?action=bootcamp_detail&id=<?php echo $bootcamp['id']; ?>" 
-                                   class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                <a href="index.php?action=bootcamp_detail&id=<?php echo $bootcamp['id']; ?>"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                                     Continue
                                 </a>
                             </div>
@@ -199,8 +203,8 @@ $user_id = $_SESSION['user_id'];
             <?php if ($total_pages > 1): ?>
                 <div class="flex justify-center mt-8">
                     <?php if ($page > 1): ?>
-                        <a href="index.php?action=my_bootcamps&page=<?php echo $page - 1; ?>" 
-                           class="w-10 h-10 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50">
+                        <a href="index.php?action=my_bootcamps&page=<?php echo $page - 1; ?>"
+                            class="w-10 h-10 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                             </svg>
@@ -213,16 +217,16 @@ $user_id = $_SESSION['user_id'];
                                 <?php echo $i; ?>
                             </span>
                         <?php else: ?>
-                            <a href="index.php?action=my_bootcamps&page=<?php echo $i; ?>" 
-                               class="w-10 h-10 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50">
+                            <a href="index.php?action=my_bootcamps&page=<?php echo $i; ?>"
+                                class="w-10 h-10 mx-1 flex items-center justify-center rounded-full text-gray-700 hover:bg-blue-50">
                                 <?php echo $i; ?>
                             </a>
                         <?php endif; ?>
                     <?php endfor; ?>
 
                     <?php if ($page < $total_pages): ?>
-                        <a href="index.php?action=my_bootcamps&page=<?php echo $page + 1; ?>" 
-                           class="w-10 h-10 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50">
+                        <a href="index.php?action=my_bootcamps&page=<?php echo $page + 1; ?>"
+                            class="w-10 h-10 mx-1 flex items-center justify-center rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
@@ -261,7 +265,7 @@ $user_id = $_SESSION['user_id'];
                     <ul class="space-y-2">
                         <li><a href="index.php" class="text-blue-200 hover:text-white">Home</a></li>
                         <li><a href="index.php?action=bootcamps" class="text-blue-200 hover:text-white">Bootcamps</a></li>
-                     
+
                         <li><a href="#" class="text-blue-200 hover:text-white">FAQ</a></li>
                         <li><a href="#" class="text-blue-200 hover:text-white">Contact Us</a></li>
                     </ul>
@@ -307,7 +311,7 @@ $user_id = $_SESSION['user_id'];
         document.addEventListener('click', function(e) {
             const profileButton = document.getElementById('profileButton');
             const profileDropdown = document.getElementById('profileDropdown');
-            
+
             if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
                 profileDropdown.classList.add('hidden');
             }
@@ -316,15 +320,15 @@ $user_id = $_SESSION['user_id'];
         // Search functionality
         const searchInput = document.getElementById('searchBootcamps');
         const bootcampCards = document.querySelectorAll('#bootcampCards > div');
-        
+
         if (searchInput) {
             searchInput.addEventListener('input', function() {
                 const searchTerm = this.value.toLowerCase();
-                
+
                 bootcampCards.forEach(card => {
                     const title = card.querySelector('h3').innerText.toLowerCase();
                     const description = card.querySelector('p').innerText.toLowerCase();
-                    
+
                     if (title.includes(searchTerm) || description.includes(searchTerm)) {
                         card.style.display = '';
                     } else {
@@ -337,12 +341,12 @@ $user_id = $_SESSION['user_id'];
         // Sort functionality
         const sortSelect = document.getElementById('sortBootcamps');
         const bootcampContainer = document.getElementById('bootcampCards');
-        
+
         if (sortSelect) {
             sortSelect.addEventListener('change', function() {
                 const sortValue = this.value;
                 const bootcampCardsArray = Array.from(bootcampCards);
-                
+
                 bootcampCardsArray.sort((a, b) => {
                     if (sortValue === 'name') {
                         const titleA = a.querySelector('h3').innerText.toLowerCase();
@@ -357,7 +361,7 @@ $user_id = $_SESSION['user_id'];
                         return 0;
                     }
                 });
-                
+
                 // Reappend sorted cards
                 bootcampCardsArray.forEach(card => {
                     bootcampContainer.appendChild(card);
