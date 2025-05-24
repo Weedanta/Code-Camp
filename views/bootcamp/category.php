@@ -164,7 +164,7 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
                                     </div>
                                 <?php endif; ?>
 
-                                <div class="p-6">
+                                <div class="p-6"><meta name="description" content="">
                                     <div class="flex justify-between items-start mb-2">
                                         <h3 class="text-xl font-bold text-gray-800">
                                             <?php echo htmlspecialchars($bootcamp['title']); ?>

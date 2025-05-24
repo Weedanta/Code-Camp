@@ -37,7 +37,6 @@ $user_id = $_SESSION['user_id'];
                 <nav class="hidden md:flex space-x-8">
                     <a href="index.php" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Home</a>
                     <a href="index.php?action=bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Bootcamps</a>
-                   
                     <a href="index.php?action=my_bootcamps" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">My Bootcamps</a>
                     <a href="index.php?action=wishlist" class="text-gray-700 hover:text-blue-600 transition-colors duration-300">Wishlist</a>
                 </nav>
@@ -76,7 +75,6 @@ $user_id = $_SESSION['user_id'];
                 <div class="px-2 pt-2 pb-3 space-y-1 bg-white rounded-md shadow-md">
                     <a href="index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Home</a>
                     <a href="index.php?action=bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Bootcamps</a>
-                    <a href="views/about/index.php" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">About Us</a>
                     <a href="index.php?action=my_bootcamps" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">My Bootcamps</a>
                     <a href="index.php?action=wishlist" class="block px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50">Wishlist</a>
                     
@@ -139,7 +137,7 @@ $user_id = $_SESSION['user_id'];
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Payment Successful!</h2>
                 <p class="text-gray-600 mb-6">Your enrollment has been confirmed and you can now access your bootcamp.</p>
                 
-                <div class="flex justify-center space-x-4">
+                <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                     <a href="index.php?action=my_bootcamps" class="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors">
                         Go to My Bootcamps
                     </a>
@@ -174,6 +172,9 @@ $user_id = $_SESSION['user_id'];
                             case 'bank_transfer':
                                 echo 'Bank Transfer';
                                 break;
+                            case 'e_wallet':
+                                echo 'E-Wallet';
+                                break;
                             default:
                                 echo ucfirst(str_replace('_', ' ', $this->order->payment_method));
                         }
@@ -184,28 +185,32 @@ $user_id = $_SESSION['user_id'];
                 <div class="border-b pb-4 mb-4">
                     <div class="text-sm text-gray-500 mb-3">Items</div>
                     
-                    <?php foreach ($items as $item): ?>
-                        <div class="flex items-start mb-3">
-                            <?php if (!empty($item['image'])): ?>
-                                <img src="assets/images/bootcamps/<?php echo htmlspecialchars($item['image']); ?>" 
-                                     alt="<?php echo htmlspecialchars($item['title']); ?>" 
-                                     class="w-16 h-12 object-cover rounded-md mr-3">
-                            <?php else: ?>
-                                <div class="w-16 h-12 bg-gray-200 rounded-md flex items-center justify-center mr-3">
-                                    <span class="text-gray-500 text-xs">No image</span>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <div class="flex-1">
-                                <h3 class="font-medium text-gray-800">
-                                    <?php echo htmlspecialchars($item['title']); ?>
-                                </h3>
-                                <div class="text-sm text-gray-500">
-                                    Rp <?php echo number_format($item['price'], 0, ',', '.'); ?>
+                    <?php if (isset($items) && !empty($items)): ?>
+                        <?php foreach ($items as $item): ?>
+                            <div class="flex items-start mb-3">
+                                <?php if (!empty($item['image'])): ?>
+                                    <img src="assets/images/bootcamps/<?php echo htmlspecialchars($item['image']); ?>" 
+                                         alt="<?php echo htmlspecialchars($item['title']); ?>" 
+                                         class="w-16 h-12 object-cover rounded-md mr-3">
+                                <?php else: ?>
+                                    <div class="w-16 h-12 bg-gray-200 rounded-md flex items-center justify-center mr-3">
+                                        <span class="text-gray-500 text-xs">No image</span>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <div class="flex-1">
+                                    <h3 class="font-medium text-gray-800">
+                                        <?php echo htmlspecialchars($item['title']); ?>
+                                    </h3>
+                                    <div class="text-sm text-gray-500">
+                                        Rp <?php echo number_format($item['price'], 0, ',', '.'); ?>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="text-gray-500">No items found.</div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="flex justify-between font-bold text-gray-800">
@@ -234,7 +239,6 @@ $user_id = $_SESSION['user_id'];
                     <ul class="space-y-2">
                         <li><a href="index.php" class="text-blue-200 hover:text-white">Home</a></li>
                         <li><a href="index.php?action=bootcamps" class="text-blue-200 hover:text-white">Bootcamps</a></li>
-                        <li><a href="views/about/index.php" class="text-blue-200 hover:text-white">About Us</a></li>
                         <li><a href="#" class="text-blue-200 hover:text-white">FAQ</a></li>
                         <li><a href="#" class="text-blue-200 hover:text-white">Contact Us</a></li>
                     </ul>
