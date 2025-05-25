@@ -1,7 +1,8 @@
 <?php
 require_once 'config/database.php';
 
-class Bootcamp {
+class Bootcamp
+{
     // Database connection and table name
     private $conn;
     private $table_name = "bootcamps";
@@ -23,12 +24,14 @@ class Bootcamp {
     public $category_name;
 
     // Constructor with DB connection
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->conn = $db;
     }
 
     // READ all bootcamps
-    public function readAll($limit = 10, $offset = 0) {
+    public function readAll($limit = 10, $offset = 0)
+    {
         // Query to get all bootcamps with category name
         $query = "SELECT b.*, c.name as category_name 
                 FROM " . $this->table_name . " b
@@ -51,7 +54,8 @@ class Bootcamp {
     }
 
     // READ bootcamps by category
-    public function readByCategory($category_id, $limit = 10, $offset = 0) {
+    public function readByCategory($category_id, $limit = 10, $offset = 0)
+    {
         // Query to get bootcamps by category
         $query = "SELECT b.*, c.name as category_name 
                 FROM " . $this->table_name . " b
@@ -75,7 +79,8 @@ class Bootcamp {
     }
 
     // READ a single bootcamp
-    public function readOne() {
+    public function readOne()
+    {
         // Query to read single bootcamp
         $query = "SELECT b.*, c.name as category_name 
                 FROM " . $this->table_name . " b
@@ -96,7 +101,7 @@ class Bootcamp {
         $num = $stmt->rowCount();
 
         // If bootcamp found
-        if($num > 0) {
+        if ($num > 0) {
             // Get record details
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -123,7 +128,8 @@ class Bootcamp {
     }
 
     // Check if user owns bootcamp
-    public function isUserEnrolled($user_id) {
+    public function isUserEnrolled($user_id)
+    {
         // Query to check if user has purchased this bootcamp
         $query = "SELECT COUNT(*) as total
                 FROM orders o
@@ -147,7 +153,8 @@ class Bootcamp {
     }
 
     // Search bootcamps
-    public function search($keywords, $limit = 10, $offset = 0) {
+    public function search($keywords, $limit = 10, $offset = 0)
+    {
         // Query to search bootcamps
         $query = "SELECT b.*, c.name as category_name 
                 FROM " . $this->table_name . " b
@@ -177,7 +184,8 @@ class Bootcamp {
     }
 
     // Count total bootcamps (for pagination)
-    public function countAll() {
+    public function countAll()
+    {
         $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE status = 'active'";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
@@ -186,7 +194,8 @@ class Bootcamp {
     }
 
     // Count bootcamps by category (for pagination)
-    public function countByCategory($category_id) {
+    public function countByCategory($category_id)
+    {
         $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE category_id = ? AND status = 'active'";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $category_id);
@@ -196,37 +205,39 @@ class Bootcamp {
     }
 
     // Count search results (for pagination)
-    public function countSearch($keywords) {
+    public function countSearch($keywords)
+    {
         $query = "SELECT COUNT(*) as total 
                 FROM " . $this->table_name . " b
                 LEFT JOIN categories c ON b.category_id = c.id
                 WHERE b.title LIKE ? OR b.description LIKE ? OR c.name LIKE ?";
-        
+
         $stmt = $this->conn->prepare($query);
-        
+
         $keywords = htmlspecialchars(strip_tags($keywords));
         $keywords = "%{$keywords}%";
-        
+
         $stmt->bindParam(1, $keywords);
         $stmt->bindParam(2, $keywords);
         $stmt->bindParam(3, $keywords);
-        
+
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row['total'];
     }
 
     // Get user's enrolled bootcamps
-    public function getUserBootcamps($user_id, $limit = 10, $offset = 0) {
+    public function getUserBootcamps($user_id, $limit = 10, $offset = 0)
+    {
         // Query to get user's purchased bootcamps
-        $query = "SELECT DISTINCT b.*, c.name as category_name 
-                FROM " . $this->table_name . " b
-                LEFT JOIN categories c ON b.category_id = c.id
-                JOIN order_items oi ON b.id = oi.bootcamp_id
-                JOIN orders o ON oi.order_id = o.id
-                WHERE o.user_id = ? AND o.payment_status = 'completed'
-                ORDER BY o.created_at DESC
-                LIMIT ? OFFSET ?";
+        $query = "SELECT DISTINCT b.*, c.name as category_name, o.created_at as order_date
+            FROM " . $this->table_name . " b
+            LEFT JOIN categories c ON b.category_id = c.id
+            JOIN order_items oi ON b.id = oi.bootcamp_id
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.user_id = ? AND o.payment_status = 'completed'
+            ORDER BY o.created_at DESC
+            LIMIT ? OFFSET ?";
 
         // Prepare query
         $stmt = $this->conn->prepare($query);
@@ -243,13 +254,14 @@ class Bootcamp {
     }
 
     // Count user's enrolled bootcamps (for pagination)
-    public function countUserBootcamps($user_id) {
+    public function countUserBootcamps($user_id)
+    {
         $query = "SELECT COUNT(DISTINCT b.id) as total 
                 FROM " . $this->table_name . " b
                 JOIN order_items oi ON b.id = oi.bootcamp_id
                 JOIN orders o ON oi.order_id = o.id
                 WHERE o.user_id = ? AND o.payment_status = 'completed'";
-        
+
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $user_id);
         $stmt->execute();
@@ -257,4 +269,3 @@ class Bootcamp {
         return $row['total'];
     }
 }
-?>
