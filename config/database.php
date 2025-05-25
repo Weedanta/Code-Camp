@@ -3,7 +3,7 @@ class Database {
     private $host = "localhost";
     private $db_name = "campus_hub";
     private $username = "root";
-    private $password = "";
+    private $password = "rahasia";
     private $conn;
 
     // Mendapatkan koneksi database

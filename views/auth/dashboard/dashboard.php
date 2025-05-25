@@ -57,6 +57,67 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
             background-color: #0284c7;
             z-index: -1;
         }
+
+        /* Custom styles for mobile menu */
+        .mobile-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            opacity: 0;
+        }
+        
+        .mobile-menu-show {
+            max-height: 500px;
+            opacity: 1;
+        }
+
+        /* Hamburger animation */
+        .hamburger {
+            width: 24px;
+            height: 18px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .hamburger-line {
+            display: block;
+            position: absolute;
+            height: 2px;
+            width: 100%;
+            background: white;
+            border-radius: 1px;
+            opacity: 1;
+            left: 0;
+            transform: rotate(0deg);
+            transition: .25s ease-in-out;
+        }
+
+        .hamburger-line:nth-child(1) {
+            top: 0px;
+        }
+
+        .hamburger-line:nth-child(2) {
+            top: 8px;
+        }
+
+        .hamburger-line:nth-child(3) {
+            top: 16px;
+        }
+
+        .hamburger.active .hamburger-line:nth-child(1) {
+            top: 8px;
+            transform: rotate(135deg);
+        }
+
+        .hamburger.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+            left: -60px;
+        }
+
+        .hamburger.active .hamburger-line:nth-child(3) {
+            top: 8px;
+            transform: rotate(-135deg);
+        }
     </style>
 </head>
 
@@ -77,7 +138,6 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                 <nav class="hidden md:flex space-x-8">
                     <a href="../../../index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Home</a>
                     <a href="../../../views/bootcamp/index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Bootcamps</a>
-              
                 </nav>
 
                 <!-- User Account -->
@@ -93,7 +153,7 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                                 </div>
                             <?php endif; ?>
                         </button>
-                        <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
+                        <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-20">
                             <a href="dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
                             <a href="../../../index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
@@ -101,25 +161,62 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                     </div>
 
                     <!-- Mobile Menu Toggle Button -->
-                    <button id="mobile-menu-button" class="md:hidden flex items-center p-2 rounded-md text-white hover:bg-blue-800 focus:outline-none">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
+                    <button id="mobile-menu-button" class="md:hidden flex items-center justify-center p-2 rounded-md text-white hover:bg-blue-800 focus:outline-none">
+                        <div class="hamburger" id="hamburger">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </div>
                     </button>
                 </div>
             </div>
 
             <!-- Mobile Menu -->
-            <div id="mobile-menu" class="md:hidden hidden w-full mt-2">
-                <div class="px-2 pt-2 pb-3 space-y-1 bg-blue-800 rounded-md">
-                    <a href="../../../index.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">Home</a>
-                    <a href="../../../views/bootcamp/index.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">Bootcamps</a>
+            <div id="mobile-menu" class="md:hidden mobile-menu w-full mt-2">
+                <div class="px-2 pt-4 pb-3 space-y-1 bg-blue-800 rounded-md shadow-lg">
+                    <a href="../../../index.php" class="block px-3 py-3 rounded-md text-white hover:bg-blue-700 transition-all duration-200 transform hover:translate-x-1">
+                        <span class="flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            Home
+                        </span>
+                    </a>
+                    <a href="../../../views/bootcamp/index.php" class="block px-3 py-3 rounded-md text-white hover:bg-blue-700 transition-all duration-200 transform hover:translate-x-1">
+                        <span class="flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                            Bootcamps
+                        </span>
+                    </a>
                     
-
-                    <div class="border-t border-blue-700 my-2 pt-2">
-                        <a href="dashboard.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">My Profile</a>
-                        <a href="change_password.php" class="block px-3 py-2 rounded-md text-white hover:bg-blue-700">Change Password</a>
-                        <a href="../../../index.php?action=logout" class="block px-3 py-2 rounded-md text-white hover:bg-red-800">Logout</a>
+                    <div class="border-t border-blue-700 my-3 pt-3">
+                        <div class="px-3 py-2 text-blue-200 text-sm font-medium">Account</div>
+                        <a href="dashboard.php" class="block px-3 py-3 rounded-md text-white hover:bg-blue-700 transition-all duration-200 transform hover:translate-x-1">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                My Profile
+                            </span>
+                        </a>
+                        <a href="change_password.php" class="block px-3 py-3 rounded-md text-white hover:bg-blue-700 transition-all duration-200 transform hover:translate-x-1">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                </svg>
+                                Change Password
+                            </span>
+                        </a>
+                        <a href="../../../index.php?action=logout" class="block px-3 py-3 rounded-md text-white hover:bg-red-700 transition-all duration-200 transform hover:translate-x-1">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                </svg>
+                                Logout
+                            </span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -186,8 +283,6 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                                     <?php echo substr($name, 0, 1); ?>
                                 </div>
                             <?php endif; ?>
-
-
                         </div>
 
                         <!-- Profile Info Form -->
@@ -200,7 +295,7 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                                 </div>
 
                                 <div class="mb-4">
-                                    <label for="alamat_email" class="block text-gray-700 font-medium mb-1">Email Addres</label>
+                                    <label for="alamat_email" class="block text-gray-700 font-medium mb-1">Email Address</label>
                                     <div class="relative">
                                         <input type="email" id="alamat_email" name="alamat_email" value="<?php echo htmlspecialchars($alamat_email); ?>"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -232,10 +327,21 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
     </div>
 
     <script>
-        // Mobile menu toggle
+        // Mobile menu toggle with smooth animation
         document.getElementById('mobile-menu-button').addEventListener('click', function() {
             const mobileMenu = document.getElementById('mobile-menu');
-            mobileMenu.classList.toggle('hidden');
+            const hamburger = document.getElementById('hamburger');
+            
+            // Toggle menu visibility with animation
+            if (mobileMenu.classList.contains('mobile-menu-show')) {
+                // Close menu
+                mobileMenu.classList.remove('mobile-menu-show');
+                hamburger.classList.remove('active');
+            } else {
+                // Open menu
+                mobileMenu.classList.add('mobile-menu-show');
+                hamburger.classList.add('active');
+            }
         });
 
         // Profile dropdown toggle
@@ -249,33 +355,44 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
         document.addEventListener('click', function(e) {
             const profileButton = document.getElementById('profileButton');
             const profileDropdown = document.getElementById('profileDropdown');
-
-            if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
-                profileDropdown.classList.add('hidden');
-            }
-        });
-
-        // Mobile menu toggle
-        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');
-            mobileMenu.classList.toggle('hidden');
-        });
+            const hamburger = document.getElementById('hamburger');
 
-        // Profile dropdown toggle
-        document.getElementById('profileButton').addEventListener('click', function(e) {
-            e.stopPropagation();
-            const dropdown = document.getElementById('profileDropdown');
-            dropdown.classList.toggle('hidden');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            const profileButton = document.getElementById('profileButton');
-            const profileDropdown = document.getElementById('profileDropdown');
-
+            // Close profile dropdown if clicked outside
             if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
                 profileDropdown.classList.add('hidden');
             }
+
+            // Close mobile menu if clicked outside
+            if (!mobileMenuButton.contains(e.target) && !mobileMenu.contains(e.target)) {
+                mobileMenu.classList.remove('mobile-menu-show');
+                hamburger.classList.remove('active');
+            }
+        });
+
+        // Close mobile menu when window is resized to desktop view
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) { // md breakpoint
+                const mobileMenu = document.getElementById('mobile-menu');
+                const hamburger = document.getElementById('hamburger');
+                mobileMenu.classList.remove('mobile-menu-show');
+                hamburger.classList.remove('active');
+            }
+        });
+
+        // Add smooth scroll effect for mobile menu links
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', function() {
+                const mobileMenu = document.getElementById('mobile-menu');
+                const hamburger = document.getElementById('hamburger');
+                
+                // Close menu after clicking a link
+                setTimeout(() => {
+                    mobileMenu.classList.remove('mobile-menu-show');
+                    hamburger.classList.remove('active');
+                }, 150);
+            });
         });
     </script>
 </body>

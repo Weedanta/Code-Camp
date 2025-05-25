@@ -169,7 +169,7 @@
                     
                     <div class="mb-6">
                         <label for="no_telepon" class="block text-gray-700 mb-1">No Telepon</label>
-                        <input type="tel" name="no_telepon" id="no_telepon" 
+                        <input type="number" name="no_telepon" id="no_telepon" 
                             class="input-field" 
                             placeholder="Contoh: 0812xxxxxxxx">
                     </div>
