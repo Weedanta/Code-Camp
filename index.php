@@ -7,6 +7,7 @@ require_once 'controllers/OrderController.php';
 require_once 'controllers/ReviewController.php';
 require_once 'controllers/CVController.php';
 require_once 'controllers/TodoListController.php';
+require_once 'controllers/ForumController.php';
 
 // Inisialisasi controllers
 $auth = new AuthController();
@@ -16,6 +17,7 @@ $order = new OrderController();
 $review = new ReviewController();
 $cv = new CVController();
 $todolist = new TodoListController();
+$forum = new ForumController();
 
 // Router sederhana
 $action = isset($_GET['action']) ? $_GET['action'] : 'home';
@@ -263,6 +265,54 @@ switch ($action) {
     case 'contact_support':
         // Implement contact support page or redirect to about page
         header('Location: views/about/index.php');
+        break;
+
+    case 'forum':
+        $forum->index();
+        break;
+        
+    case 'forum_detail':
+        $forum->detail();
+        break;
+        
+    case 'forum_create':
+        $forum->create();
+        break;
+        
+    case 'forum_store':
+        $forum->store();
+        break;
+        
+    case 'forum_edit':
+        $forum->edit();
+        break;
+        
+    case 'forum_update':
+        $forum->update();
+        break;
+        
+    case 'forum_delete':
+        $forum->deletePost();
+        break;
+        
+    case 'forum_add_reply':
+        $forum->addReply();
+        break;
+        
+    case 'forum_edit_reply':
+        $forum->editReply();
+        break;
+        
+    case 'forum_delete_reply':
+        $forum->deleteReply();
+        break;
+        
+    case 'forum_search':
+        $forum->search();
+        break;
+        
+    case 'forum_my_posts':
+        $forum->myPosts();
         break;
         
     default:
