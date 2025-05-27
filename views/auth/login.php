@@ -1,197 +1,260 @@
+<?php
+// views/auth/login.php - Updated version with admin detection
+session_start();
+
+// Redirect if already logged in
+if (isset($_SESSION['user_id'])) {
+    header('Location: /views/auth/dashboard/dashboard.php');
+    exit;
+}
+
+if (isset($_SESSION['admin_id'])) {
+    header('Location: /views/admin/dashboard.php');
+    exit;
+}
+
+// Handle login form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once '../../config/database.php';
+    
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    
+    if (empty($email) || empty($password)) {
+        $_SESSION['error'] = 'Email dan password harus diisi';
+    } else {
+        $database = new Database();
+        $db = $database->getConnection();
+        
+        // Check if email contains 'admin' for admin login
+        if (strpos(strtolower($email), 'admin') !== false) {
+            require_once '../../controllers/AdminController.php';
+            $adminController = new AdminController($db);
+            $adminController->login();
+        } else {
+            // Regular user login
+            require_once '../../controllers/AuthController.php';
+            $authController = new AuthController($db);
+            $authController->login();
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Code Camp</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="icon" href="../../assets/images/logo/logo_mobile.png" type="image/x-icon">
+    <title>Login - Campus Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/assets/css/custom.css" rel="stylesheet">
     <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .login-container {
-            height: 100vh;
-            display: flex;
-        }
-        .form-side {
-            width: 50%;
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             align-items: center;
-            justify-content: center;
-            background-color: white;
         }
-        .form-content {
-            width: 70%;
-            max-width: 450px;
+        .login-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
-        .brand-side {
-            width: 50%;
-            background-color: #1e3a8a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
         }
-        .brand-side::before,
-        .brand-side::after {
-            content: '';
-            position: absolute;
-            border-radius: 50%;
-            background-color: rgba(59, 130, 246, 0.3);
+        .admin-indicator {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 1rem;
+            display: none;
         }
-        .brand-side::before {
-            width: 600px;
-            height: 600px;
-            top: -300px;
-            right: -300px;
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
-        .brand-side::after {
-            width: 500px;
-            height: 500px;
-            bottom: -250px;
-            left: -250px;
-            background-color: rgba(59, 130, 246, 0.2);
-        }
-        .input-field {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            font-size: 15px;
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
             transition: all 0.3s ease;
         }
-        .input-field:focus {
-            border-color: #3b82f6;
-            outline: none;
-        }
-        .password-field {
-            position: relative;
-        }
-        .password-toggle {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #6b7280;
-        }
-        @media (max-width: 768px) {
-            .login-container {
-                flex-direction: column;
-            }
-            .form-side {
-                width: 100%;
-                height: 100%;
-            }
-            .brand-side {
-                display: none;
-            }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <!-- Form Side -->
-        <div class="form-side">
-            <div class="form-content">
-                <h1 class="text-2xl font-bold text-gray-800 mb-1">Selamat Datang!</h1>
-                <p class="text-gray-600 mb-6">Masuk dengan akun Anda</p>
-                
-                <!-- Alert Messages -->
-                <?php if(isset($_GET['error'])): ?>
-                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
-                        <?php 
-                            $error = $_GET['error'];
-                            if($error == 'empty') {
-                                echo "Silakan isi semua field";
-                            } elseif($error == 'invalid') {
-                                echo "Email atau password salah";
-                            } else {
-                                echo "Terjadi kesalahan, silakan coba lagi";
-                            }
-                        ?>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="card login-card">
+                    <div class="card-header login-header text-center py-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-graduation-cap me-2"></i>Campus Hub
+                        </h3>
+                        <p class="mb-0 mt-2">Login ke Akun Anda</p>
                     </div>
-                <?php endif; ?>
+                    <div class="card-body p-4">
+                        <!-- Admin Indicator -->
+                        <div id="adminIndicator" class="admin-indicator text-center">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            <strong>Mode Admin Terdeteksi</strong>
+                            <small class="d-block">Email mengandung kata 'admin'</small>
+                        </div>
 
-                <?php if(isset($_GET['success']) && $_GET['success'] == 'register'): ?>
-                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
-                        Registrasi berhasil! Silakan login.
+                        <!-- Alert Messages -->
+                        <?php if (isset($_SESSION['success'])): ?>
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i><?= htmlspecialchars($_SESSION['success']) ?>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                            <?php unset($_SESSION['success']); ?>
+                        <?php endif; ?>
+
+                        <?php if (isset($_SESSION['error'])): ?>
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i><?= htmlspecialchars($_SESSION['error']) ?>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                            <?php unset($_SESSION['error']); ?>
+                        <?php endif; ?>
+
+                        <form method="POST" id="loginForm">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">
+                                    <i class="fas fa-envelope me-2"></i>Email
+                                </label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       placeholder="Masukkan email Anda" required>
+                                <div class="form-text">
+                                    <small id="emailHelp">Gunakan email yang mengandung 'admin' untuk akses admin</small>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock me-2"></i>Password
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="password" name="password" 
+                                           placeholder="Masukkan password Anda" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary btn-login">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                                </button>
+                            </div>
+
+                            <div class="text-center">
+                                <p class="mb-0">Belum punya akun?</p>
+                                <a href="signup.php" class="text-decoration-none">
+                                    <i class="fas fa-user-plus me-1"></i>Daftar Sekarang
+                                </a>
+                            </div>
+                        </form>
                     </div>
-                <?php endif; ?>
-                
-                <!-- Login Form -->
-                <form action="../../index.php?action=process_login" method="post" id="loginForm">
-                    <div class="mb-4">
-                        <label for="alamat_email" class="block text-gray-700 mb-1">Alamat email</label>
-                        <input type="email" name="alamat_email" id="alamat_email" 
-                            class="input-field" 
-                            placeholder="Masukkan email Anda" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <div class="flex justify-between mb-1">
-                            <label for="password" class="block text-gray-700">Password</label>
-                            <a href="#" class="text-blue-500 text-sm hover:underline">Lupa password?</a>
-                        </div>
-                        <div class="password-field">
-                            <input type="password" name="password" id="password" 
-                                class="input-field" 
-                                placeholder="Masukkan password" required>
-                            <button type="button" id="togglePassword" class="password-toggle">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center mb-6">
-                        <input type="checkbox" id="ingat_saya" name="ingat_saya" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
-                        <label for="ingat_saya" class="ml-2 block text-sm text-gray-700">Ingat saya</label>
-                    </div>
-                    
-                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded transition duration-200">
-                        Masuk
-                    </button>
-                </form>
-                
-                <div class="text-center mt-6">
-                    <p class="text-gray-600 text-sm">
-                        Belum punya akun? 
-                        <a href="../../index.php?action=signup" class="text-blue-500 hover:underline font-medium">Daftar Sekarang</a>
-                    </p>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Brand Side -->
-        <div class="brand-side">
-            <div class="relative z-10">
-                <div class="text-4xl font-bold text-white flex items-center">
-                    <img src="../../assets/images/logo.png" alt="logo" class="lg:h-40 md:h-32 h-24 mr-2" draggable="false">
+
+                <!-- Info Card -->
+                <div class="card mt-3 border-0 bg-transparent">
+                    <div class="card-body text-center text-white">
+                        <small>
+                            <i class="fas fa-info-circle me-1"></i>
+                            Untuk akses admin, gunakan email yang mengandung kata "admin"
+                        </small>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-        // Toggle password visibility
+        // Password toggle functionality
         document.getElementById('togglePassword').addEventListener('click', function() {
-            const passwordInput = document.getElementById('password');
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
+            const passwordField = document.getElementById('password');
+            const toggleIcon = this.querySelector('i');
             
-            // Change icon
-            if (type === 'password') {
-                this.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>';
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
             } else {
-                this.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" /><path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" /></svg>';
+                passwordField.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
             }
+        });
+
+        // Admin detection
+        document.getElementById('email').addEventListener('input', function() {
+            const email = this.value.toLowerCase();
+            const adminIndicator = document.getElementById('adminIndicator');
+            const emailHelp = document.getElementById('emailHelp');
+            
+            if (email.includes('admin')) {
+                adminIndicator.style.display = 'block';
+                emailHelp.innerHTML = '<i class="fas fa-shield-alt me-1"></i><strong>Mode Admin:</strong> Anda akan login sebagai administrator';
+                emailHelp.className = 'form-text text-warning fw-bold';
+            } else {
+                adminIndicator.style.display = 'none';
+                emailHelp.innerHTML = 'Gunakan email yang mengandung "admin" untuk akses admin';
+                emailHelp.className = 'form-text';
+            }
+        });
+
+        // Form validation and security
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            // Basic validation
+            if (!email || !password) {
+                e.preventDefault();
+                alert('Email dan password harus diisi');
+                return;
+            }
+            
+            // Email format validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('Format email tidak valid');
+                return;
+            }
+            
+            // Minimum password length
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('Password harus minimal 6 karakter');
+                return;
+            }
+        });
+
+        // XSS Protection - Sanitize inputs
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input[type="email"], input[type="password"]');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    // Remove any script tags or suspicious content
+                    this.value = this.value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+                });
+            });
         });
     </script>
 </body>
