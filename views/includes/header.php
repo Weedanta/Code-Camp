@@ -201,12 +201,20 @@ if (!isset($current_page)) {
                                     <?php echo strtoupper(substr($user_name, 0, 1)); ?>
                                 </div>
                             </button>
+                            <!-- UPDATED DROPDOWN WITH MY REVIEWS LINK -->
                             <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-20">
                                 <a href="<?php echo isset($base_url) ? $base_url : ''; ?>views/auth/dashboard/dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-user mr-2"></i>My Profile
                                 </a>
+                                <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=cv_builder" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-file-alt mr-2"></i>CV Builder
+                                </a>
                                 <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=todolist" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-tasks mr-2"></i>Todo List
+                                </a>
+                                <!-- NEW MY REVIEWS LINK -->
+                                <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=my_reviews" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-star mr-2"></i>My Reviews
                                 </a>
                                 <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=my_orders" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-shopping-bag mr-2"></i>My Orders
@@ -291,11 +299,26 @@ if (!isset($current_page)) {
                             <span>My Profile</span>
                         </a>
 
+                        <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=cv_builder" class="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 transform hover:translate-x-1">
+                            <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>CV Builder</span>
+                        </a>
+
                         <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=todolist" class="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 transform hover:translate-x-1">
                             <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                             </svg>
                             <span>Todo List</span>
+                        </a>
+
+                        <!-- NEW MY REVIEWS LINK IN MOBILE -->
+                        <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=my_reviews" class="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 transform hover:translate-x-1">
+                            <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                            </svg>
+                            <span>My Reviews</span>
                         </a>
 
                         <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=my_orders" class="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 transform hover:translate-x-1">

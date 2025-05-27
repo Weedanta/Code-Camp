@@ -15,9 +15,14 @@ $additional_css = '
 .star-rating .fa-star {
     color: #D1D5DB; /* gray-300 */
     cursor: pointer;
+    transition: all 0.2s ease;
 }
 .star-rating .fa-star.active {
     color: #FBBF24; /* yellow-400 */
+}
+.star-rating .fa-star:hover {
+    color: #F59E0B; /* yellow-500 */
+    transform: scale(1.1);
 }
 .review-stars .fa-star {
     color: #D1D5DB;
@@ -25,6 +30,50 @@ $additional_css = '
 }
 .review-stars .fa-star.active {
     color: #FBBF24;
+}
+
+/* Toast notification styles */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    min-width: 300px;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    color: white;
+    font-weight: 500;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast.success {
+    background-color: #10B981;
+}
+
+.toast.error {
+    background-color: #EF4444;
+}
+
+.toast.warning {
+    background-color: #F59E0B;
+}
+
+.toast .close-btn {
+    margin-left: 12px;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.toast .close-btn:hover {
+    opacity: 1;
 }
 </style>';
 
@@ -98,7 +147,7 @@ include_once 'views/includes/header.php';
             <?php if (!empty($this->bootcamp->image)): ?>
                 <!-- Ubah gambar bootcamp ke ngoding.jpg -->
                 <img src="assets/images/ngoding.jpg"
-                    alt="<?php echo htmlspecialchars($item['title']); ?>"
+                    alt="<?php echo htmlspecialchars($this->bootcamp->title); ?>"
                     class="w-full h-48 object-cover">
             <?php else: ?>
                 <div class="w-full h-64 md:h-80 bg-gray-200 flex items-center justify-center">
@@ -242,7 +291,7 @@ include_once 'views/includes/header.php';
             <div id="reviews">
                 <h2 class="text-xl font-bold text-gray-800 mb-4">Reviews</h2>
 
-                <?php if ($is_logged_in && $user_enrolled): ?>
+                <?php if ($is_logged_in): ?>
                     <!-- Add/Edit Review Form -->
                     <div class="bg-gray-50 p-4 rounded-lg mb-6">
                         <h3 class="font-medium text-gray-800 mb-3">
@@ -265,7 +314,8 @@ include_once 'views/includes/header.php';
                             <div class="mb-3">
                                 <label for="reviewText" class="block text-gray-700 mb-1">Review</label>
                                 <textarea id="reviewText" name="review_text" rows="3"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"><?php echo $user_review ? $user_review['review_text'] : ''; ?></textarea>
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Share your experience with this bootcamp..."><?php echo $user_review ? $user_review['review_text'] : ''; ?></textarea>
                             </div>
 
                             <div class="text-right">
@@ -321,6 +371,337 @@ include_once 'views/includes/header.php';
         </div>
     </div>
 </div>
+
+<!-- JAVASCRIPT UNTUK REVIEW FUNCTIONALITY -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Review system loaded'); // Debug log
+
+    // Star rating functionality
+    const ratingStars = document.querySelectorAll('#ratingStars .fa-star');
+    const ratingInput = document.getElementById('rating');
+    
+    if (ratingStars.length > 0) {
+        console.log('Star rating initialized'); // Debug log
+        
+        ratingStars.forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.getAttribute('data-rating'));
+                console.log('Star clicked, rating:', rating); // Debug log
+                ratingInput.value = rating;
+                
+                // Update visual stars
+                ratingStars.forEach((s, index) => {
+                    if (index < rating) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+            });
+            
+            // Hover effect
+            star.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.getAttribute('data-rating'));
+                ratingStars.forEach((s, index) => {
+                    if (index < rating) {
+                        s.style.color = '#F59E0B'; // yellow-500
+                    } else {
+                        s.style.color = '#D1D5DB'; // gray-300
+                    }
+                });
+            });
+        });
+        
+        // Reset on mouse leave
+        const ratingContainer = document.getElementById('ratingStars');
+        if (ratingContainer) {
+            ratingContainer.addEventListener('mouseleave', function() {
+                const currentRating = parseInt(ratingInput.value);
+                ratingStars.forEach((s, index) => {
+                    if (index < currentRating) {
+                        s.style.color = '#FBBF24'; // yellow-400
+                    } else {
+                        s.style.color = '#D1D5DB'; // gray-300
+                    }
+                });
+            });
+        }
+    }
+
+    // Review form submission
+    const reviewForm = document.getElementById('reviewForm');
+    if (reviewForm) {
+        console.log('Review form found'); // Debug log
+        
+        reviewForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Review form submitted'); // Debug log
+            
+            const rating = ratingInput.value;
+            const reviewText = document.getElementById('reviewText').value.trim();
+            const bootcampId = document.getElementById('bootcampId').value;
+            
+            console.log('Form data:', {rating, reviewText, bootcampId}); // Debug log
+            
+            // Validation
+            if (rating === '0' || rating === '') {
+                showToast('Please select a rating', 'error');
+                return;
+            }
+            
+            if (reviewText === '') {
+                showToast('Please write a review', 'error');
+                return;
+            }
+            
+            // Disable submit button
+            const submitBtn = document.getElementById('submitReview');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+            
+            // Create FormData
+            const formData = new FormData();
+            formData.append('bootcamp_id', bootcampId);
+            formData.append('rating', rating);
+            formData.append('review_text', reviewText);
+            
+            console.log('Sending review to server...'); // Debug log
+            
+            // Submit review
+            fetch('index.php?action=add_review', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response received:', response); // Debug log
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data); // Debug log
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    
+                    // Reset form if it was a new review
+                    if (originalText.includes('Submit')) {
+                        reviewForm.reset();
+                        ratingInput.value = '0';
+                        ratingStars.forEach(s => s.classList.remove('active'));
+                    }
+                    
+                    // Reload page after 2 seconds to show updated review
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting review:', error);
+                showToast('Failed to submit review. Please try again.', 'error');
+            })
+            .finally(() => {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        });
+    }
+
+    // Wishlist functionality
+    const wishlistButton = document.getElementById('wishlistButton');
+    if (wishlistButton) {
+        console.log('Wishlist button found'); // Debug log
+        
+        wishlistButton.addEventListener('click', function() {
+            const bootcampId = this.getAttribute('data-bootcamp-id');
+            const heartIcon = this.querySelector('i');
+            const isInWishlist = heartIcon.classList.contains('fas');
+            
+            console.log('Wishlist button clicked, bootcamp:', bootcampId, 'inWishlist:', isInWishlist); // Debug log
+            
+            // Disable button temporarily
+            this.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('bootcamp_id', bootcampId);
+            
+            const action = isInWishlist ? 'remove_from_wishlist' : 'add_to_wishlist';
+            
+            fetch(`index.php?action=${action}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Wishlist response:', data); // Debug log
+                
+                if (data.success) {
+                    // Toggle heart icon
+                    if (isInWishlist) {
+                        heartIcon.classList.remove('fas');
+                        heartIcon.classList.add('far');
+                    } else {
+                        heartIcon.classList.remove('far');
+                        heartIcon.classList.add('fas');
+                    }
+                    
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Wishlist error:', error);
+                showToast('Failed to update wishlist. Please try again.', 'error');
+            })
+            .finally(() => {
+                // Re-enable button
+                this.disabled = false;
+            });
+        });
+    }
+
+    // Load more reviews functionality
+    const loadMoreBtn = document.getElementById('loadMoreReviews');
+    if (loadMoreBtn) {
+        let currentPage = 1;
+        
+        loadMoreBtn.addEventListener('click', function() {
+            const bootcampId = document.getElementById('bootcampId').value;
+            currentPage++;
+            
+            console.log('Loading more reviews, page:', currentPage); // Debug log
+            
+            // Show loading state
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
+            
+            fetch(`index.php?action=get_bootcamp_reviews&bootcamp_id=${bootcampId}&page=${currentPage}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('More reviews loaded:', data); // Debug log
+                
+                if (data.reviews && data.reviews.length > 0) {
+                    const reviewsList = document.getElementById('reviewsList');
+                    
+                    data.reviews.forEach(review => {
+                        const reviewElement = createReviewElement(review);
+                        reviewsList.appendChild(reviewElement);
+                    });
+                    
+                    // Hide button if no more reviews
+                    if (currentPage >= data.pagination.total_pages) {
+                        this.style.display = 'none';
+                    }
+                } else {
+                    this.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading more reviews:', error);
+                showToast('Failed to load more reviews', 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                this.disabled = false;
+                this.innerHTML = 'Load More Reviews';
+            });
+        });
+    }
+});
+
+// Helper function to create review element
+function createReviewElement(review) {
+    const reviewDiv = document.createElement('div');
+    reviewDiv.className = 'border-b border-gray-200 pb-4 mb-4 last:border-b-0';
+    
+    const starsHtml = Array.from({length: 5}, (_, i) => {
+        const starClass = i < review.rating ? 'active' : '';
+        return `<i class="fas fa-star ${starClass}"></i>`;
+    }).join('');
+    
+    reviewDiv.innerHTML = `
+        <div class="flex justify-between items-start">
+            <div>
+                <div class="review-stars">
+                    ${starsHtml}
+                </div>
+                <h4 class="font-medium text-gray-800 mt-1">${escapeHtml(review.user_name)}</h4>
+                <p class="text-gray-500 text-sm">${formatDate(review.created_at)}</p>
+            </div>
+        </div>
+        <div class="mt-2 text-gray-700">
+            ${escapeHtml(review.review_text).replace(/\n/g, '<br>')}
+        </div>
+    `;
+    
+    return reviewDiv;
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Helper function to format date
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+}
+
+// Toast notification system
+function showToast(message, type = 'success') {
+    console.log('Showing toast:', message, type); // Debug log
+    
+    // Remove existing toasts
+    const existingToasts = document.querySelectorAll('.toast');
+    existingToasts.forEach(toast => toast.remove());
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? 'fas fa-check-circle' : 
+                 type === 'error' ? 'fas fa-exclamation-circle' : 
+                 'fas fa-info-circle';
+    
+    toast.innerHTML = `
+        <i class="${icon} mr-2"></i>
+        <span>${message}</span>
+        <button class="close-btn" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    // Add to page
+    document.body.appendChild(toast);
+    
+    // Show with animation
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }
+    }, 5000);
+}
+</script>
 
 <?php
 // Include footer

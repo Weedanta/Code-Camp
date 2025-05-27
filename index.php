@@ -184,6 +184,22 @@ switch ($action) {
     case 'get_bootcamp_reviews':
         $review->getBootcampReviews();
         break;
+
+    case 'my_reviews':
+        $review->myReviews();
+        break;
+
+    case 'update_review':
+        $review->updateReview();
+        break;
+
+    case 'delete_review':
+        $review->deleteReview();
+        break;
+
+    case 'get_review':
+        $review->getReview();
+        break;
         
     // CV Builder Routes
     case 'cv_builder':
@@ -212,6 +228,10 @@ switch ($action) {
         
     case 'cv_debug':
         $cv->debug();
+        break;
+
+    case 'cv_cleanup':
+        $cv->cleanup();
         break;
         
     // TodoList Routes
