@@ -27,14 +27,11 @@ class CV {
         
         $stmt = $this->conn->prepare($query);
         
-        // Sanitize
+        // Sanitize user_id only, NOT the JSON data
         $this->user_id = htmlspecialchars(strip_tags($this->user_id));
-        $this->personal_info = htmlspecialchars(strip_tags($this->personal_info));
-        $this->experience = htmlspecialchars(strip_tags($this->experience));
-        $this->education = htmlspecialchars(strip_tags($this->education));
-        $this->skills = htmlspecialchars(strip_tags($this->skills));
-        $this->projects = htmlspecialchars(strip_tags($this->projects));
-        $this->certifications = htmlspecialchars(strip_tags($this->certifications));
+        
+        // JSON data should NOT be htmlspecialchars'd - it will break the JSON format
+        // The data is already properly formatted as JSON from the controller
         
         // Bind values
         $stmt->bindParam(":user_id", $this->user_id);
@@ -70,14 +67,11 @@ class CV {
         
         $stmt = $this->conn->prepare($query);
         
-        // Sanitize
+        // Sanitize user_id only, NOT the JSON data
         $this->user_id = htmlspecialchars(strip_tags($this->user_id));
-        $this->personal_info = htmlspecialchars(strip_tags($this->personal_info));
-        $this->experience = htmlspecialchars(strip_tags($this->experience));
-        $this->education = htmlspecialchars(strip_tags($this->education));
-        $this->skills = htmlspecialchars(strip_tags($this->skills));
-        $this->projects = htmlspecialchars(strip_tags($this->projects));
-        $this->certifications = htmlspecialchars(strip_tags($this->certifications));
+        
+        // JSON data should NOT be htmlspecialchars'd - it will break the JSON format
+        // The data is already properly formatted as JSON from the controller
         
         // Bind values
         $stmt->bindParam(":user_id", $this->user_id);

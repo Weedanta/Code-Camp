@@ -70,6 +70,7 @@ if ($has_cv_data) {
                             case 'created': echo 'Your CV has been created successfully!'; break;
                             case 'updated': echo 'Your CV has been updated successfully!'; break;
                             case 'deleted': echo 'Your CV has been deleted successfully!'; break;
+                            case 'cleanup': echo 'Corrupted data has been cleaned up. You can now create your CV again.'; break;
                             default: echo 'Operation completed successfully!';
                         }
                         ?>
@@ -90,6 +91,8 @@ if ($has_cv_data) {
                             case 'update_failed': echo 'Failed to update CV. Please try again.'; break;
                             case 'delete_failed': echo 'Failed to delete CV. Please try again.'; break;
                             case 'no_data': echo 'No CV data found. Please create your CV first.'; break;
+                            case 'corrupted_data': echo 'Previous CV data was corrupted and has been removed. Please create your CV again.'; break;
+                            case 'cleanup_failed': echo 'Failed to clean up corrupted data. Please try again.'; break;
                             default: echo 'There was a problem saving your CV. Please try again.';
                         }
                         ?>

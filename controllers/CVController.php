@@ -28,6 +28,20 @@ class CVController {
         $stmt = $this->cv->readByUserId();
         $cv_data = $stmt->fetch(PDO::FETCH_ASSOC);
         
+        // Check if data is corrupted (htmlspecialchars issue)
+        if ($cv_data) {
+            $test_personal = json_decode($cv_data['personal_info'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                // Data is corrupted, delete it
+                $this->cv->delete();
+                $cv_data = false;
+                
+                // Set error message
+                header('Location: index.php?action=cv_builder&error=corrupted_data');
+                exit();
+            }
+        }
+        
         include_once 'views/cv/index.php';
     }
     
@@ -278,28 +292,42 @@ class CVController {
             print_r($cv_data);
             echo "</pre>";
             
-            echo "<h4>Parsed Data:</h4>";
-            echo "<pre>";
+            echo "<h4>JSON Validation:</h4>";
             $personal_info = json_decode($cv_data['personal_info'], true);
-            $experience = json_decode($cv_data['experience'], true);
-            $education = json_decode($cv_data['education'], true);
-            $skills = json_decode($cv_data['skills'], true);
-            $projects = json_decode($cv_data['projects'], true);
-            $certifications = json_decode($cv_data['certifications'], true);
+            $json_error = json_last_error();
             
-            echo "Personal Info: ";
-            print_r($personal_info);
-            echo "\nExperience: ";
-            print_r($experience);
-            echo "\nEducation: ";
-            print_r($education);
-            echo "\nSkills: ";
-            print_r($skills);
-            echo "\nProjects: ";
-            print_r($projects);
-            echo "\nCertifications: ";
-            print_r($certifications);
-            echo "</pre>";
+            echo "<p>JSON Error Code: " . $json_error . "</p>";
+            echo "<p>JSON Error Message: " . json_last_error_msg() . "</p>";
+            
+            if ($json_error !== JSON_ERROR_NONE) {
+                echo "<p style='color: red;'>JSON DATA IS CORRUPTED!</p>";
+                echo "<p>Raw personal_info data:</p>";
+                echo "<pre>" . htmlspecialchars($cv_data['personal_info']) . "</pre>";
+                
+                echo "<p><a href='index.php?action=cv_cleanup' style='background: red; color: white; padding: 10px; text-decoration: none;'>CLEAN UP CORRUPTED DATA</a></p>";
+            } else {
+                echo "<h4>Parsed Data:</h4>";
+                echo "<pre>";
+                $experience = json_decode($cv_data['experience'], true);
+                $education = json_decode($cv_data['education'], true);
+                $skills = json_decode($cv_data['skills'], true);
+                $projects = json_decode($cv_data['projects'], true);
+                $certifications = json_decode($cv_data['certifications'], true);
+                
+                echo "Personal Info: ";
+                print_r($personal_info);
+                echo "\nExperience: ";
+                print_r($experience);
+                echo "\nEducation: ";
+                print_r($education);
+                echo "\nSkills: ";
+                print_r($skills);
+                echo "\nProjects: ";
+                print_r($projects);
+                echo "\nCertifications: ";
+                print_r($certifications);
+                echo "</pre>";
+            }
         } else {
             echo "<p>No CV Data Found!</p>";
             
@@ -325,6 +353,25 @@ class CVController {
             } else {
                 echo "<p>cv_data table does NOT exist</p>";
             }
+        }
+        
+        echo "<p><a href='index.php?action=cv_builder'>Back to CV Builder</a></p>";
+    }
+    
+    // Cleanup corrupted data
+    public function cleanup() {
+        session_start();
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: index.php?action=login');
+            exit();
+        }
+        
+        $this->cv->user_id = $_SESSION['user_id'];
+        
+        if ($this->cv->delete()) {
+            header('Location: index.php?action=cv_builder&success=cleanup');
+        } else {
+            header('Location: index.php?action=cv_builder&error=cleanup_failed');
         }
     }
 }
