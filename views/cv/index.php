@@ -2,32 +2,58 @@
 $base_url = '';
 include_once $base_url . 'views/includes/header.php';
 
-// Parse existing CV data if available
-$personal_info = $cv_data ? json_decode($cv_data['personal_info'], true) : [];
-$experience = $cv_data ? json_decode($cv_data['experience'], true) : [];
-$education = $cv_data ? json_decode($cv_data['education'], true) : [];
-$skills = $cv_data ? json_decode($cv_data['skills'], true) : [];
-$projects = $cv_data ? json_decode($cv_data['projects'], true) : [];
-$certifications = $cv_data ? json_decode($cv_data['certifications'], true) : [];
+// Debug: Check if CV data exists
+$has_cv_data = !empty($cv_data);
+
+// Parse existing CV data if available with better error handling
+$personal_info = [];
+$experience = [];
+$education = [];
+$skills = [];
+$projects = [];
+$certifications = [];
+
+if ($has_cv_data) {
+    $personal_info = json_decode($cv_data['personal_info'], true) ?: [];
+    $experience = json_decode($cv_data['experience'], true) ?: [];
+    $education = json_decode($cv_data['education'], true) ?: [];
+    $skills = json_decode($cv_data['skills'], true) ?: [];
+    $projects = json_decode($cv_data['projects'], true) ?: [];
+    $certifications = json_decode($cv_data['certifications'], true) ?: [];
+}
 ?>
 
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="container mx-auto px-4">
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div class="flex justify-between items-center">
-                <div>
+            <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center">
+                <div class="mb-4 lg:mb-0">
                     <h1 class="text-3xl font-bold text-gray-900">CV Builder</h1>
                     <p class="text-gray-600 mt-2">Create an ATS-friendly resume that gets you noticed</p>
+                    <?php if ($has_cv_data): ?>
+                        <p class="text-sm text-green-600 mt-1">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            CV data found - Last updated: <?php echo date('M d, Y', strtotime($cv_data['updated_at'] ?: $cv_data['created_at'])); ?>
+                        </p>
+                    <?php else: ?>
+                        <p class="text-sm text-blue-600 mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            No CV data found - Create your first CV
+                        </p>
+                    <?php endif; ?>
                 </div>
-                <div class="flex space-x-3">
-                    <?php if ($cv_data): ?>
-                        <a href="index.php?action=cv_preview" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                    <?php if ($has_cv_data): ?>
+                        <a href="index.php?action=cv_preview" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center">
                             <i class="fas fa-eye mr-2"></i>Preview
                         </a>
-                        <a href="index.php?action=cv_pdf" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        <a href="index.php?action=cv_pdf" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-center">
                             <i class="fas fa-download mr-2"></i>Download PDF
                         </a>
+                        <button onclick="deleteCv()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                            <i class="fas fa-trash mr-2"></i>Delete CV
+                        </button>
                     <?php endif; ?>
                 </div>
             </div>
@@ -35,13 +61,40 @@ $certifications = $cv_data ? json_decode($cv_data['certifications'], true) : [];
 
         <?php if (isset($_GET['success'])): ?>
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-                <strong>Success!</strong> Your CV has been <?php echo $_GET['success'] == 'created' ? 'created' : 'updated'; ?> successfully.
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <strong>Success!</strong> 
+                    <span class="ml-1">
+                        <?php 
+                        switch($_GET['success']) {
+                            case 'created': echo 'Your CV has been created successfully!'; break;
+                            case 'updated': echo 'Your CV has been updated successfully!'; break;
+                            case 'deleted': echo 'Your CV has been deleted successfully!'; break;
+                            default: echo 'Operation completed successfully!';
+                        }
+                        ?>
+                    </span>
+                </div>
             </div>
         <?php endif; ?>
 
         <?php if (isset($_GET['error'])): ?>
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-                <strong>Error!</strong> There was a problem saving your CV. Please try again.
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <strong>Error!</strong> 
+                    <span class="ml-1">
+                        <?php 
+                        switch($_GET['error']) {
+                            case 'create_failed': echo 'Failed to create CV. Please try again.'; break;
+                            case 'update_failed': echo 'Failed to update CV. Please try again.'; break;
+                            case 'delete_failed': echo 'Failed to delete CV. Please try again.'; break;
+                            case 'no_data': echo 'No CV data found. Please create your CV first.'; break;
+                            default: echo 'There was a problem saving your CV. Please try again.';
+                        }
+                        ?>
+                    </span>
+                </div>
             </div>
         <?php endif; ?>
 
@@ -423,6 +476,48 @@ let educationIndex = <?php echo !empty($education) ? count($education) : 1; ?>;
 let projectIndex = <?php echo !empty($projects) ? count($projects) : 0; ?>;
 let certificationIndex = <?php echo !empty($certifications) ? count($certifications) : 0; ?>;
 
+// Delete CV function
+function deleteCv() {
+    if (confirm('Are you sure you want to delete your CV? This action cannot be undone.')) {
+        window.location.href = 'index.php?action=cv_delete';
+    }
+}
+
+// Auto-save function (optional)
+function autoSave() {
+    const form = document.querySelector('form');
+    const formData = new FormData(form);
+    
+    fetch('index.php?action=cv_save', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('Auto-saved successfully');
+            // Show a subtle indicator
+            showAutoSaveIndicator();
+        }
+    })
+    .catch(error => {
+        console.error('Auto-save failed:', error);
+    });
+}
+
+function showAutoSaveIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'fixed top-4 right-4 bg-green-500 text-white px-3 py-2 rounded shadow-lg z-50';
+    indicator.innerHTML = '<i class="fas fa-check mr-2"></i>Auto-saved';
+    document.body.appendChild(indicator);
+    
+    setTimeout(() => {
+        indicator.remove();
+    }, 2000);
+}
+
+// Add auto-save every 30 seconds
+setInterval(autoSave, 30000);
+
 function addExperience() {
     const container = document.getElementById('experience-container');
     const html = `
@@ -472,7 +567,11 @@ function addExperience() {
 }
 
 function removeExperience(button) {
-    button.closest('.experience-item').remove();
+    if (document.querySelectorAll('.experience-item').length > 1) {
+        button.closest('.experience-item').remove();
+    } else {
+        alert('You must have at least one experience entry.');
+    }
 }
 
 function addEducation() {
@@ -524,7 +623,11 @@ function addEducation() {
 }
 
 function removeEducation(button) {
-    button.closest('.education-item').remove();
+    if (document.querySelectorAll('.education-item').length > 1) {
+        button.closest('.education-item').remove();
+    } else {
+        alert('You must have at least one education entry.');
+    }
 }
 
 function addProject() {
@@ -612,6 +715,23 @@ function addCertification() {
 function removeCertification(button) {
     button.closest('.certification-item').remove();
 }
+
+// Form validation before submit
+document.querySelector('form').addEventListener('submit', function(e) {
+    const fullName = document.querySelector('input[name="personal_info[full_name]"]').value.trim();
+    const email = document.querySelector('input[name="personal_info[email]"]').value.trim();
+    
+    if (!fullName || !email) {
+        e.preventDefault();
+        alert('Please fill in at least your full name and email address.');
+        return false;
+    }
+    
+    // Show loading state
+    const submitBtn = document.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    submitBtn.disabled = true;
+});
 </script>
 
 <?php include_once $base_url . 'views/includes/footer.php'; ?>

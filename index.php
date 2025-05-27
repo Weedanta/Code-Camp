@@ -194,12 +194,24 @@ switch ($action) {
         $cv->save();
         break;
         
+    case 'cv_delete':
+        $cv->delete();
+        break;
+        
     case 'cv_preview':
         $cv->preview();
         break;
         
     case 'cv_pdf':
         $cv->generatePDF();
+        break;
+        
+    case 'cv_data':
+        $cv->getData();
+        break;
+        
+    case 'cv_debug':
+        $cv->debug();
         break;
         
     // TodoList Routes

@@ -106,4 +106,21 @@ class CV {
         }
         return false;
     }
+    
+    // Delete CV
+    public function delete() {
+        $query = "DELETE FROM " . $this->table_name . " WHERE user_id = :user_id";
+        $stmt = $this->conn->prepare($query);
+        
+        // Sanitize
+        $this->user_id = htmlspecialchars(strip_tags($this->user_id));
+        
+        // Bind values
+        $stmt->bindParam(":user_id", $this->user_id);
+        
+        if($stmt->execute()) {
+            return true;
+        }
+        return false;
+    }
 }

@@ -1,6 +1,33 @@
 <?php
 $base_url = '';
 include_once $base_url . 'views/includes/header.php';
+
+// Check if we have CV data (this variable is set in the controller)
+if (!$has_cv_data) {
+    ?>
+    <div class="min-h-screen bg-gray-50 py-8">
+        <div class="container mx-auto px-4">
+            <div class="max-w-2xl mx-auto text-center">
+                <div class="bg-white rounded-lg shadow-sm p-8">
+                    <i class="fas fa-file-alt text-6xl text-gray-300 mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">No CV Data Found</h2>
+                    <p class="text-gray-600 mb-6">You haven't created your CV yet. Start building your professional resume now!</p>
+                    <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-3">
+                        <a href="index.php?action=cv_builder" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Create My CV
+                        </a>
+                        <a href="index.php?action=todolist" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors">
+                            <i class="fas fa-tasks mr-2"></i>Go to Todo List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+    include_once $base_url . 'views/includes/footer.php';
+    return;
+}
 ?>
 
 <div class="min-h-screen bg-gray-50 py-8">
