@@ -1,7 +1,8 @@
 <?php
 // controllers/AdminController.php
 
-require_once 'models/Admin.php';
+require_once __DIR__ . '/../models/Admin.php';
+require_once __DIR__ . '/../helpers/SecurityHelper.php';
 
 class AdminController {
     private $admin;
@@ -19,12 +20,12 @@ class AdminController {
 
     // Sanitize input to prevent XSS
     private function sanitizeInput($data) {
-        return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
+        return SecurityHelper::sanitizeInput($data);
     }
 
     // Validate email
     private function validateEmail($email) {
-        return filter_var($email, FILTER_VALIDATE_EMAIL);
+        return SecurityHelper::validateEmail($email);
     }
 
     // Admin login
@@ -36,20 +37,27 @@ class AdminController {
             // Check if email contains 'admin'
             if (strpos(strtolower($email), 'admin') === false) {
                 $_SESSION['error'] = 'Akses ditolak. Email harus mengandung kata "admin".';
-                header('Location: /views/auth/login.php');
-                exit;
+                include __DIR__ . '/../views/admin/login.php';
+                return;
             }
 
             if (empty($email) || empty($password)) {
                 $_SESSION['error'] = 'Email dan password harus diisi';
-                header('Location: /views/auth/login.php');
-                exit;
+                include __DIR__ . '/../views/admin/login.php';
+                return;
             }
 
             if (!$this->validateEmail($email)) {
                 $_SESSION['error'] = 'Format email tidak valid';
-                header('Location: /views/auth/login.php');
-                exit;
+                include __DIR__ . '/../views/admin/login.php';
+                return;
+            }
+
+            // Rate limiting
+            if (!SecurityHelper::preventBruteForce($email)) {
+                $_SESSION['error'] = 'Terlalu banyak percobaan login. Coba lagi dalam 15 menit.';
+                include __DIR__ . '/../views/admin/login.php';
+                return;
             }
 
             $admin = $this->admin->login($email, $password);
@@ -59,6 +67,7 @@ class AdminController {
                 $_SESSION['admin_email'] = $admin['email'];
                 $_SESSION['admin_role'] = $admin['role'];
                 $_SESSION['is_admin'] = true;
+                $_SESSION['admin_last_activity'] = time();
 
                 // Log activity
                 $this->admin->logActivity(
@@ -69,13 +78,15 @@ class AdminController {
                     $_SERVER['HTTP_USER_AGENT'] ?? null
                 );
 
-                header('Location: /views/admin/dashboard.php');
+                header('Location: ?action=dashboard');
                 exit;
             } else {
                 $_SESSION['error'] = 'Email atau password salah';
-                header('Location: /views/auth/login.php');
-                exit;
+                include __DIR__ . '/../views/admin/login.php';
+                return;
             }
+        } else {
+            include __DIR__ . '/../views/admin/login.php';
         }
     }
 
@@ -91,8 +102,15 @@ class AdminController {
             );
         }
 
-        session_destroy();
-        header('Location: /views/auth/login.php');
+        // Clear admin session
+        unset($_SESSION['admin_id']);
+        unset($_SESSION['admin_name']);
+        unset($_SESSION['admin_email']);
+        unset($_SESSION['admin_role']);
+        unset($_SESSION['is_admin']);
+        unset($_SESSION['admin_last_activity']);
+
+        header('Location: ?action=login');
         exit;
     }
 
@@ -100,21 +118,44 @@ class AdminController {
     public function manageUsers() {
         if (!$this->isAdmin()) {
             $_SESSION['error'] = 'Akses ditolak. Anda harus login sebagai admin.';
-            header('Location: /views/auth/login.php');
+            header('Location: ?action=login');
             exit;
         }
 
-        $users = $this->admin->getAllUsers();
-        $userCount = $this->admin->getUserCount();
+        // Get search parameter
+        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
         
-        include 'views/admin/manage_users.php';
+        // Get pagination parameters
+        $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+        $perPage = 10;
+        $offset = ($page - 1) * $perPage;
+
+        // Get all users
+        $allUsers = $this->admin->getAllUsers();
+        $userCount = $this->admin->getUserCount();
+
+        // Apply search filter
+        if (!empty($search)) {
+            $allUsers = array_filter($allUsers, function ($user) use ($search) {
+                return stripos($user['name'], $search) !== false ||
+                       stripos($user['alamat_email'], $search) !== false ||
+                       stripos($user['no_telepon'], $search) !== false;
+            });
+        }
+
+        // Apply pagination
+        $totalUsers = count($allUsers);
+        $totalPages = ceil($totalUsers / $perPage);
+        $users = array_slice($allUsers, $offset, $perPage);
+        
+        include __DIR__ . '/../views/admin/manage_users.php';
     }
 
     // Show edit user form
     public function editUser($id = null) {
         if (!$this->isAdmin()) {
             $_SESSION['error'] = 'Akses ditolak. Anda harus login sebagai admin.';
-            header('Location: /views/auth/login.php');
+            header('Location: ?action=login');
             exit;
         }
 
@@ -122,25 +163,25 @@ class AdminController {
         
         if (!$id || !is_numeric($id)) {
             $_SESSION['error'] = 'ID user tidak valid';
-            header('Location: /views/admin/manage_users.php');
+            header('Location: ?action=manage_users');
             exit;
         }
 
         $user = $this->admin->getUserById($id);
         if (!$user) {
             $_SESSION['error'] = 'User tidak ditemukan';
-            header('Location: /views/admin/manage_users.php');
+            header('Location: ?action=manage_users');
             exit;
         }
 
-        include 'views/admin/edit_user.php';
+        include __DIR__ . '/../views/admin/edit_user.php';
     }
 
     // Update user
     public function updateUser() {
         if (!$this->isAdmin()) {
             $_SESSION['error'] = 'Akses ditolak. Anda harus login sebagai admin.';
-            header('Location: /views/auth/login.php');
+            header('Location: ?action=login');
             exit;
         }
 
@@ -152,13 +193,19 @@ class AdminController {
 
             if (empty($id) || empty($name) || empty($email)) {
                 $_SESSION['error'] = 'Semua field wajib diisi kecuali nomor telepon';
-                header('Location: /views/admin/edit_user.php?id=' . $id);
+                header('Location: ?action=edit_user&id=' . $id);
                 exit;
             }
 
             if (!$this->validateEmail($email)) {
                 $_SESSION['error'] = 'Format email tidak valid';
-                header('Location: /views/admin/edit_user.php?id=' . $id);
+                header('Location: ?action=edit_user&id=' . $id);
+                exit;
+            }
+
+            if (strlen($name) < 2) {
+                $_SESSION['error'] = 'Nama harus minimal 2 karakter';
+                header('Location: ?action=edit_user&id=' . $id);
                 exit;
             }
 
@@ -179,7 +226,7 @@ class AdminController {
                 $_SESSION['error'] = $result['message'];
             }
 
-            header('Location: /views/admin/manage_users.php');
+            header('Location: ?action=manage_users');
             exit;
         }
     }
@@ -188,7 +235,7 @@ class AdminController {
     public function deleteUser() {
         if (!$this->isAdmin()) {
             $_SESSION['error'] = 'Akses ditolak. Anda harus login sebagai admin.';
-            header('Location: /views/auth/login.php');
+            header('Location: ?action=login');
             exit;
         }
 
@@ -196,7 +243,7 @@ class AdminController {
         
         if (!$id || !is_numeric($id)) {
             $_SESSION['error'] = 'ID user tidak valid';
-            header('Location: /views/admin/manage_users.php');
+            header('Location: ?action=manage_users');
             exit;
         }
 
@@ -217,7 +264,7 @@ class AdminController {
             $_SESSION['error'] = $result['message'];
         }
 
-        header('Location: /views/admin/manage_users.php');
+        header('Location: ?action=manage_users');
         exit;
     }
 
@@ -225,11 +272,24 @@ class AdminController {
     public function dashboard() {
         if (!$this->isAdmin()) {
             $_SESSION['error'] = 'Akses ditolak. Anda harus login sebagai admin.';
-            header('Location: /views/auth/login.php');
+            header('Location: ?action=login');
             exit;
         }
 
         $userCount = $this->admin->getUserCount();
-        include 'views/admin/dashboard.php';
+        include __DIR__ . '/../views/admin/dashboard.php';
+    }
+
+    // Get admin statistics
+    public function getStats() {
+        if (!$this->isAdmin()) {
+            return ['error' => 'Unauthorized'];
+        }
+
+        return [
+            'user_count' => $this->admin->getUserCount(),
+            'admin_count' => 1, // Placeholder
+            'system_status' => 'online'
+        ];
     }
 }

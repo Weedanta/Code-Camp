@@ -5,6 +5,8 @@ require_once 'controllers/BootcampController.php';
 require_once 'controllers/WishlistController.php';
 require_once 'controllers/OrderController.php';
 require_once 'controllers/ReviewController.php';
+require_once 'controllers/CVController.php';
+require_once 'controllers/TodoListController.php';
 
 // Inisialisasi controllers
 $auth = new AuthController();
@@ -12,6 +14,8 @@ $bootcamp = new BootcampController();
 $wishlist = new WishlistController();
 $order = new OrderController();
 $review = new ReviewController();
+$cv = new CVController();
+$todolist = new TodoListController();
 
 // Router sederhana
 $action = isset($_GET['action']) ? $_GET['action'] : 'home';
@@ -179,6 +183,48 @@ switch ($action) {
         
     case 'get_bootcamp_reviews':
         $review->getBootcampReviews();
+        break;
+        
+    // CV Builder Routes
+    case 'cv_builder':
+        $cv->index();
+        break;
+        
+    case 'cv_save':
+        $cv->save();
+        break;
+        
+    case 'cv_preview':
+        $cv->preview();
+        break;
+        
+    case 'cv_pdf':
+        $cv->generatePDF();
+        break;
+        
+    // TodoList Routes
+    case 'todolist':
+        $todolist->index();
+        break;
+        
+    case 'todo_create':
+        $todolist->create();
+        break;
+        
+    case 'todo_update':
+        $todolist->update();
+        break;
+        
+    case 'todo_update_status':
+        $todolist->updateStatus();
+        break;
+        
+    case 'todo_delete':
+        $todolist->delete();
+        break;
+        
+    case 'todo_get':
+        $todolist->getTodo();
         break;
         
     // Contact/Support Route
