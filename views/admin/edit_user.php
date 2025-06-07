@@ -1,266 +1,484 @@
-<?php
-// views/admin/edit_user.php
-session_start();
-
-// Check if user is admin
-if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
-    header('Location: /views/auth/login.php');
-    exit;
-}
-
-// Get user ID
-$userId = $_GET['id'] ?? null;
-if (!$userId || !is_numeric($userId)) {
-    $_SESSION['error'] = 'ID user tidak valid';
-    header('Location: /views/admin/manage_users.php');
-    exit;
-}
-
-// Initialize controller and get user data
-require_once '../../config/database.php';
-require_once '../../controllers/AdminController.php';
-
-$database = new Database();
-$db = $database->getConnection();
-$admin = new Admin($db);
-
-$user = $admin->getUserById($userId);
-if (!$user) {
-    $_SESSION['error'] = 'User tidak ditemukan';
-    header('Location: /views/admin/manage_users.php');
-    exit;
-}
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $adminController = new AdminController($db);
-    $adminController->updateUser();
-}
-?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Pengguna - Admin Campus Hub</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/assets/css/custom.css" rel="stylesheet">
+    <title>Edit User - Admin Campus Hub</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #1f2937 0%, #374151 100%);
+        }
+        .form-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
 </head>
-<body>
-    <!-- Admin Header -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/views/admin/dashboard.php">
-                <i class="fas fa-shield-alt me-2"></i>Admin Panel - Campus Hub
-            </a>
-            <div class="navbar-nav ms-auto">
-                <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user me-1"></i><?= htmlspecialchars($_SESSION['admin_name']) ?>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/views/admin/dashboard.php?action=logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                    </ul>
+<body class="bg-gray-50">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 z-50 w-64 sidebar-gradient shadow-xl">
+        <div class="flex flex-col h-full">
+            <!-- Logo -->
+            <div class="flex items-center justify-center h-16 bg-black bg-opacity-20">
+                <i class="fas fa-graduation-cap text-2xl text-white mr-3"></i>
+                <span class="text-xl font-bold text-white">Campus Hub</span>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <a href="admin.php?action=dashboard" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                    <i class="fas fa-tachometer-alt mr-3"></i>
+                    Dashboard
+                </a>
+                <a href="admin.php?action=manage_users" class="flex items-center px-4 py-3 text-white bg-indigo-600 rounded-lg">
+                    <i class="fas fa-users mr-3"></i>
+                    Kelola Users
+                </a>
+                <a href="admin.php?action=manage_bootcamps" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                    <i class="fas fa-laptop-code mr-3"></i>
+                    Kelola Bootcamps
+                </a>
+                <a href="admin.php?action=manage_categories" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                    <i class="fas fa-tags mr-3"></i>
+                    Kelola Kategori
+                </a>
+                <a href="admin.php?action=manage_orders" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                    <i class="fas fa-shopping-cart mr-3"></i>
+                    Kelola Orders
+                </a>
+                <a href="admin.php?action=manage_reviews" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                    <i class="fas fa-star mr-3"></i>
+                    Kelola Reviews
+                </a>
+                <a href="admin.php?action=manage_forum" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                    <i class="fas fa-comments mr-3"></i>
+                    Kelola Forum
+                </a>
+                <a href="admin.php?action=manage_settings" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                    <i class="fas fa-cog mr-3"></i>
+                    Pengaturan
+                </a>
+            </nav>
+            
+            <!-- User Info -->
+            <div class="p-4 border-t border-gray-600">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-white"><?php echo htmlspecialchars($_SESSION['admin_name']); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo htmlspecialchars($_SESSION['admin_role']); ?></p>
+                    </div>
                 </div>
+                <a href="admin.php?action=logout" class="mt-3 w-full flex items-center justify-center px-4 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    Logout
+                </a>
             </div>
         </div>
-    </nav>
+    </div>
 
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 px-0 bg-light">
-                <div class="d-flex flex-column p-3">
-                    <ul class="nav nav-pills flex-column mb-auto">
-                        <li class="nav-item">
-                            <a href="/views/admin/dashboard.php" class="nav-link">
-                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/views/admin/manage_users.php" class="nav-link active">
-                                <i class="fas fa-users me-2"></i>Kelola Akun
-                            </a>
-                        </li>
-                    </ul>
+    <!-- Main Content -->
+    <div class="ml-64 min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <nav class="flex" aria-label="Breadcrumb">
+                            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                                <li class="inline-flex items-center">
+                                    <a href="admin.php?action=manage_users" class="text-gray-500 hover:text-gray-700">
+                                        <i class="fas fa-users mr-2"></i>
+                                        Kelola Users
+                                    </a>
+                                </li>
+                                <li>
+                                    <div class="flex items-center">
+                                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                        <span class="text-gray-700 font-medium">Edit User</span>
+                                    </div>
+                                </li>
+                            </ol>
+                        </nav>
+                        <h1 class="text-2xl font-bold text-gray-900 mt-2">Edit User</h1>
+                        <p class="text-gray-600">Ubah informasi user: <?php echo htmlspecialchars($user['name']); ?></p>
+                    </div>
+                    <a href="admin.php?action=manage_users" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Kembali
+                    </a>
                 </div>
             </div>
+        </header>
 
-            <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 px-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Edit Pengguna</h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <a href="/views/admin/manage_users.php" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Kembali
-                        </a>
+        <!-- Main Content -->
+        <main class="p-6">
+            <!-- Alerts -->
+            <?php if (isset($_SESSION['success'])): ?>
+                <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center">
+                    <i class="fas fa-check-circle mr-3"></i>
+                    <span><?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></span>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
+                    <i class="fas fa-exclamation-triangle mr-3"></i>
+                    <span><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></span>
+                </div>
+            <?php endif; ?>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- User Info Card -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="form-gradient p-6 text-white text-center">
+                            <div class="w-20 h-20 bg-white bg-opacity-20 rounded-full mx-auto flex items-center justify-center mb-4">
+                                <i class="fas fa-user text-3xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold"><?php echo htmlspecialchars($user['name']); ?></h3>
+                            <p class="text-sm opacity-90"><?php echo htmlspecialchars($user['alamat_email']); ?></p>
+                            <div class="mt-4 flex justify-center">
+                                <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-xs font-medium">
+                                    ID: #<?php echo $user['id']; ?>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Status</span>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full 
+                                    <?php echo $user['status'] === 'active' ? 'bg-green-100 text-green-800' : 
+                                        ($user['status'] === 'inactive' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'); ?>">
+                                    <?php echo ucfirst($user['status']); ?>
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Email Verified</span>
+                                <span class="<?php echo $user['email_verified'] ? 'text-green-600' : 'text-red-600'; ?>">
+                                    <i class="fas fa-<?php echo $user['email_verified'] ? 'check-circle' : 'times-circle'; ?>"></i>
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Bergabung</span>
+                                <span class="text-sm text-gray-900"><?php echo date('d M Y', strtotime($user['created_at'])); ?></span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Terakhir Update</span>
+                                <span class="text-sm text-gray-900"><?php echo date('d M Y', strtotime($user['updated_at'])); ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Statistics -->
+                    <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Statistik User</h4>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-shopping-cart text-blue-600 w-5"></i>
+                                    <span class="text-sm text-gray-600 ml-2">Total Orders</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">0</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-money-bill text-green-600 w-5"></i>
+                                    <span class="text-sm text-gray-600 ml-2">Total Spent</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">Rp 0</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-star text-yellow-600 w-5"></i>
+                                    <span class="text-sm text-gray-600 ml-2">Reviews</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">0</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-comments text-purple-600 w-5"></i>
+                                    <span class="text-sm text-gray-600 ml-2">Forum Posts</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">0</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Alert Messages -->
-                <?php if (isset($_SESSION['success'])): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle me-2"></i><?= htmlspecialchars($_SESSION['success']) ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    <?php unset($_SESSION['success']); ?>
-                <?php endif; ?>
-
-                <?php if (isset($_SESSION['error'])): ?>
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i><?= htmlspecialchars($_SESSION['error']) ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    <?php unset($_SESSION['error']); ?>
-                <?php endif; ?>
-
                 <!-- Edit Form -->
-                <div class="row justify-content-center">
-                    <div class="col-md-8">
-                        <div class="card shadow">
-                            <div class="card-header">
-                                <h6 class="m-0 font-weight-bold text-primary">
-                                    <i class="fas fa-user-edit me-2"></i>Edit Data Pengguna
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <form method="POST" id="editForm">
-                                    <input type="hidden" name="id" value="<?= htmlspecialchars($user['id']) ?>">
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="name" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="name" name="name" 
-                                                   value="<?= htmlspecialchars($user['name']) ?>" required>
-                                            <div class="invalid-feedback">
-                                                Nama lengkap harus diisi.
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-md-6 mb-3">
-                                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                                            <input type="email" class="form-control" id="email" name="email" 
-                                                   value="<?= htmlspecialchars($user['alamat_email']) ?>" required>
-                                            <div class="invalid-feedback">
-                                                Email harus diisi dengan format yang benar.
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="phone" class="form-label">No. Telepon</label>
-                                            <input type="text" class="form-control" id="phone" name="phone" 
-                                                   value="<?= htmlspecialchars($user['no_telepon'] ?? '') ?>"
-                                                   placeholder="Contoh: 08123456789">
-                                            <div class="form-text">Opsional - kosongkan jika tidak ada</div>
-                                        </div>
-                                        
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">Tanggal Daftar</label>
-                                            <input type="text" class="form-control" 
-                                                   value="<?= date('d/m/Y H:i', strtotime($user['created_at'])) ?>" readonly>
-                                            <div class="form-text">Tidak dapat diubah</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="d-flex justify-content-between mt-4">
-                                        <a href="/views/admin/manage_users.php" class="btn btn-secondary">
-                                            <i class="fas fa-times me-2"></i>Batal
-                                        </a>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save me-2"></i>Simpan Perubahan
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900">Edit Informasi User</h3>
+                            <p class="text-sm text-gray-600 mt-1">Perbarui data user dengan informasi yang valid</p>
                         </div>
-
-                        <!-- User Info Card -->
-                        <div class="card shadow mt-4">
-                            <div class="card-header">
-                                <h6 class="m-0 font-weight-bold text-info">
-                                    <i class="fas fa-info-circle me-2"></i>Informasi Pengguna
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p><strong>ID Pengguna:</strong> <?= htmlspecialchars($user['id']) ?></p>
-                                        <p><strong>Tanggal Daftar:</strong> <?= date('d/m/Y H:i', strtotime($user['created_at'])) ?></p>
+                        
+                        <form method="POST" action="admin.php?action=update_user" class="p-6 space-y-6">
+                            <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
+                            <input type="hidden" name="csrf_token" value="<?php echo SecurityHelper::generateCSRFToken(); ?>">
+                            
+                            <!-- Personal Information -->
+                            <div>
+                                <h4 class="text-md font-medium text-gray-900 mb-4">Informasi Pribadi</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                                            <i class="fas fa-user mr-2"></i>Nama Lengkap
+                                        </label>
+                                        <input type="text" 
+                                               id="name" 
+                                               name="name" 
+                                               value="<?php echo htmlspecialchars($user['name']); ?>"
+                                               required 
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                               placeholder="Masukkan nama lengkap">
                                     </div>
-                                    <div class="col-md-6">
-                                        <p><strong>Terakhir Update:</strong> 
-                                           <?= $user['updated_at'] ? date('d/m/Y H:i', strtotime($user['updated_at'])) : 'Belum pernah' ?>
-                                        </p>
+                                    
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                            <i class="fas fa-envelope mr-2"></i>Email
+                                        </label>
+                                        <input type="email" 
+                                               id="email" 
+                                               name="email" 
+                                               value="<?php echo htmlspecialchars($user['alamat_email']); ?>"
+                                               required 
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                               placeholder="Masukkan email">
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Contact Information -->
+                            <div>
+                                <h4 class="text-md font-medium text-gray-900 mb-4">Informasi Kontak</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                                            <i class="fas fa-phone mr-2"></i>Nomor Telepon
+                                        </label>
+                                        <input type="tel" 
+                                               id="phone" 
+                                               name="phone" 
+                                               value="<?php echo htmlspecialchars($user['no_telepon'] ?? ''); ?>"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                               placeholder="Masukkan nomor telepon">
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
+                                            <i class="fas fa-user-check mr-2"></i>Status
+                                        </label>
+                                        <select id="status" 
+                                                name="status" 
+                                                required
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                            <option value="active" <?php echo $user['status'] === 'active' ? 'selected' : ''; ?>>Active</option>
+                                            <option value="inactive" <?php echo $user['status'] === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                                            <option value="suspended" <?php echo $user['status'] === 'suspended' ? 'selected' : ''; ?>>Suspended</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                                <div class="flex space-x-4">
+                                    <button type="submit" 
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                                        <i class="fas fa-save mr-2"></i>
+                                        Simpan Perubahan
+                                    </button>
+                                    
+                                    <a href="admin.php?action=manage_users" 
+                                       class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                                        <i class="fas fa-times mr-2"></i>
+                                        Batal
+                                    </a>
+                                </div>
+                                
+                                <button type="button" 
+                                        onclick="resetPassword(<?php echo $user['id']; ?>)"
+                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center">
+                                    <i class="fas fa-key mr-2"></i>
+                                    Reset Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="mt-6 bg-white rounded-lg shadow-sm border border-red-200">
+                        <div class="px-6 py-4 border-b border-red-200 bg-red-50">
+                            <h3 class="text-lg font-semibold text-red-900">Danger Zone</h3>
+                            <p class="text-sm text-red-700 mt-1">Tindakan di bawah ini tidak dapat dibatalkan</p>
+                        </div>
+                        
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-md font-medium text-gray-900">Hapus User</h4>
+                                    <p class="text-sm text-gray-600 mt-1">
+                                        Menghapus user akan menghilangkan semua data termasuk orders, reviews, dan aktivitas forum.
+                                    </p>
+                                </div>
+                                <button type="button" 
+                                        onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['name'], ENT_QUOTES); ?>')"
+                                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
+                                    <i class="fas fa-trash mr-2"></i>
+                                    Hapus User
+                                </button>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <i class="fas fa-exclamation-triangle text-red-600"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mt-4">Hapus User</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500">
+                        Apakah Anda yakin ingin menghapus user <span id="deleteUserName" class="font-medium"></span>? 
+                        Semua data termasuk orders, reviews, dan aktivitas forum akan ikut terhapus.
+                    </p>
+                </div>
+                <div class="items-center px-4 py-3 flex space-x-4">
+                    <button id="cancelDelete" class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                        Batal
+                    </button>
+                    <button id="confirmDelete" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        Hapus
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <!-- Reset Password Modal -->
+    <div id="resetPasswordModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                    <i class="fas fa-key text-yellow-600"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mt-4">Reset Password</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500">
+                        Password akan direset ke password default: <code class="bg-gray-100 px-2 py-1 rounded">password123</code>
+                    </p>
+                    <p class="text-sm text-gray-500 mt-2">
+                        User akan diminta untuk mengganti password saat login berikutnya.
+                    </p>
+                </div>
+                <div class="items-center px-4 py-3 flex space-x-4">
+                    <button id="cancelReset" class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                        Batal
+                    </button>
+                    <button id="confirmReset" class="px-4 py-2 bg-yellow-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let userToDelete = null;
+        let userToResetPassword = null;
+
+        function deleteUser(id, name) {
+            userToDelete = id;
+            document.getElementById('deleteUserName').textContent = name;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function resetPassword(id) {
+            userToResetPassword = id;
+            document.getElementById('resetPasswordModal').classList.remove('hidden');
+        }
+
+        // Delete modal handlers
+        document.getElementById('cancelDelete').addEventListener('click', function() {
+            document.getElementById('deleteModal').classList.add('hidden');
+            userToDelete = null;
+        });
+
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            if (userToDelete) {
+                window.location.href = `admin.php?action=delete_user&id=${userToDelete}`;
+            }
+        });
+
+        // Reset password modal handlers
+        document.getElementById('cancelReset').addEventListener('click', function() {
+            document.getElementById('resetPasswordModal').classList.add('hidden');
+            userToResetPassword = null;
+        });
+
+        document.getElementById('confirmReset').addEventListener('click', function() {
+            if (userToResetPassword) {
+                // You would implement this endpoint
+                window.location.href = `admin.php?action=reset_user_password&id=${userToResetPassword}`;
+            }
+        });
+
+        // Close modals when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+                userToDelete = null;
+            }
+        });
+
+        document.getElementById('resetPasswordModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+                userToResetPassword = null;
+            }
+        });
+
         // Form validation
-        (function() {
-            'use strict';
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
             
-            const form = document.getElementById('editForm');
+            if (name.length < 2) {
+                e.preventDefault();
+                alert('Nama harus minimal 2 karakter');
+                return;
+            }
             
-            form.addEventListener('submit', function(event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                
-                // Additional validation
-                const name = document.getElementById('name').value.trim();
-                const email = document.getElementById('email').value.trim();
-                
-                if (name.length < 2) {
-                    event.preventDefault();
-                    document.getElementById('name').setCustomValidity('Nama harus minimal 2 karakter');
-                } else {
-                    document.getElementById('name').setCustomValidity('');
-                }
-                
-                // Email format validation
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(email)) {
-                    event.preventDefault();
-                    document.getElementById('email').setCustomValidity('Format email tidak valid');
-                } else {
-                    document.getElementById('email').setCustomValidity('');
-                }
-                
-                form.classList.add('was-validated');
-            }, false);
-            
-            // Real-time validation
-            document.getElementById('name').addEventListener('input', function() {
-                const value = this.value.trim();
-                if (value.length >= 2) {
-                    this.setCustomValidity('');
-                } else {
-                    this.setCustomValidity('Nama harus minimal 2 karakter');
-                }
-            });
-            
-            document.getElementById('email').addEventListener('input', function() {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (emailRegex.test(this.value)) {
-                    this.setCustomValidity('');
-                } else {
-                    this.setCustomValidity('Format email tidak valid');
-                }
-            });
-        })();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('Format email tidak valid');
+                return;
+            }
+        });
+
+        // Auto-focus on name field
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('name').focus();
+        });
     </script>
 </body>
 </html>

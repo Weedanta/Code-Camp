@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kelola Users - Admin Campus Hub</title>
+    <title>Kelola Bootcamps - Admin Campus Hub</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -25,13 +25,25 @@
             background-color: #dcfce7;
             color: #16a34a;
         }
-        .status-inactive {
+        .status-upcoming {
+            background-color: #dbeafe;
+            color: #2563eb;
+        }
+        .status-closed {
             background-color: #fee2e2;
             color: #dc2626;
         }
-        .status-suspended {
-            background-color: #fef3c7;
-            color: #d97706;
+        .status-draft {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+        .featured-badge {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -51,11 +63,11 @@
                     <i class="fas fa-tachometer-alt mr-3"></i>
                     Dashboard
                 </a>
-                <a href="admin.php?action=manage_users" class="flex items-center px-4 py-3 text-white bg-indigo-600 rounded-lg">
+                <a href="admin.php?action=manage_users" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
                     <i class="fas fa-users mr-3"></i>
                     Kelola Users
                 </a>
-                <a href="admin.php?action=manage_bootcamps" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                <a href="admin.php?action=manage_bootcamps" class="flex items-center px-4 py-3 text-white bg-indigo-600 rounded-lg">
                     <i class="fas fa-laptop-code mr-3"></i>
                     Kelola Bootcamps
                 </a>
@@ -107,14 +119,18 @@
             <div class="px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Kelola Users</h1>
-                        <p class="text-gray-600">Manajemen akun pengguna sistem</p>
+                        <h1 class="text-2xl font-bold text-gray-900">Kelola Bootcamps</h1>
+                        <p class="text-gray-600">Manajemen program bootcamp dan kursus</p>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <button onclick="exportUsers()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+                        <button onclick="exportBootcamps()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
                             <i class="fas fa-download mr-2"></i>
                             Export CSV
                         </button>
+                        <a href="admin.php?action=create_bootcamp" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+                            <i class="fas fa-plus mr-2"></i>
+                            Tambah Bootcamp
+                        </a>
                     </div>
                 </div>
             </div>
@@ -142,11 +158,11 @@
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div class="flex items-center">
                         <div class="p-2 bg-blue-100 rounded-lg">
-                            <i class="fas fa-users text-blue-600"></i>
+                            <i class="fas fa-laptop-code text-blue-600"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Total Users</p>
-                            <p class="text-2xl font-bold text-gray-900"><?php echo number_format($totalUsers); ?></p>
+                            <p class="text-sm font-medium text-gray-600">Total Bootcamps</p>
+                            <p class="text-2xl font-bold text-gray-900"><?php echo number_format($totalBootcamps); ?></p>
                         </div>
                     </div>
                 </div>
@@ -154,12 +170,12 @@
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div class="flex items-center">
                         <div class="p-2 bg-green-100 rounded-lg">
-                            <i class="fas fa-user-check text-green-600"></i>
+                            <i class="fas fa-check-circle text-green-600"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Active Users</p>
+                            <p class="text-sm font-medium text-gray-600">Active</p>
                             <p class="text-2xl font-bold text-gray-900">
-                                <?php echo count(array_filter($users, function($u) { return $u['status'] === 'active'; })); ?>
+                                <?php echo count(array_filter($bootcamps, function($b) { return $b['status'] === 'active'; })); ?>
                             </p>
                         </div>
                     </div>
@@ -168,12 +184,12 @@
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div class="flex items-center">
                         <div class="p-2 bg-yellow-100 rounded-lg">
-                            <i class="fas fa-user-clock text-yellow-600"></i>
+                            <i class="fas fa-clock text-yellow-600"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Inactive Users</p>
+                            <p class="text-sm font-medium text-gray-600">Upcoming</p>
                             <p class="text-2xl font-bold text-gray-900">
-                                <?php echo count(array_filter($users, function($u) { return $u['status'] === 'inactive'; })); ?>
+                                <?php echo count(array_filter($bootcamps, function($b) { return $b['status'] === 'upcoming'; })); ?>
                             </p>
                         </div>
                     </div>
@@ -181,13 +197,13 @@
                 
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div class="flex items-center">
-                        <div class="p-2 bg-red-100 rounded-lg">
-                            <i class="fas fa-user-slash text-red-600"></i>
+                        <div class="p-2 bg-purple-100 rounded-lg">
+                            <i class="fas fa-star text-purple-600"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Suspended</p>
+                            <p class="text-sm font-medium text-gray-600">Featured</p>
                             <p class="text-2xl font-bold text-gray-900">
-                                <?php echo count(array_filter($users, function($u) { return $u['status'] === 'suspended'; })); ?>
+                                <?php echo count(array_filter($bootcamps, function($b) { return $b['featured']; })); ?>
                             </p>
                         </div>
                     </div>
@@ -197,7 +213,7 @@
             <!-- Filters and Search -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                 <form method="GET" action="admin.php" class="flex flex-wrap items-center gap-4">
-                    <input type="hidden" name="action" value="manage_users">
+                    <input type="hidden" name="action" value="manage_bootcamps">
                     
                     <!-- Search -->
                     <div class="flex-1 min-w-64">
@@ -206,9 +222,21 @@
                             <input type="text" 
                                    name="search" 
                                    value="<?php echo htmlspecialchars($search ?? ''); ?>"
-                                   placeholder="Cari nama, email, atau telepon..." 
+                                   placeholder="Cari judul, deskripsi, atau instructor..." 
                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
+                    </div>
+                    
+                    <!-- Category Filter -->
+                    <div>
+                        <select name="category" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Semua Kategori</option>
+                            <?php foreach ($categories as $cat): ?>
+                                <option value="<?php echo $cat['id']; ?>" <?php echo ($category ?? '') == $cat['id'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($cat['name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     
                     <!-- Status Filter -->
@@ -216,8 +244,9 @@
                         <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Semua Status</option>
                             <option value="active" <?php echo ($status ?? '') === 'active' ? 'selected' : ''; ?>>Active</option>
-                            <option value="inactive" <?php echo ($status ?? '') === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                            <option value="suspended" <?php echo ($status ?? '') === 'suspended' ? 'selected' : ''; ?>>Suspended</option>
+                            <option value="upcoming" <?php echo ($status ?? '') === 'upcoming' ? 'selected' : ''; ?>>Upcoming</option>
+                            <option value="closed" <?php echo ($status ?? '') === 'closed' ? 'selected' : ''; ?>>Closed</option>
+                            <option value="draft" <?php echo ($status ?? '') === 'draft' ? 'selected' : ''; ?>>Draft</option>
                         </select>
                     </div>
                     
@@ -228,105 +257,123 @@
                     </button>
                     
                     <!-- Reset Button -->
-                    <a href="admin.php?action=manage_users" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors flex items-center">
+                    <a href="admin.php?action=manage_bootcamps" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors flex items-center">
                         <i class="fas fa-redo mr-2"></i>
                         Reset
                     </a>
                 </form>
             </div>
 
-            <!-- Users Table -->
+            <!-- Bootcamps Table -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-gray-900">Daftar Users</h3>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-sm text-gray-600">Showing <?php echo count($users); ?> of <?php echo $totalUsers; ?> users</span>
-                        <button onclick="toggleBulkActions()" id="bulkToggle" class="text-blue-600 hover:text-blue-800 text-sm">
-                            Bulk Actions
-                        </button>
-                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900">Daftar Bootcamps</h3>
+                    <span class="text-sm text-gray-600">Showing <?php echo count($bootcamps); ?> of <?php echo $totalBootcamps; ?> bootcamps</span>
                 </div>
                 
-                <!-- Bulk Actions Bar (Hidden by default) -->
-                <div id="bulkActionsBar" class="hidden bg-blue-50 border-b border-blue-200 px-6 py-3">
-                    <form method="POST" action="admin.php?action=delete_users_bulk" onsubmit="return confirmBulkDelete()">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <span class="text-sm text-blue-700">
-                                    <span id="selectedCount">0</span> users selected
-                                </span>
-                                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm transition-colors">
-                                    <i class="fas fa-trash mr-1"></i>
-                                    Delete Selected
-                                </button>
-                            </div>
-                            <button type="button" onclick="toggleBulkActions()" class="text-blue-600 hover:text-blue-800 text-sm">
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="hidden px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" id="bulkCheckboxHeader">
-                                    <input type="checkbox" id="selectAll" onchange="toggleAllUsers()" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontak</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bootcamp</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Instructor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bergabung</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statistik</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <?php if (!empty($users)): ?>
-                                <?php foreach ($users as $user): ?>
+                            <?php if (!empty($bootcamps)): ?>
+                                <?php foreach ($bootcamps as $bootcamp): ?>
                                     <tr class="table-hover">
-                                        <td class="hidden px-6 py-4 whitespace-nowrap bulkCheckboxCell">
-                                            <input type="checkbox" name="selected_users[]" value="<?php echo $user['id']; ?>" onchange="updateSelectedCount()" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 user-checkbox">
-                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                                    <i class="fas fa-user text-gray-600"></i>
+                                                <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                    <?php if (!empty($bootcamp['image'])): ?>
+                                                        <img src="assets/images/bootcamps/<?php echo htmlspecialchars($bootcamp['image']); ?>" 
+                                                             alt="<?php echo htmlspecialchars($bootcamp['title']); ?>"
+                                                             class="w-12 h-12 object-cover rounded-lg">
+                                                    <?php else: ?>
+                                                        <i class="fas fa-laptop-code text-gray-600"></i>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="ml-4">
-                                                    <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($user['name']); ?></div>
-                                                    <div class="text-sm text-gray-500">ID: #<?php echo $user['id']; ?></div>
+                                                    <div class="text-sm font-medium text-gray-900 max-w-xs truncate">
+                                                        <?php echo htmlspecialchars($bootcamp['title']); ?>
+                                                        <?php if ($bootcamp['featured']): ?>
+                                                            <span class="featured-badge ml-2">
+                                                                <i class="fas fa-star text-xs"></i>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div class="text-sm text-gray-500">ID: #<?php echo $bootcamp['id']; ?></div>
+                                                    <div class="text-xs text-gray-400"><?php echo htmlspecialchars($bootcamp['duration']); ?></div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900"><?php echo htmlspecialchars($user['alamat_email']); ?></div>
-                                            <div class="text-sm text-gray-500"><?php echo htmlspecialchars($user['no_telepon'] ?? 'No phone'); ?></div>
+                                            <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                                                <?php echo htmlspecialchars($bootcamp['category_name']); ?>
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="status-badge status-<?php echo $user['status']; ?>">
+                                            <div class="text-sm text-gray-900"><?php echo htmlspecialchars($bootcamp['instructor_name']); ?></div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">
+                                                Rp <?php echo number_format($bootcamp['price']); ?>
+                                            </div>
+                                            <?php if ($bootcamp['discount_price'] && $bootcamp['discount_price'] > 0): ?>
+                                                <div class="text-xs text-green-600">
+                                                    Diskon: Rp <?php echo number_format($bootcamp['discount_price']); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="status-badge status-<?php echo $bootcamp['status']; ?>">
                                                 <i class="fas fa-circle text-xs mr-1"></i>
-                                                <?php echo ucfirst($user['status']); ?>
+                                                <?php echo ucfirst($bootcamp['status']); ?>
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <div><?php echo number_format($user['total_orders'] ?? 0); ?> orders</div>
-                                            <div class="text-gray-500">Rp <?php echo number_format($user['total_spent'] ?? 0); ?></div>
+                                            <div><?php echo number_format($bootcamp['total_enrollments'] ?? 0); ?> enrolled</div>
+                                            <div class="text-gray-500">
+                                                <?php if ($bootcamp['avg_rating']): ?>
+                                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                                    <?php echo number_format($bootcamp['avg_rating'], 1); ?> (<?php echo $bootcamp['review_count']; ?>)
+                                                <?php else: ?>
+                                                    <span class="text-gray-400">No reviews</span>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <?php echo date('d M Y', strtotime($user['created_at'])); ?>
+                                            <div><?php echo date('d M Y', strtotime($bootcamp['start_date'])); ?></div>
+                                            <div class="text-xs text-gray-400">Created: <?php echo date('d M Y', strtotime($bootcamp['created_at'])); ?></div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex items-center space-x-2">
-                                                <a href="admin.php?action=edit_user&id=<?php echo $user['id']; ?>" 
+                                                <a href="index.php?action=bootcamp_detail&id=<?php echo $bootcamp['id']; ?>" 
+                                                   target="_blank"
+                                                   class="text-green-600 hover:text-green-900 transition-colors" 
+                                                   title="View Bootcamp">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="admin.php?action=edit_bootcamp&id=<?php echo $bootcamp['id']; ?>" 
                                                    class="text-blue-600 hover:text-blue-900 transition-colors" 
-                                                   title="Edit User">
+                                                   title="Edit Bootcamp">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <button onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['name'], ENT_QUOTES); ?>')" 
+                                                <button onclick="toggleFeatured(<?php echo $bootcamp['id']; ?>, <?php echo $bootcamp['featured'] ? 'false' : 'true'; ?>)" 
+                                                        class="<?php echo $bootcamp['featured'] ? 'text-yellow-600 hover:text-yellow-900' : 'text-gray-400 hover:text-yellow-600'; ?> transition-colors" 
+                                                        title="<?php echo $bootcamp['featured'] ? 'Remove from Featured' : 'Make Featured'; ?>">
+                                                    <i class="fas fa-star"></i>
+                                                </button>
+                                                <button onclick="deleteBootcamp(<?php echo $bootcamp['id']; ?>, '<?php echo htmlspecialchars($bootcamp['title'], ENT_QUOTES); ?>')" 
                                                         class="text-red-600 hover:text-red-900 transition-colors" 
-                                                        title="Delete User">
+                                                        title="Delete Bootcamp">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -335,11 +382,13 @@
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center">
+                                    <td colspan="8" class="px-6 py-12 text-center">
                                         <div class="text-gray-500">
-                                            <i class="fas fa-users text-4xl mb-4"></i>
-                                            <p class="text-lg font-medium">Tidak ada users ditemukan</p>
-                                            <p class="mt-2">Coba ubah filter pencarian Anda</p>
+                                            <i class="fas fa-laptop-code text-4xl mb-4"></i>
+                                            <p class="text-lg font-medium">Tidak ada bootcamps ditemukan</p>
+                                            <p class="mt-2">Coba ubah filter pencarian Anda atau 
+                                                <a href="admin.php?action=create_bootcamp" class="text-blue-600 hover:text-blue-800">tambah bootcamp baru</a>
+                                            </p>
                                         </div>
                                     </td>
                                 </tr>
@@ -353,14 +402,14 @@
                     <div class="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
                         <div class="flex-1 flex justify-between sm:hidden">
                             <?php if ($page > 1): ?>
-                                <a href="?action=manage_users&page=<?php echo ($page - 1); ?>&search=<?php echo urlencode($search ?? ''); ?>&status=<?php echo urlencode($status ?? ''); ?>" 
+                                <a href="?action=manage_bootcamps&page=<?php echo ($page - 1); ?>&search=<?php echo urlencode($search ?? ''); ?>&category=<?php echo urlencode($category ?? ''); ?>&status=<?php echo urlencode($status ?? ''); ?>" 
                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                                     Previous
                                 </a>
                             <?php endif; ?>
                             
                             <?php if ($page < $totalPages): ?>
-                                <a href="?action=manage_users&page=<?php echo ($page + 1); ?>&search=<?php echo urlencode($search ?? ''); ?>&status=<?php echo urlencode($status ?? ''); ?>" 
+                                <a href="?action=manage_bootcamps&page=<?php echo ($page + 1); ?>&search=<?php echo urlencode($search ?? ''); ?>&category=<?php echo urlencode($category ?? ''); ?>&status=<?php echo urlencode($status ?? ''); ?>" 
                                    class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                                     Next
                                 </a>
@@ -376,7 +425,7 @@
                             <div>
                                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                                     <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
-                                        <a href="?action=manage_users&page=<?php echo $i; ?>&search=<?php echo urlencode($search ?? ''); ?>&status=<?php echo urlencode($status ?? ''); ?>" 
+                                        <a href="?action=manage_bootcamps&page=<?php echo $i; ?>&search=<?php echo urlencode($search ?? ''); ?>&category=<?php echo urlencode($category ?? ''); ?>&status=<?php echo urlencode($status ?? ''); ?>" 
                                            class="<?php echo $i === $page ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'; ?> relative inline-flex items-center px-4 py-2 border text-sm font-medium">
                                             <?php echo $i; ?>
                                         </a>
@@ -397,10 +446,10 @@
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
                     <i class="fas fa-exclamation-triangle text-red-600"></i>
                 </div>
-                <h3 class="text-lg font-medium text-gray-900 mt-4">Hapus User</h3>
+                <h3 class="text-lg font-medium text-gray-900 mt-4">Hapus Bootcamp</h3>
                 <div class="mt-2 px-7 py-3">
                     <p class="text-sm text-gray-500">
-                        Apakah Anda yakin ingin menghapus user <span id="deleteUserName" class="font-medium"></span>? 
+                        Apakah Anda yakin ingin menghapus bootcamp <span id="deleteBootcampName" class="font-medium"></span>? 
                         Tindakan ini tidak dapat dibatalkan.
                     </p>
                 </div>
@@ -417,76 +466,44 @@
     </div>
 
     <script>
-        let userToDelete = null;
+        let bootcampToDelete = null;
 
-        function deleteUser(id, name) {
-            userToDelete = id;
-            document.getElementById('deleteUserName').textContent = name;
+        function deleteBootcamp(id, title) {
+            bootcampToDelete = id;
+            document.getElementById('deleteBootcampName').textContent = title;
             document.getElementById('deleteModal').classList.remove('hidden');
         }
 
-        function exportUsers() {
-            window.open('admin.php?action=export_data&type=users', '_blank');
+        function toggleFeatured(id, featured) {
+            const url = `admin.php?action=toggle_featured_bootcamp&id=${id}&featured=${featured}`;
+            fetch(url, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan');
+                });
         }
 
-        function toggleBulkActions() {
-            const bulkActionsBar = document.getElementById('bulkActionsBar');
-            const bulkCheckboxHeader = document.getElementById('bulkCheckboxHeader');
-            const bulkCheckboxCells = document.querySelectorAll('.bulkCheckboxCell');
-            const bulkToggle = document.getElementById('bulkToggle');
-            
-            if (bulkActionsBar.classList.contains('hidden')) {
-                bulkActionsBar.classList.remove('hidden');
-                bulkCheckboxHeader.classList.remove('hidden');
-                bulkCheckboxCells.forEach(cell => cell.classList.remove('hidden'));
-                bulkToggle.textContent = 'Cancel';
-            } else {
-                bulkActionsBar.classList.add('hidden');
-                bulkCheckboxHeader.classList.add('hidden');
-                bulkCheckboxCells.forEach(cell => cell.classList.add('hidden'));
-                bulkToggle.textContent = 'Bulk Actions';
-                // Reset checkboxes
-                document.getElementById('selectAll').checked = false;
-                document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
-                updateSelectedCount();
-            }
-        }
-
-        function toggleAllUsers() {
-            const selectAll = document.getElementById('selectAll');
-            const userCheckboxes = document.querySelectorAll('.user-checkbox');
-            
-            userCheckboxes.forEach(checkbox => {
-                checkbox.checked = selectAll.checked;
-            });
-            
-            updateSelectedCount();
-        }
-
-        function updateSelectedCount() {
-            const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
-            document.getElementById('selectedCount').textContent = selectedCheckboxes.length;
-        }
-
-        function confirmBulkDelete() {
-            const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
-            if (selectedCheckboxes.length === 0) {
-                alert('Pilih minimal satu user untuk dihapus');
-                return false;
-            }
-            
-            return confirm(`Apakah Anda yakin ingin menghapus ${selectedCheckboxes.length} user yang dipilih? Tindakan ini tidak dapat dibatalkan.`);
+        function exportBootcamps() {
+            window.open('admin.php?action=export_data&type=bootcamps', '_blank');
         }
 
         // Modal event handlers
         document.getElementById('cancelDelete').addEventListener('click', function() {
             document.getElementById('deleteModal').classList.add('hidden');
-            userToDelete = null;
+            bootcampToDelete = null;
         });
 
         document.getElementById('confirmDelete').addEventListener('click', function() {
-            if (userToDelete) {
-                window.location.href = `admin.php?action=delete_user&id=${userToDelete}`;
+            if (bootcampToDelete) {
+                window.location.href = `admin.php?action=delete_bootcamp&id=${bootcampToDelete}`;
             }
         });
 
@@ -494,7 +511,7 @@
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 this.classList.add('hidden');
-                userToDelete = null;
+                bootcampToDelete = null;
             }
         });
 
@@ -502,9 +519,14 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 document.getElementById('deleteModal').classList.add('hidden');
-                userToDelete = null;
+                bootcampToDelete = null;
             }
         });
+
+        // Auto-refresh stats every 30 seconds
+        setInterval(function() {
+            // You can implement real-time stats updates here
+        }, 30000);
     </script>
 </body>
 </html>
