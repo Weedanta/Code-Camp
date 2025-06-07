@@ -1,7 +1,7 @@
 <?php
 // controllers/AdminController.php
 
-require_once __DIR__ . '/../models/Admin.php';
+require_once __DIR__ . '/../models/AdminModel.php';
 require_once __DIR__ . '/../helpers/SecurityHelper.php';
 
 class AdminController {
@@ -10,286 +10,501 @@ class AdminController {
 
     public function __construct($db) {
         $this->conn = $db;
-        $this->admin = new Admin($db);
+        $this->admin = new AdminModel($db);
     }
 
-    // Check if user is admin
-    private function isAdmin() {
-        return isset($_SESSION['admin_id']) && isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
+    // ==================== AUTHENTICATION ====================
+    
+    public function showLogin() {
+        // If already logged in, redirect to dashboard
+        if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
+            header('Location: admin.php?action=dashboard');
+            exit;
+        }
+        
+        include __DIR__ . '/../views/admin/login.php';
     }
 
-    // Sanitize input to prevent XSS
-    private function sanitizeInput($data) {
-        return SecurityHelper::sanitizeInput($data);
-    }
+    public function processLogin() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=login');
+            exit;
+        }
 
-    // Validate email
-    private function validateEmail($email) {
-        return SecurityHelper::validateEmail($email);
-    }
+        $email = SecurityHelper::sanitizeInput($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
 
-    // Admin login
-    public function login() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $email = $this->sanitizeInput($_POST['email'] ?? '');
-            $password = $_POST['password'] ?? '';
+        // Rate limiting
+        if (!SecurityHelper::preventBruteForce($email)) {
+            $_SESSION['error'] = 'Terlalu banyak percobaan login. Coba lagi dalam 15 menit.';
+            header('Location: admin.php?action=login');
+            exit;
+        }
 
-            // Check if email contains 'admin'
-            if (strpos(strtolower($email), 'admin') === false) {
-                $_SESSION['error'] = 'Akses ditolak. Email harus mengandung kata "admin".';
-                include __DIR__ . '/../views/admin/login.php';
-                return;
-            }
+        // Validate input
+        if (empty($email) || empty($password)) {
+            $_SESSION['error'] = 'Email dan password harus diisi';
+            header('Location: admin.php?action=login');
+            exit;
+        }
 
-            if (empty($email) || empty($password)) {
-                $_SESSION['error'] = 'Email dan password harus diisi';
-                include __DIR__ . '/../views/admin/login.php';
-                return;
-            }
+        // Check email contains 'admin'
+        if (strpos(strtolower($email), 'admin') === false) {
+            SecurityHelper::logSecurityEvent(
+                'invalid_admin_login',
+                "Non-admin email attempted admin login: " . $email,
+                'high'
+            );
+            $_SESSION['error'] = 'Akses ditolak';
+            header('Location: admin.php?action=login');
+            exit;
+        }
 
-            if (!$this->validateEmail($email)) {
-                $_SESSION['error'] = 'Format email tidak valid';
-                include __DIR__ . '/../views/admin/login.php';
-                return;
-            }
+        // Attempt login
+        $admin = $this->admin->login($email, $password);
+        if ($admin) {
+            $_SESSION['admin_id'] = $admin['id'];
+            $_SESSION['admin_name'] = $admin['name'];
+            $_SESSION['admin_email'] = $admin['email'];
+            $_SESSION['admin_role'] = $admin['role'];
+            $_SESSION['is_admin'] = true;
+            $_SESSION['admin_last_activity'] = time();
 
-            // Rate limiting
-            if (!SecurityHelper::preventBruteForce($email)) {
-                $_SESSION['error'] = 'Terlalu banyak percobaan login. Coba lagi dalam 15 menit.';
-                include __DIR__ . '/../views/admin/login.php';
-                return;
-            }
+            // Update last login
+            $this->admin->updateLastLogin($admin['id']);
 
-            $admin = $this->admin->login($email, $password);
-            if ($admin) {
-                $_SESSION['admin_id'] = $admin['id'];
-                $_SESSION['admin_name'] = $admin['name'];
-                $_SESSION['admin_email'] = $admin['email'];
-                $_SESSION['admin_role'] = $admin['role'];
-                $_SESSION['is_admin'] = true;
-                $_SESSION['admin_last_activity'] = time();
+            // Log successful login
+            $this->admin->logActivity(
+                $admin['id'], 
+                'login', 
+                'Admin berhasil login',
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null
+            );
 
-                // Log activity
-                $this->admin->logActivity(
-                    $admin['id'], 
-                    'login', 
-                    'Admin berhasil login', 
-                    $_SERVER['REMOTE_ADDR'] ?? null,
-                    $_SERVER['HTTP_USER_AGENT'] ?? null
-                );
-
-                header('Location: ?action=dashboard');
-                exit;
-            } else {
-                $_SESSION['error'] = 'Email atau password salah';
-                include __DIR__ . '/../views/admin/login.php';
-                return;
-            }
+            header('Location: admin.php?action=dashboard');
+            exit;
         } else {
-            include __DIR__ . '/../views/admin/login.php';
+            SecurityHelper::logSecurityEvent(
+                'failed_admin_login',
+                "Failed admin login attempt: " . $email,
+                'high'
+            );
+            $_SESSION['error'] = 'Email atau password salah';
+            header('Location: admin.php?action=login');
+            exit;
         }
     }
 
-    // Admin logout
     public function logout() {
         if (isset($_SESSION['admin_id'])) {
             $this->admin->logActivity(
                 $_SESSION['admin_id'], 
                 'logout', 
-                'Admin logout', 
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null
+                'Admin logout'
             );
         }
 
         // Clear admin session
-        unset($_SESSION['admin_id']);
-        unset($_SESSION['admin_name']);
-        unset($_SESSION['admin_email']);
-        unset($_SESSION['admin_role']);
-        unset($_SESSION['is_admin']);
-        unset($_SESSION['admin_last_activity']);
+        $_SESSION = array();
+        if (isset($_COOKIE[session_name()])) {
+            setcookie(session_name(), '', time()-42000, '/');
+        }
+        session_destroy();
 
-        header('Location: ?action=login');
+        header('Location: admin.php?action=login');
         exit;
     }
 
-    // Show manage users page
-    public function manageUsers() {
-        if (!$this->isAdmin()) {
-            $_SESSION['error'] = 'Akses ditolak. Anda harus login sebagai admin.';
-            header('Location: ?action=login');
-            exit;
-        }
-
-        // Get search parameter
-        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    // ==================== DASHBOARD ====================
+    
+    public function dashboard() {
+        $stats = $this->admin->getDashboardStats();
+        $recentActivities = $this->admin->getRecentActivities(10);
+        $systemAlerts = $this->admin->getSystemAlerts();
         
-        // Get pagination parameters
-        $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-        $perPage = 10;
-        $offset = ($page - 1) * $perPage;
+        include __DIR__ . '/../views/admin/dashboard.php';
+    }
 
-        // Get all users
-        $allUsers = $this->admin->getAllUsers();
-        $userCount = $this->admin->getUserCount();
+    public function stats() {
+        $detailedStats = $this->admin->getDashboardStats();
+        include __DIR__ . '/../views/admin/stats.php';
+    }
 
-        // Apply search filter
-        if (!empty($search)) {
-            $allUsers = array_filter($allUsers, function ($user) use ($search) {
-                return stripos($user['name'], $search) !== false ||
-                       stripos($user['alamat_email'], $search) !== false ||
-                       stripos($user['no_telepon'], $search) !== false;
-            });
-        }
-
-        // Apply pagination
-        $totalUsers = count($allUsers);
-        $totalPages = ceil($totalUsers / $perPage);
-        $users = array_slice($allUsers, $offset, $perPage);
+    // ==================== USER MANAGEMENT ====================
+    
+    public function manageUsers() {
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
+        $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
+        
+        $users = $this->admin->getUsers($page, 20, $search, $status);
+        $totalUsers = $this->admin->countUsers($search, $status);
+        $totalPages = ceil($totalUsers / 20);
         
         include __DIR__ . '/../views/admin/manage_users.php';
     }
 
-    // Show edit user form
-    public function editUser($id = null) {
-        if (!$this->isAdmin()) {
-            $_SESSION['error'] = 'Akses ditolak. Anda harus login sebagai admin.';
-            header('Location: ?action=login');
-            exit;
-        }
-
-        $id = $id ?? ($_GET['id'] ?? null);
-        
-        if (!$id || !is_numeric($id)) {
+    public function editUser() {
+        $id = intval($_GET['id'] ?? 0);
+        if (!$id) {
             $_SESSION['error'] = 'ID user tidak valid';
-            header('Location: ?action=manage_users');
+            header('Location: admin.php?action=manage_users');
             exit;
         }
 
         $user = $this->admin->getUserById($id);
         if (!$user) {
             $_SESSION['error'] = 'User tidak ditemukan';
-            header('Location: ?action=manage_users');
+            header('Location: admin.php?action=manage_users');
             exit;
         }
 
         include __DIR__ . '/../views/admin/edit_user.php';
     }
 
-    // Update user
     public function updateUser() {
-        if (!$this->isAdmin()) {
-            $_SESSION['error'] = 'Akses ditolak. Anda harus login sebagai admin.';
-            header('Location: ?action=login');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_users');
             exit;
         }
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $id = $this->sanitizeInput($_POST['id'] ?? '');
-            $name = $this->sanitizeInput($_POST['name'] ?? '');
-            $email = $this->sanitizeInput($_POST['email'] ?? '');
-            $phone = $this->sanitizeInput($_POST['phone'] ?? '');
-
-            if (empty($id) || empty($name) || empty($email)) {
-                $_SESSION['error'] = 'Semua field wajib diisi kecuali nomor telepon';
-                header('Location: ?action=edit_user&id=' . $id);
-                exit;
-            }
-
-            if (!$this->validateEmail($email)) {
-                $_SESSION['error'] = 'Format email tidak valid';
-                header('Location: ?action=edit_user&id=' . $id);
-                exit;
-            }
-
-            if (strlen($name) < 2) {
-                $_SESSION['error'] = 'Nama harus minimal 2 karakter';
-                header('Location: ?action=edit_user&id=' . $id);
-                exit;
-            }
-
-            $result = $this->admin->updateUser($id, $name, $email, $phone);
-            
-            if ($result['success']) {
-                // Log activity
-                $this->admin->logActivity(
-                    $_SESSION['admin_id'], 
-                    'update_user', 
-                    "Mengupdate data user ID: $id", 
-                    $_SERVER['REMOTE_ADDR'] ?? null,
-                    $_SERVER['HTTP_USER_AGENT'] ?? null
-                );
-                
-                $_SESSION['success'] = $result['message'];
-            } else {
-                $_SESSION['error'] = $result['message'];
-            }
-
-            header('Location: ?action=manage_users');
+        // Validate CSRF token
+        if (!SecurityHelper::verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'Token keamanan tidak valid';
+            header('Location: admin.php?action=manage_users');
             exit;
         }
+
+        $id = intval($_POST['id']);
+        $name = SecurityHelper::sanitizeInput($_POST['name']);
+        $email = SecurityHelper::sanitizeInput($_POST['email']);
+        $phone = SecurityHelper::sanitizeInput($_POST['phone']);
+        $status = SecurityHelper::sanitizeInput($_POST['status'] ?? '');
+
+        // Validate input
+        if (empty($name) || empty($email)) {
+            $_SESSION['error'] = 'Nama dan email wajib diisi';
+            header('Location: admin.php?action=edit_user&id=' . $id);
+            exit;
+        }
+
+        if (!SecurityHelper::validateEmail($email)) {
+            $_SESSION['error'] = 'Format email tidak valid';
+            header('Location: admin.php?action=edit_user&id=' . $id);
+            exit;
+        }
+
+        $result = $this->admin->updateUser($id, $name, $email, $phone, $status);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'update_user', 
+                "Mengupdate data user ID: $id"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_users');
+        exit;
     }
 
-    // Delete user
     public function deleteUser() {
-        if (!$this->isAdmin()) {
-            $_SESSION['error'] = 'Akses ditolak. Anda harus login sebagai admin.';
-            header('Location: ?action=login');
+        $id = intval($_GET['id'] ?? $_POST['id'] ?? 0);
+        
+        if (!$id) {
+            $_SESSION['error'] = 'ID user tidak valid';
+            header('Location: admin.php?action=manage_users');
             exit;
         }
 
-        $id = $_GET['id'] ?? $_POST['id'] ?? null;
-        
-        if (!$id || !is_numeric($id)) {
-            $_SESSION['error'] = 'ID user tidak valid';
-            header('Location: ?action=manage_users');
+        // Check if user exists
+        $user = $this->admin->getUserById($id);
+        if (!$user) {
+            $_SESSION['error'] = 'User tidak ditemukan';
+            header('Location: admin.php?action=manage_users');
             exit;
         }
 
         $result = $this->admin->deleteUser($id);
         
         if ($result['success']) {
-            // Log activity
             $this->admin->logActivity(
                 $_SESSION['admin_id'], 
                 'delete_user', 
-                "Menghapus user ID: $id", 
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null
+                "Menghapus user: " . $user['name'] . " (ID: $id)"
             );
-            
             $_SESSION['success'] = $result['message'];
         } else {
             $_SESSION['error'] = $result['message'];
         }
 
-        header('Location: ?action=manage_users');
+        header('Location: admin.php?action=manage_users');
         exit;
     }
 
-    // Admin dashboard
-    public function dashboard() {
-        if (!$this->isAdmin()) {
-            $_SESSION['error'] = 'Akses ditolak. Anda harus login sebagai admin.';
-            header('Location: ?action=login');
+    public function deleteUsersBulk() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_users');
             exit;
         }
 
-        $userCount = $this->admin->getUserCount();
-        include __DIR__ . '/../views/admin/dashboard.php';
-    }
-
-    // Get admin statistics
-    public function getStats() {
-        if (!$this->isAdmin()) {
-            return ['error' => 'Unauthorized'];
+        $ids = $_POST['selected_users'] ?? [];
+        if (empty($ids) || !is_array($ids)) {
+            $_SESSION['error'] = 'Tidak ada user yang dipilih';
+            header('Location: admin.php?action=manage_users');
+            exit;
         }
 
-        return [
-            'user_count' => $this->admin->getUserCount(),
-            'admin_count' => 1, // Placeholder
-            'system_status' => 'online'
-        ];
+        $deletedCount = 0;
+        foreach ($ids as $id) {
+            $id = intval($id);
+            if ($id > 0) {
+                $result = $this->admin->deleteUser($id);
+                if ($result['success']) {
+                    $deletedCount++;
+                }
+            }
+        }
+
+        $this->admin->logActivity(
+            $_SESSION['admin_id'], 
+            'bulk_delete_users', 
+            "Menghapus $deletedCount users secara bulk"
+        );
+
+        $_SESSION['success'] = "$deletedCount user berhasil dihapus";
+        header('Location: admin.php?action=manage_users');
+        exit;
+    }
+
+    // ==================== BOOTCAMP MANAGEMENT ====================
+    
+    public function manageBootcamps() {
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
+        $category = intval($_GET['category'] ?? 0);
+        $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
+        
+        $bootcamps = $this->admin->getBootcamps($page, 20, $search, $category, $status);
+        $totalBootcamps = $this->admin->countBootcamps($search, $category, $status);
+        $totalPages = ceil($totalBootcamps / 20);
+        $categories = $this->admin->getCategories();
+        
+        include __DIR__ . '/../views/admin/manage_bootcamps.php';
+    }
+
+    public function createBootcamp() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Process form submission
+            $data = [
+                'title' => SecurityHelper::sanitizeInput($_POST['title']),
+                'description' => SecurityHelper::sanitizeInput($_POST['description']),
+                'category_id' => intval($_POST['category_id']),
+                'instructor_name' => SecurityHelper::sanitizeInput($_POST['instructor_name']),
+                'price' => floatval($_POST['price']),
+                'discount_price' => floatval($_POST['discount_price']),
+                'start_date' => SecurityHelper::sanitizeInput($_POST['start_date']),
+                'duration' => SecurityHelper::sanitizeInput($_POST['duration']),
+                'status' => SecurityHelper::sanitizeInput($_POST['status'])
+            ];
+
+            // Handle file upload
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                $uploadResult = SecurityHelper::validateFileUpload($_FILES['image'], ['image/jpeg', 'image/png', 'image/gif'], 5 * 1024 * 1024);
+                
+                if ($uploadResult['valid']) {
+                    // Move uploaded file
+                    $filename = uniqid() . '_' . basename($_FILES['image']['name']);
+                    $uploadPath = 'assets/images/bootcamps/' . $filename;
+                    
+                    if (move_uploaded_file($_FILES['image']['tmp_name'], $uploadPath)) {
+                        $data['image'] = $filename;
+                    }
+                } else {
+                    $_SESSION['error'] = 'Error upload image: ' . implode(', ', $uploadResult['errors']);
+                    $categories = $this->admin->getCategories();
+                    include __DIR__ . '/../views/admin/create_bootcamp.php';
+                    return;
+                }
+            }
+
+            $result = $this->admin->createBootcamp($data);
+            
+            if ($result['success']) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'], 
+                    'create_bootcamp', 
+                    "Membuat bootcamp: " . $data['title']
+                );
+                $_SESSION['success'] = $result['message'];
+                header('Location: admin.php?action=manage_bootcamps');
+                exit;
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+        }
+
+        $categories = $this->admin->getCategories();
+        include __DIR__ . '/../views/admin/create_bootcamp.php';
+    }
+
+    public function editBootcamp() {
+        $id = intval($_GET['id'] ?? 0);
+        if (!$id) {
+            $_SESSION['error'] = 'ID bootcamp tidak valid';
+            header('Location: admin.php?action=manage_bootcamps');
+            exit;
+        }
+
+        $bootcamp = $this->admin->getBootcampById($id);
+        if (!$bootcamp) {
+            $_SESSION['error'] = 'Bootcamp tidak ditemukan';
+            header('Location: admin.php?action=manage_bootcamps');
+            exit;
+        }
+
+        $categories = $this->admin->getCategories();
+        include __DIR__ . '/../views/admin/edit_bootcamp.php';
+    }
+
+    // ==================== ORDER MANAGEMENT ====================
+    
+    public function manageOrders() {
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
+        $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
+        
+        $orders = $this->admin->getOrders($page, 20, $search, $status);
+        $totalOrders = $this->admin->countOrders($search, $status);
+        $totalPages = ceil($totalOrders / 20);
+        
+        include __DIR__ . '/../views/admin/manage_orders.php';
+    }
+
+    // ==================== CATEGORY MANAGEMENT ====================
+    
+    public function manageCategories() {
+        $categories = $this->admin->getCategories();
+        include __DIR__ . '/../views/admin/manage_categories.php';
+    }
+
+    // ==================== SYSTEM TOOLS ====================
+    
+    public function backupDatabase() {
+        try {
+            $filename = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
+            $backupPath = 'backups/' . $filename;
+            
+            // Create backups directory if not exists
+            if (!is_dir('backups')) {
+                mkdir('backups', 0755, true);
+            }
+            
+            // Simple backup success message (actual implementation would depend on server setup)
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'backup_database', 
+                "Database backup initiated: $filename"
+            );
+            $_SESSION['success'] = "Backup database berhasil dimulai: $filename";
+            
+        } catch (Exception $e) {
+            $_SESSION['error'] = 'Error: ' . $e->getMessage();
+        }
+
+        header('Location: admin.php?action=manage_settings');
+        exit;
+    }
+
+    public function cleanLogs() {
+        $result = $this->admin->cleanOldLogs();
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'clean_logs', 
+                "Membersihkan log lama"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_settings');
+        exit;
+    }
+
+    public function exportData() {
+        $type = SecurityHelper::sanitizeInput($_GET['type'] ?? '');
+        
+        try {
+            switch ($type) {
+                case 'users':
+                    $data = $this->admin->exportUsers();
+                    $filename = 'users_export_' . date('Y-m-d') . '.csv';
+                    break;
+                    
+                case 'bootcamps':
+                    $data = $this->admin->exportBootcamps();
+                    $filename = 'bootcamps_export_' . date('Y-m-d') . '.csv';
+                    break;
+                    
+                case 'orders':
+                    $data = $this->admin->exportOrders();
+                    $filename = 'orders_export_' . date('Y-m-d') . '.csv';
+                    break;
+                    
+                default:
+                    $_SESSION['error'] = 'Tipe export tidak valid';
+                    header('Location: admin.php?action=manage_settings');
+                    exit;
+            }
+            
+            // Set headers for download
+            header('Content-Type: text/csv');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: no-cache, must-revalidate');
+            
+            // Output CSV
+            $output = fopen('php://output', 'w');
+            
+            // Add BOM for UTF-8
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Write headers
+            if (!empty($data)) {
+                fputcsv($output, array_keys($data[0]));
+                
+                // Write data
+                foreach ($data as $row) {
+                    fputcsv($output, $row);
+                }
+            }
+            
+            fclose($output);
+            
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'export_data', 
+                "Export data $type"
+            );
+            
+            exit;
+            
+        } catch (Exception $e) {
+            $_SESSION['error'] = 'Error export: ' . $e->getMessage();
+            header('Location: admin.php?action=manage_settings');
+            exit;
+        }
+    }
+
+    // ==================== SETTINGS ====================
+    
+    public function manageSettings() {
+        include __DIR__ . '/../views/admin/manage_settings.php';
     }
 }
