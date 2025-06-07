@@ -1,5 +1,5 @@
 <?php
-// admin.php - Admin Panel Router
+// admin.php - Enhanced Admin Panel Router
 session_start();
 
 // Include required files
@@ -30,6 +30,13 @@ if (!in_array($action, $publicRoutes)) {
     
     // Update last activity
     $_SESSION['admin_last_activity'] = time();
+    
+    // Check session timeout (2 hours)
+    if (isset($_SESSION['admin_last_activity']) && (time() - $_SESSION['admin_last_activity'] > 7200)) {
+        session_destroy();
+        header('Location: admin.php?action=login&timeout=1');
+        exit;
+    }
     
     // Regenerate session ID periodically for security
     if (!isset($_SESSION['admin_session_regenerated'])) {
@@ -63,7 +70,7 @@ switch ($action) {
         break;
         
     case 'stats':
-        $adminController->stats();
+        $adminController->detailedStats();
         break;
     
     // ==================== USER MANAGEMENT ====================
@@ -86,6 +93,10 @@ switch ($action) {
     case 'delete_users_bulk':
         $adminController->deleteUsersBulk();
         break;
+        
+    case 'reset_user_password':
+        $adminController->resetUserPassword();
+        break;
     
     // ==================== BOOTCAMP MANAGEMENT ====================
     case 'manage_bootcamps':
@@ -107,6 +118,10 @@ switch ($action) {
     case 'delete_bootcamp':
         $adminController->deleteBootcamp();
         break;
+        
+    case 'toggle_featured_bootcamp':
+        $adminController->toggleFeaturedBootcamp();
+        break;
     
     // ==================== CATEGORY MANAGEMENT ====================
     case 'manage_categories':
@@ -115,6 +130,14 @@ switch ($action) {
         
     case 'create_category':
         $adminController->createCategory();
+        break;
+        
+    case 'update_category':
+        $adminController->updateCategory();
+        break;
+        
+    case 'delete_category':
+        $adminController->deleteCategory();
         break;
     
     // ==================== ORDER MANAGEMENT ====================
@@ -142,6 +165,14 @@ switch ($action) {
     case 'reject_review':
         $adminController->rejectReview();
         break;
+        
+    case 'delete_review':
+        $adminController->deleteReview();
+        break;
+        
+    case 'bulk_approve_reviews':
+        $adminController->bulkApproveReviews();
+        break;
     
     // ==================== FORUM MANAGEMENT ====================
     case 'manage_forum':
@@ -150,6 +181,10 @@ switch ($action) {
         
     case 'moderate_post':
         $adminController->moderatePost();
+        break;
+        
+    case 'delete_forum_post':
+        $adminController->deleteForumPost();
         break;
     
     // ==================== SETTINGS ====================
@@ -174,7 +209,56 @@ switch ($action) {
         $adminController->exportData();
         break;
         
+    case 'optimize_database':
+        $adminController->optimizeDatabase();
+        break;
+        
+    case 'check_system':
+        $adminController->checkSystemHealth();
+        break;
+    
+    // ==================== ADMIN PROFILE ====================
+    case 'profile':
+        $adminController->showProfile();
+        break;
+        
+    case 'update_profile':
+        $adminController->updateProfile();
+        break;
+        
+    case 'change_password':
+        $adminController->changePassword();
+        break;
+    
+    // ==================== ACTIVITY LOG ====================
+    case 'activity_log':
+        $adminController->activityLog();
+        break;
+    
+    // ==================== AJAX ENDPOINTS ====================
+    case 'ajax_get_user':
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $adminController->ajaxGetUser();
+        }
+        break;
+        
+    case 'ajax_get_bootcamp':
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $adminController->ajaxGetBootcamp();
+        }
+        break;
+        
+    case 'ajax_dashboard_stats':
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $adminController->ajaxDashboardStats();
+        }
+        break;
+        
     default:
+        // Log invalid access attempt
+        if (isset($_SESSION['admin_id'])) {
+            $adminController->logInvalidAccess($action);
+        }
         header('Location: admin.php?action=dashboard');
         break;
 }

@@ -1,5 +1,5 @@
 <?php
-// controllers/AdminController.php
+// controllers/AdminController.php - Enhanced Admin Controller
 
 require_once __DIR__ . '/../models/AdminModel.php';
 require_once __DIR__ . '/../helpers/SecurityHelper.php';
@@ -126,8 +126,8 @@ class AdminController {
         include __DIR__ . '/../views/admin/dashboard.php';
     }
 
-    public function stats() {
-        $detailedStats = $this->admin->getDashboardStats();
+    public function detailedStats() {
+        $detailedStats = $this->admin->getDetailedStats();
         include __DIR__ . '/../views/admin/stats.php';
     }
 
@@ -281,6 +281,33 @@ class AdminController {
         exit;
     }
 
+    public function resetUserPassword() {
+        $id = intval($_GET['id'] ?? 0);
+        
+        if (!$id) {
+            $_SESSION['error'] = 'ID user tidak valid';
+            header('Location: admin.php?action=manage_users');
+            exit;
+        }
+
+        $result = $this->admin->resetUserPassword($id);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'reset_password', 
+                "Reset password user ID: $id"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        $referer = $_SERVER['HTTP_REFERER'] ?? 'admin.php?action=manage_users';
+        header('Location: ' . $referer);
+        exit;
+    }
+
     // ==================== BOOTCAMP MANAGEMENT ====================
     
     public function manageBootcamps() {
@@ -302,6 +329,7 @@ class AdminController {
             // Process form submission
             $data = [
                 'title' => SecurityHelper::sanitizeInput($_POST['title']),
+                'slug' => SecurityHelper::sanitizeInput($_POST['slug']),
                 'description' => SecurityHelper::sanitizeInput($_POST['description']),
                 'category_id' => intval($_POST['category_id']),
                 'instructor_name' => SecurityHelper::sanitizeInput($_POST['instructor_name']),
@@ -309,7 +337,9 @@ class AdminController {
                 'discount_price' => floatval($_POST['discount_price']),
                 'start_date' => SecurityHelper::sanitizeInput($_POST['start_date']),
                 'duration' => SecurityHelper::sanitizeInput($_POST['duration']),
-                'status' => SecurityHelper::sanitizeInput($_POST['status'])
+                'status' => SecurityHelper::sanitizeInput($_POST['status']),
+                'featured' => intval($_POST['featured'] ?? 0),
+                'max_participants' => intval($_POST['max_participants'] ?? 0)
             ];
 
             // Handle file upload
@@ -371,6 +401,216 @@ class AdminController {
         include __DIR__ . '/../views/admin/edit_bootcamp.php';
     }
 
+    public function updateBootcamp() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_bootcamps');
+            exit;
+        }
+
+        $id = intval($_POST['id']);
+        $data = [
+            'title' => SecurityHelper::sanitizeInput($_POST['title']),
+            'slug' => SecurityHelper::sanitizeInput($_POST['slug']),
+            'description' => SecurityHelper::sanitizeInput($_POST['description']),
+            'category_id' => intval($_POST['category_id']),
+            'instructor_name' => SecurityHelper::sanitizeInput($_POST['instructor_name']),
+            'price' => floatval($_POST['price']),
+            'discount_price' => floatval($_POST['discount_price']),
+            'start_date' => SecurityHelper::sanitizeInput($_POST['start_date']),
+            'duration' => SecurityHelper::sanitizeInput($_POST['duration']),
+            'status' => SecurityHelper::sanitizeInput($_POST['status']),
+            'featured' => intval($_POST['featured'] ?? 0),
+            'max_participants' => intval($_POST['max_participants'])
+        ];
+
+        // Handle file upload if provided
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $uploadResult = SecurityHelper::validateFileUpload($_FILES['image'], ['image/jpeg', 'image/png', 'image/gif'], 5 * 1024 * 1024);
+            
+            if ($uploadResult['valid']) {
+                $filename = uniqid() . '_' . basename($_FILES['image']['name']);
+                $uploadPath = 'assets/images/bootcamps/' . $filename;
+                
+                if (move_uploaded_file($_FILES['image']['tmp_name'], $uploadPath)) {
+                    $data['image'] = $filename;
+                }
+            }
+        }
+
+        $result = $this->admin->updateBootcamp($id, $data);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'update_bootcamp', 
+                "Mengupdate bootcamp ID: $id"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_bootcamps');
+        exit;
+    }
+
+    public function deleteBootcamp() {
+        $id = intval($_GET['id'] ?? $_POST['id'] ?? 0);
+        
+        if (!$id) {
+            $_SESSION['error'] = 'ID bootcamp tidak valid';
+            header('Location: admin.php?action=manage_bootcamps');
+            exit;
+        }
+
+        $bootcamp = $this->admin->getBootcampById($id);
+        if (!$bootcamp) {
+            $_SESSION['error'] = 'Bootcamp tidak ditemukan';
+            header('Location: admin.php?action=manage_bootcamps');
+            exit;
+        }
+
+        $result = $this->admin->deleteBootcamp($id);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'delete_bootcamp', 
+                "Menghapus bootcamp: " . $bootcamp['title'] . " (ID: $id)"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_bootcamps');
+        exit;
+    }
+
+    public function toggleFeaturedBootcamp() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            exit;
+        }
+
+        $id = intval($_GET['id'] ?? 0);
+        $featured = $_GET['featured'] === 'true' ? 1 : 0;
+
+        if (!$id) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'ID tidak valid']);
+            exit;
+        }
+
+        $result = $this->admin->toggleBootcampFeatured($id, $featured);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'toggle_featured', 
+                "Toggle featured bootcamp ID: $id menjadi " . ($featured ? 'featured' : 'not featured')
+            );
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($result);
+        exit;
+    }
+
+    // ==================== CATEGORY MANAGEMENT ====================
+    
+    public function manageCategories() {
+        $categories = $this->admin->getCategories();
+        include __DIR__ . '/../views/admin/manage_categories.php';
+    }
+
+    public function createCategory() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'name' => SecurityHelper::sanitizeInput($_POST['name']),
+                'slug' => SecurityHelper::generateSlug($_POST['name']),
+                'description' => SecurityHelper::sanitizeInput($_POST['description']),
+                'status' => 'active',
+                'sort_order' => intval($_POST['sort_order'] ?? 0)
+            ];
+
+            $result = $this->admin->createCategory($data);
+            
+            if ($result['success']) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'], 
+                    'create_category', 
+                    "Membuat kategori: " . $data['name']
+                );
+                $_SESSION['success'] = $result['message'];
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+
+            header('Location: admin.php?action=manage_categories');
+            exit;
+        }
+
+        include __DIR__ . '/../views/admin/create_category.php';
+    }
+
+    public function updateCategory() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_categories');
+            exit;
+        }
+
+        $id = intval($_POST['id']);
+        $data = [
+            'name' => SecurityHelper::sanitizeInput($_POST['name']),
+            'description' => SecurityHelper::sanitizeInput($_POST['description']),
+            'sort_order' => intval($_POST['sort_order'] ?? 0)
+        ];
+
+        $result = $this->admin->updateCategory($id, $data);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'update_category', 
+                "Mengupdate kategori ID: $id"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_categories');
+        exit;
+    }
+
+    public function deleteCategory() {
+        $id = intval($_GET['id'] ?? 0);
+        
+        if (!$id) {
+            $_SESSION['error'] = 'ID kategori tidak valid';
+            header('Location: admin.php?action=manage_categories');
+            exit;
+        }
+
+        $result = $this->admin->deleteCategory($id);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'delete_category', 
+                "Menghapus kategori ID: $id"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_categories');
+        exit;
+    }
+
     // ==================== ORDER MANAGEMENT ====================
     
     public function manageOrders() {
@@ -385,11 +625,247 @@ class AdminController {
         include __DIR__ . '/../views/admin/manage_orders.php';
     }
 
-    // ==================== CATEGORY MANAGEMENT ====================
+    public function viewOrder() {
+        $id = intval($_GET['id'] ?? 0);
+        if (!$id) {
+            $_SESSION['error'] = 'ID order tidak valid';
+            header('Location: admin.php?action=manage_orders');
+            exit;
+        }
+
+        $order = $this->admin->getOrderById($id);
+        if (!$order) {
+            $_SESSION['error'] = 'Order tidak ditemukan';
+            header('Location: admin.php?action=manage_orders');
+            exit;
+        }
+
+        $orderItems = $this->admin->getOrderItems($id);
+        include __DIR__ . '/../views/admin/view_order.php';
+    }
+
+    public function updateOrderStatus() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_orders');
+            exit;
+        }
+
+        $id = intval($_POST['id']);
+        $status = SecurityHelper::sanitizeInput($_POST['status']);
+
+        $result = $this->admin->updateOrderStatus($id, $status);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'update_order_status', 
+                "Mengubah status order ID $id menjadi $status"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_orders');
+        exit;
+    }
+
+    // ==================== REVIEW MANAGEMENT ====================
     
-    public function manageCategories() {
-        $categories = $this->admin->getCategories();
-        include __DIR__ . '/../views/admin/manage_categories.php';
+    public function manageReviews() {
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
+        $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
+        
+        $reviews = $this->admin->getReviews($page, 20, $search, $status);
+        $totalReviews = $this->admin->countReviews($search, $status);
+        $totalPages = ceil($totalReviews / 20);
+        
+        include __DIR__ . '/../views/admin/manage_reviews.php';
+    }
+
+    public function approveReview() {
+        $id = intval($_GET['id'] ?? 0);
+        
+        $result = $this->admin->updateReviewStatus($id, 'published');
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'approve_review', 
+                "Menyetujui review ID: $id"
+            );
+            $_SESSION['success'] = 'Review berhasil disetujui';
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_reviews');
+        exit;
+    }
+
+    public function rejectReview() {
+        $id = intval($_GET['id'] ?? 0);
+        
+        $result = $this->admin->updateReviewStatus($id, 'rejected');
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'reject_review', 
+                "Menolak review ID: $id"
+            );
+            $_SESSION['success'] = 'Review berhasil ditolak';
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_reviews');
+        exit;
+    }
+
+    public function deleteReview() {
+        $id = intval($_GET['id'] ?? 0);
+        
+        $result = $this->admin->deleteReview($id);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'delete_review', 
+                "Menghapus review ID: $id"
+            );
+            $_SESSION['success'] = 'Review berhasil dihapus';
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_reviews');
+        exit;
+    }
+
+    public function bulkApproveReviews() {
+        $result = $this->admin->bulkApproveReviews();
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'bulk_approve_reviews', 
+                "Bulk approve " . $result['count'] . " reviews"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_reviews');
+        exit;
+    }
+
+    // ==================== FORUM MANAGEMENT ====================
+    
+    public function manageForum() {
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
+        $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
+        
+        $posts = $this->admin->getForumPosts($page, 20, $search, $status);
+        $totalPosts = $this->admin->countForumPosts($search, $status);
+        $totalPages = ceil($totalPosts / 20);
+        
+        include __DIR__ . '/../views/admin/manage_forum.php';
+    }
+
+    public function moderatePost() {
+        $id = intval($_GET['id'] ?? 0);
+        $action = SecurityHelper::sanitizeInput($_GET['moderate'] ?? '');
+        
+        if ($action === 'pin') {
+            $result = $this->admin->pinForumPost($id, true);
+            $message = 'Post berhasil di-pin';
+        } elseif ($action === 'unpin') {
+            $result = $this->admin->pinForumPost($id, false);
+            $message = 'Post berhasil di-unpin';
+        } elseif ($action === 'lock') {
+            $result = $this->admin->lockForumPost($id, true);
+            $message = 'Post berhasil dikunci';
+        } elseif ($action === 'unlock') {
+            $result = $this->admin->lockForumPost($id, false);
+            $message = 'Post berhasil dibuka';
+        } else {
+            $_SESSION['error'] = 'Aksi tidak valid';
+            header('Location: admin.php?action=manage_forum');
+            exit;
+        }
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'moderate_forum_post', 
+                "Moderasi post ID $id: $action"
+            );
+            $_SESSION['success'] = $message;
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_forum');
+        exit;
+    }
+
+    public function deleteForumPost() {
+        $id = intval($_GET['id'] ?? 0);
+        
+        $result = $this->admin->deleteForumPost($id);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'delete_forum_post', 
+                "Menghapus forum post ID: $id"
+            );
+            $_SESSION['success'] = 'Post berhasil dihapus';
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_forum');
+        exit;
+    }
+
+    // ==================== SETTINGS MANAGEMENT ====================
+    
+    public function manageSettings() {
+        $settings = $this->admin->getSettings();
+        include __DIR__ . '/../views/admin/manage_settings.php';
+    }
+
+    public function updateSettings() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_settings');
+            exit;
+        }
+
+        $updatedCount = 0;
+        foreach ($_POST as $key => $value) {
+            if ($key !== 'csrf_token') {
+                $sanitizedValue = SecurityHelper::sanitizeInput($value);
+                $result = $this->admin->updateSetting($key, $sanitizedValue);
+                if ($result['success']) {
+                    $updatedCount++;
+                }
+            }
+        }
+
+        $this->admin->logActivity(
+            $_SESSION['admin_id'], 
+            'update_settings', 
+            "Mengupdate $updatedCount pengaturan sistem"
+        );
+
+        $_SESSION['success'] = "Berhasil mengupdate $updatedCount pengaturan";
+        header('Location: admin.php?action=manage_settings');
+        exit;
     }
 
     // ==================== SYSTEM TOOLS ====================
@@ -404,13 +880,18 @@ class AdminController {
                 mkdir('backups', 0755, true);
             }
             
-            // Simple backup success message (actual implementation would depend on server setup)
-            $this->admin->logActivity(
-                $_SESSION['admin_id'], 
-                'backup_database', 
-                "Database backup initiated: $filename"
-            );
-            $_SESSION['success'] = "Backup database berhasil dimulai: $filename";
+            $result = $this->admin->createDatabaseBackup($backupPath);
+            
+            if ($result['success']) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'], 
+                    'backup_database', 
+                    "Database backup created: $filename"
+                );
+                $_SESSION['success'] = $result['message'];
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
             
         } catch (Exception $e) {
             $_SESSION['error'] = 'Error: ' . $e->getMessage();
@@ -502,9 +983,169 @@ class AdminController {
         }
     }
 
-    // ==================== SETTINGS ====================
+    public function optimizeDatabase() {
+        $result = $this->admin->optimizeDatabase();
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'optimize_database', 
+                "Database optimization completed"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=manage_settings');
+        exit;
+    }
+
+    public function checkSystemHealth() {
+        $healthCheck = $this->admin->checkSystemHealth();
+        
+        $this->admin->logActivity(
+            $_SESSION['admin_id'], 
+            'system_health_check', 
+            "System health check performed"
+        );
+
+        header('Content-Type: application/json');
+        echo json_encode($healthCheck);
+        exit;
+    }
+
+    // ==================== ADMIN PROFILE ====================
     
-    public function manageSettings() {
-        include __DIR__ . '/../views/admin/manage_settings.php';
+    public function showProfile() {
+        $admin = $this->admin->getAdminById($_SESSION['admin_id']);
+        include __DIR__ . '/../views/admin/profile.php';
+    }
+
+    public function updateProfile() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=profile');
+            exit;
+        }
+
+        $id = $_SESSION['admin_id'];
+        $data = [
+            'name' => SecurityHelper::sanitizeInput($_POST['name']),
+            'email' => SecurityHelper::sanitizeInput($_POST['email']),
+            'phone' => SecurityHelper::sanitizeInput($_POST['phone'] ?? ''),
+            'department' => SecurityHelper::sanitizeInput($_POST['department'] ?? ''),
+            'timezone' => SecurityHelper::sanitizeInput($_POST['timezone'] ?? ''),
+            'language' => SecurityHelper::sanitizeInput($_POST['language'] ?? '')
+        ];
+
+        $result = $this->admin->updateAdminProfile($id, $data);
+        
+        if ($result['success']) {
+            $_SESSION['admin_name'] = $data['name'];
+            $_SESSION['admin_email'] = $data['email'];
+            
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'update_profile', 
+                "Update admin profile"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=profile');
+        exit;
+    }
+
+    public function changePassword() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=profile');
+            exit;
+        }
+
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if ($newPassword !== $confirmPassword) {
+            $_SESSION['error'] = 'Konfirmasi password tidak cocok';
+            header('Location: admin.php?action=profile');
+            exit;
+        }
+
+        $result = $this->admin->changeAdminPassword($_SESSION['admin_id'], $currentPassword, $newPassword);
+        
+        if ($result['success']) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'], 
+                'change_password', 
+                "Admin password changed"
+            );
+            $_SESSION['success'] = $result['message'];
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
+
+        header('Location: admin.php?action=profile');
+        exit;
+    }
+
+    // ==================== ACTIVITY LOG ====================
+    
+    public function activityLog() {
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
+        $activity_type = SecurityHelper::sanitizeInput($_GET['activity_type'] ?? '');
+        $admin_id = intval($_GET['admin_id'] ?? 0);
+        $date_from = SecurityHelper::sanitizeInput($_GET['date_from'] ?? '');
+        $date_to = SecurityHelper::sanitizeInput($_GET['date_to'] ?? '');
+        
+        $activities = $this->admin->getActivityLog($page, 50, $search, $activity_type, $admin_id, $date_from, $date_to);
+        $totalActivities = $this->admin->countActivityLog($search, $activity_type, $admin_id, $date_from, $date_to);
+        $totalPages = ceil($totalActivities / 50);
+        
+        include __DIR__ . '/../views/admin/activity_log.php';
+    }
+
+    // ==================== AJAX ENDPOINTS ====================
+    
+    public function ajaxGetUser() {
+        $id = intval($_GET['id'] ?? 0);
+        $user = $this->admin->getUserById($id);
+        
+        header('Content-Type: application/json');
+        echo json_encode($user);
+        exit;
+    }
+
+    public function ajaxGetBootcamp() {
+        $id = intval($_GET['id'] ?? 0);
+        $bootcamp = $this->admin->getBootcampById($id);
+        
+        header('Content-Type: application/json');
+        echo json_encode($bootcamp);
+        exit;
+    }
+
+    public function ajaxDashboardStats() {
+        $stats = $this->admin->getDashboardStats();
+        
+        header('Content-Type: application/json');
+        echo json_encode($stats);
+        exit;
+    }
+
+    // ==================== UTILITY METHODS ====================
+    
+    public function logInvalidAccess($action) {
+        $this->admin->logActivity(
+            $_SESSION['admin_id'] ?? 0,
+            'invalid_access',
+            "Attempted to access invalid action: $action",
+            $_SERVER['REMOTE_ADDR'] ?? null,
+            $_SERVER['HTTP_USER_AGENT'] ?? null
+        );
     }
 }
+?>
