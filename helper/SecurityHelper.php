@@ -1,5 +1,5 @@
 <?php
-// helpers/SecurityHelper.php - Enhanced Security Helper for Admin Panel
+// helper/SecurityHelper.php - Enhanced Security Helper for Admin Panel
 
 class SecurityHelper {
     
@@ -138,8 +138,28 @@ class SecurityHelper {
      * Validate strong password
      */
     public static function validatePassword($password) {
-        // At least 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special char
-        return preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/', $password);
+        $errors = [];
+        
+        if (strlen($password) < 8) {
+            $errors[] = 'Password harus minimal 8 karakter';
+        }
+        
+        if (!preg_match('/[A-Z]/', $password)) {
+            $errors[] = 'Password harus mengandung minimal 1 huruf besar';
+        }
+        
+        if (!preg_match('/[a-z]/', $password)) {
+            $errors[] = 'Password harus mengandung minimal 1 huruf kecil';
+        }
+        
+        if (!preg_match('/[0-9]/', $password)) {
+            $errors[] = 'Password harus mengandung minimal 1 angka';
+        }
+        
+        return [
+            'valid' => empty($errors),
+            'errors' => $errors
+        ];
     }
     
     /**
@@ -387,83 +407,6 @@ class SecurityHelper {
         }
     }
     
-    // ==================== SQL INJECTION PREVENTION ====================
-    
-    /**
-     * Prepare safe SQL query parameters
-     */
-    public static function prepareSafeQuery($query, $params = []) {
-        // This would typically be used with PDO prepared statements
-        // The actual SQL injection prevention happens at the PDO level
-        // This function provides additional validation
-        
-        foreach ($params as $key => $value) {
-            if (is_string($value)) {
-                // Check for SQL injection patterns
-                if (self::containsSQLInjection($value)) {
-                    self::logSecurityEvent(
-                        'sql_injection_attempt',
-                        "Potential SQL injection detected in parameter $key: $value",
-                        'high'
-                    );
-                    throw new InvalidArgumentException("Invalid parameter detected");
-                }
-            }
-        }
-        
-        return ['query' => $query, 'params' => $params];
-    }
-    
-    /**
-     * Check for SQL injection patterns
-     */
-    private static function containsSQLInjection($input) {
-        $patterns = [
-            '/(\s*(union|select|insert|update|delete|drop|create|alter|exec|execute)\s+)/i',
-            '/(\s*(or|and)\s+\d+\s*=\s*\d+)/i',
-            '/(\s*;\s*(drop|delete|update|insert))/i',
-            '/(\s*\'\s*(or|and)\s*\'\w*\'\s*=\s*\'\w*)/i',
-            '/(\s*--)/i',
-            '/(\s*\/\*.*\*\/)/i'
-        ];
-        
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $input)) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-    
-    // ==================== SESSION SECURITY ====================
-    
-    /**
-     * Secure session configuration
-     */
-    public static function configureSecureSession() {
-        // Set secure session parameters
-        ini_set('session.cookie_httponly', 1);
-        ini_set('session.use_only_cookies', 1);
-        ini_set('session.cookie_secure', isset($_SERVER['HTTPS']));
-        ini_set('session.cookie_samesite', 'Strict');
-        
-        // Regenerate session ID periodically
-        if (!isset($_SESSION['last_regeneration'])) {
-            $_SESSION['last_regeneration'] = time();
-        } elseif (time() - $_SESSION['last_regeneration'] > 300) { // 5 minutes
-            session_regenerate_id(true);
-            $_SESSION['last_regeneration'] = time();
-        }
-    }
-    
-    /**
-     * Generate secure session token
-     */
-    public static function generateSessionToken() {
-        return bin2hex(random_bytes(32));
-    }
-    
     // ==================== UTILITY FUNCTIONS ====================
     
     /**
@@ -531,6 +474,121 @@ class SecurityHelper {
      */
     public static function timeSafeEquals($a, $b) {
         return hash_equals((string)$a, (string)$b);
+    }
+    
+    /**
+     * Format currency for Indonesian Rupiah
+     */
+    public static function formatCurrency($amount) {
+        return 'Rp ' . number_format($amount, 0, ',', '.');
+    }
+    
+    /**
+     * Format date to Indonesian format
+     */
+    public static function formatDate($date, $format = 'd/m/Y H:i') {
+        if (empty($date) || $date === '0000-00-00 00:00:00') {
+            return '-';
+        }
+        return date($format, strtotime($date));
+    }
+    
+    /**
+     * Get file extension from filename
+     */
+    public static function getFileExtension($filename) {
+        return strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    }
+    
+    /**
+     * Check if file is image
+     */
+    public static function isImageFile($filename) {
+        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        return in_array(self::getFileExtension($filename), $imageExtensions);
+    }
+    
+    /**
+     * Generate random token
+     */
+    public static function generateToken($length = 32) {
+        return bin2hex(random_bytes($length));
+    }
+    
+    /**
+     * Sanitize filename for upload
+     */
+    public static function sanitizeFilename($filename) {
+        // Get file extension
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        $basename = pathinfo($filename, PATHINFO_FILENAME);
+        
+        // Sanitize basename
+        $basename = preg_replace('/[^a-zA-Z0-9_-]/', '', $basename);
+        
+        // Limit length
+        if (strlen($basename) > 50) {
+            $basename = substr($basename, 0, 50);
+        }
+        
+        return $basename . '.' . $extension;
+    }
+    
+    /**
+     * Create directory if not exists
+     */
+    public static function createDirectoryIfNotExists($path) {
+        if (!is_dir($path)) {
+            return mkdir($path, 0755, true);
+        }
+        return true;
+    }
+    
+    /**
+     * Calculate file size in readable format
+     */
+    public static function formatFileSize($size) {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $unitIndex = 0;
+        
+        while ($size >= 1024 && $unitIndex < count($units) - 1) {
+            $size /= 1024;
+            $unitIndex++;
+        }
+        
+        return round($size, 2) . ' ' . $units[$unitIndex];
+    }
+    
+    /**
+     * Validate date format
+     */
+    public static function validateDate($date, $format = 'Y-m-d') {
+        $d = DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) === $date;
+    }
+    
+    /**
+     * Generate breadcrumb for admin pages
+     */
+    public static function generateBreadcrumb($action) {
+        $breadcrumbs = [
+            'dashboard' => ['Dashboard'],
+            'manage_users' => ['Dashboard', 'Kelola Users'],
+            'edit_user' => ['Dashboard', 'Kelola Users', 'Edit User'],
+            'manage_bootcamps' => ['Dashboard', 'Kelola Bootcamps'],
+            'create_bootcamp' => ['Dashboard', 'Kelola Bootcamps', 'Tambah Bootcamp'],
+            'edit_bootcamp' => ['Dashboard', 'Kelola Bootcamps', 'Edit Bootcamp'],
+            'manage_categories' => ['Dashboard', 'Kelola Kategori'],
+            'manage_orders' => ['Dashboard', 'Kelola Orders'],
+            'view_order' => ['Dashboard', 'Kelola Orders', 'Detail Order'],
+            'manage_reviews' => ['Dashboard', 'Kelola Reviews'],
+            'manage_forum' => ['Dashboard', 'Kelola Forum'],
+            'manage_settings' => ['Dashboard', 'Pengaturan'],
+            'profile' => ['Dashboard', 'Profile Admin'],
+            'activity_log' => ['Dashboard', 'Log Aktivitas']
+        ];
+        
+        return $breadcrumbs[$action] ?? ['Dashboard'];
     }
 }
 ?>

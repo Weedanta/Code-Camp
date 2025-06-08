@@ -1,8 +1,8 @@
 <?php
-// controllers/AdminController.php - Enhanced Admin Controller (Fixed Version)
+// controllers/AdminController.php - Enhanced Admin Controller
 
 require_once __DIR__ . '/../models/AdminModel.php';
-require_once __DIR__ . '/../helper/SecurityHelper.php'; // Fixed path
+require_once __DIR__ . '/../helper/SecurityHelper.php';
 
 class AdminController {
     private $admin;
@@ -20,8 +20,8 @@ class AdminController {
             extract($data);
         }
         
-        // Cek apakah file view ada
-        $fullPath = __DIR__ . '/../' . $viewPath;
+        // Path relatif dari root directory (admin.php)
+        $fullPath = $viewPath;
         if (file_exists($fullPath)) {
             include $fullPath;
         } else {
@@ -42,7 +42,6 @@ class AdminController {
         
         $this->includeView('views/admin/login.php');
     }
-
 
     public function processLogin() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -110,6 +109,7 @@ class AdminController {
                 "Failed admin login attempt: " . $email,
                 'high'
             );
+            SecurityHelper::recordFailedAttempt($email);
             $_SESSION['error'] = 'Email atau password salah';
             header('Location: admin.php?action=login');
             exit;
@@ -139,42 +139,58 @@ class AdminController {
     // ==================== DASHBOARD ====================
     
     public function dashboard() {
-        $stats = $this->admin->getDashboardStats();
-        $recentActivities = $this->admin->getRecentActivities(10);
-        $systemAlerts = $this->admin->getSystemAlerts();
-        
-        $this->includeView('views/admin/dashboard.php', compact('stats', 'recentActivities', 'systemAlerts'));
-    }
-
-    public function detailedStats() {
-        $detailedStats = $this->admin->getDetailedStats();
-        $this->includeView('views/admin/stats.php', compact('detailedStats'));
+        try {
+            $stats = $this->admin->getDashboardStats();
+            $recentActivities = $this->admin->getRecentActivities(10);
+            $systemAlerts = $this->admin->getSystemAlerts();
+            
+            $this->includeView('views/admin/dashboard.php', compact('stats', 'recentActivities', 'systemAlerts'));
+        } catch (Exception $e) {
+            error_log("Dashboard error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error loading dashboard';
+            $stats = [];
+            $recentActivities = [];
+            $systemAlerts = [];
+            $this->includeView('views/admin/dashboard.php', compact('stats', 'recentActivities', 'systemAlerts'));
+        }
     }
 
     public function detailedStats() {
         try {
             $detailedStats = $this->admin->getDetailedStats();
-            include __DIR__ . '/../views/admin/stats.php';
+            $this->includeView('views/admin/stats.php', compact('detailedStats'));
         } catch (Exception $e) {
             error_log("Stats error: " . $e->getMessage());
             $_SESSION['error'] = 'Error loading statistics';
             $detailedStats = [];
-            include __DIR__ . '/../views/admin/stats.php';
+            $this->includeView('views/admin/stats.php', compact('detailedStats'));
         }
     }
 
     // ==================== USER MANAGEMENT ====================
     
     public function manageUsers() {
-        $page = max(1, intval($_GET['page'] ?? 1));
-        $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
-        $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
-        
-        $users = $this->admin->getUsers($page, 20, $search, $status);
-        $totalUsers = $this->admin->countUsers($search, $status);
-        $totalPages = ceil($totalUsers / 20);
-        
-        $this->includeView('views/admin/manage_users.php', compact('users', 'totalUsers', 'totalPages', 'page', 'search', 'status'));
+        try {
+            $page = max(1, intval($_GET['page'] ?? 1));
+            $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
+            $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
+            
+            $users = $this->admin->getUsers($page, 20, $search, $status);
+            $totalUsers = $this->admin->countUsers($search, $status);
+            $totalPages = ceil($totalUsers / 20);
+            
+            $this->includeView('views/admin/manage_user.php', compact('users', 'totalUsers', 'totalPages', 'page', 'search', 'status'));
+        } catch (Exception $e) {
+            error_log("Manage users error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error loading users data';
+            $users = [];
+            $totalUsers = 0;
+            $totalPages = 1;
+            $page = 1;
+            $search = '';
+            $status = '';
+            $this->includeView('views/admin/manage_user.php', compact('users', 'totalUsers', 'totalPages', 'page', 'search', 'status'));
+        }
     }
 
     public function editUser() {
@@ -185,14 +201,21 @@ class AdminController {
             exit;
         }
 
-        $user = $this->admin->getUserById($id);
-        if (!$user) {
-            $_SESSION['error'] = 'User tidak ditemukan';
+        try {
+            $user = $this->admin->getUserById($id);
+            if (!$user) {
+                $_SESSION['error'] = 'User tidak ditemukan';
+                header('Location: admin.php?action=manage_users');
+                exit;
+            }
+
+            $this->includeView('views/admin/edit_user.php', compact('user'));
+        } catch (Exception $e) {
+            error_log("Edit user error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error loading user data';
             header('Location: admin.php?action=manage_users');
             exit;
         }
-
-        $this->includeView('views/admin/edit_user.php', compact('user'));
     }
 
     public function updateUser() {
@@ -364,33 +387,47 @@ class AdminController {
     // ==================== BOOTCAMP MANAGEMENT ====================
     
     public function manageBootcamps() {
-        $page = max(1, intval($_GET['page'] ?? 1));
-        $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
-        $category = intval($_GET['category'] ?? 0);
-        $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
-        
-        $bootcamps = $this->admin->getBootcamps($page, 20, $search, $category, $status);
-        $totalBootcamps = $this->admin->countBootcamps($search, $category, $status);
-        $totalPages = ceil($totalBootcamps / 20);
-        $categories = $this->admin->getCategories();
-        
-        $this->includeView('views/admin/manage_bootcamps.php', compact('bootcamps', 'totalBootcamps', 'totalPages', 'categories', 'page', 'search', 'category', 'status'));
+        try {
+            $page = max(1, intval($_GET['page'] ?? 1));
+            $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
+            $category = intval($_GET['category'] ?? 0);
+            $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
+            
+            $bootcamps = $this->admin->getBootcamps($page, 20, $search, $category, $status);
+            $totalBootcamps = $this->admin->countBootcamps($search, $category, $status);
+            $totalPages = ceil($totalBootcamps / 20);
+            $categories = $this->admin->getCategories();
+            
+            $this->includeView('views/admin/manage_bootcamps.php', compact('bootcamps', 'totalBootcamps', 'totalPages', 'categories', 'page', 'search', 'category', 'status'));
+        } catch (Exception $e) {
+            error_log("Manage bootcamps error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error loading bootcamps data';
+            $bootcamps = [];
+            $totalBootcamps = 0;
+            $totalPages = 1;
+            $categories = [];
+            $page = 1;
+            $search = '';
+            $category = 0;
+            $status = '';
+            $this->includeView('views/admin/manage_bootcamps.php', compact('bootcamps', 'totalBootcamps', 'totalPages', 'categories', 'page', 'search', 'category', 'status'));
+        }
     }
 
     public function createBootcamp() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Process form submission
             $data = [
-                'title' => SecurityHelper::sanitizeInput($_POST['title']),
-                'slug' => SecurityHelper::sanitizeInput($_POST['slug']),
-                'description' => SecurityHelper::sanitizeInput($_POST['description']),
-                'category_id' => intval($_POST['category_id']),
-                'instructor_name' => SecurityHelper::sanitizeInput($_POST['instructor_name']),
-                'price' => floatval($_POST['price']),
-                'discount_price' => floatval($_POST['discount_price']),
-                'start_date' => SecurityHelper::sanitizeInput($_POST['start_date']),
-                'duration' => SecurityHelper::sanitizeInput($_POST['duration']),
-                'status' => SecurityHelper::sanitizeInput($_POST['status']),
+                'title' => SecurityHelper::sanitizeInput($_POST['title'] ?? ''),
+                'slug' => SecurityHelper::generateSlug($_POST['title'] ?? ''),
+                'description' => SecurityHelper::sanitizeInput($_POST['description'] ?? ''),
+                'category_id' => intval($_POST['category_id'] ?? 0),
+                'instructor_name' => SecurityHelper::sanitizeInput($_POST['instructor_name'] ?? ''),
+                'price' => floatval($_POST['price'] ?? 0),
+                'discount_price' => floatval($_POST['discount_price'] ?? 0),
+                'start_date' => SecurityHelper::sanitizeInput($_POST['start_date'] ?? ''),
+                'duration' => SecurityHelper::sanitizeInput($_POST['duration'] ?? ''),
+                'status' => SecurityHelper::sanitizeInput($_POST['status'] ?? 'draft'),
                 'featured' => intval($_POST['featured'] ?? 0),
                 'max_participants' => intval($_POST['max_participants'] ?? 0),
                 'image' => '' // Default value
@@ -401,9 +438,14 @@ class AdminController {
                 $uploadResult = SecurityHelper::validateFileUpload($_FILES['image'], ['image/jpeg', 'image/png', 'image/gif'], 5 * 1024 * 1024);
                 
                 if ($uploadResult['valid']) {
-                    // Move uploaded file
+                    // Create upload directory if not exists
+                    $uploadDir = 'assets/images/bootcamps/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+                    
                     $filename = uniqid() . '_' . basename($_FILES['image']['name']);
-                    $uploadPath = 'assets/images/bootcamps/' . $filename;
+                    $uploadPath = $uploadDir . $filename;
                     
                     if (move_uploaded_file($_FILES['image']['tmp_name'], $uploadPath)) {
                         $data['image'] = $filename;
@@ -416,26 +458,30 @@ class AdminController {
                 }
             }
 
-            $result = $this->admin->createBootcamp($data);
-            
-            if ($result['success']) {
-                $this->admin->logActivity(
-                    $_SESSION['admin_id'], 
-                    'create_bootcamp', 
-                    "Membuat bootcamp: " . $data['title']
-                );
-                $_SESSION['success'] = $result['message'];
-                header('Location: admin.php?action=manage_bootcamps');
-                exit;
-            } else {
-                $_SESSION['error'] = $result['message'];
+            try {
+                $result = $this->admin->createBootcamp($data);
+                
+                if ($result['success']) {
+                    $this->admin->logActivity(
+                        $_SESSION['admin_id'], 
+                        'create_bootcamp', 
+                        "Membuat bootcamp: " . $data['title']
+                    );
+                    $_SESSION['success'] = $result['message'];
+                    header('Location: admin.php?action=manage_bootcamps');
+                    exit;
+                } else {
+                    $_SESSION['error'] = $result['message'];
+                }
+            } catch (Exception $e) {
+                error_log("Create bootcamp error: " . $e->getMessage());
+                $_SESSION['error'] = 'Error creating bootcamp';
             }
         }
 
         $categories = $this->admin->getCategories();
         $this->includeView('views/admin/create_bootcamp.php', compact('categories'));
     }
-
 
     public function editBootcamp() {
         $id = intval($_GET['id'] ?? 0);
@@ -445,15 +491,22 @@ class AdminController {
             exit;
         }
 
-        $bootcamp = $this->admin->getBootcampById($id);
-        if (!$bootcamp) {
-            $_SESSION['error'] = 'Bootcamp tidak ditemukan';
+        try {
+            $bootcamp = $this->admin->getBootcampById($id);
+            if (!$bootcamp) {
+                $_SESSION['error'] = 'Bootcamp tidak ditemukan';
+                header('Location: admin.php?action=manage_bootcamps');
+                exit;
+            }
+
+            $categories = $this->admin->getCategories();
+            $this->includeView('views/admin/edit_bootcamps.php', compact('bootcamp', 'categories'));
+        } catch (Exception $e) {
+            error_log("Edit bootcamp error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error loading bootcamp data';
             header('Location: admin.php?action=manage_bootcamps');
             exit;
         }
-
-        $categories = $this->admin->getCategories();
-        $this->includeView('views/admin/edit_bootcamp.php', compact('bootcamp', 'categories'));
     }
 
     public function updateBootcamp() {
@@ -462,17 +515,10 @@ class AdminController {
             exit;
         }
 
-        // Validate CSRF token
-        if (!SecurityHelper::verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-            $_SESSION['error'] = 'Token keamanan tidak valid';
-            header('Location: admin.php?action=manage_bootcamps');
-            exit;
-        }
-
         $id = intval($_POST['id'] ?? 0);
         $data = [
             'title' => SecurityHelper::sanitizeInput($_POST['title'] ?? ''),
-            'slug' => SecurityHelper::sanitizeInput($_POST['slug'] ?? ''),
+            'slug' => SecurityHelper::generateSlug($_POST['title'] ?? ''),
             'description' => SecurityHelper::sanitizeInput($_POST['description'] ?? ''),
             'category_id' => intval($_POST['category_id'] ?? 0),
             'instructor_name' => SecurityHelper::sanitizeInput($_POST['instructor_name'] ?? ''),
@@ -604,52 +650,22 @@ class AdminController {
     // ==================== CATEGORY MANAGEMENT ====================
     
     public function manageCategories() {
-        $categories = $this->admin->getCategories();
-        $this->includeView('views/admin/manage_categories.php', compact('categories'));
-    }
-
-    public function createCategory() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [
-                'name' => SecurityHelper::sanitizeInput($_POST['name']),
-                'slug' => SecurityHelper::generateSlug($_POST['name']),
-                'description' => SecurityHelper::sanitizeInput($_POST['description']),
-                'status' => 'active',
-                'sort_order' => intval($_POST['sort_order'] ?? 0)
-            ];
-
-            $result = $this->admin->createCategory($data);
-            
-            if ($result['success']) {
-                $this->admin->logActivity(
-                    $_SESSION['admin_id'], 
-                    'create_category', 
-                    "Membuat kategori: " . $data['name']
-                );
-                $_SESSION['success'] = $result['message'];
-            } else {
-                $_SESSION['error'] = $result['message'];
-            }
-
-            header('Location: admin.php?action=manage_categories');
-            exit;
+        try {
+            $categories = $this->admin->getCategories();
+            $this->includeView('views/admin/manage_categories.php', compact('categories'));
+        } catch (Exception $e) {
+            error_log("Manage categories error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error loading categories';
+            $categories = [];
+            $this->includeView('views/admin/manage_categories.php', compact('categories'));
         }
-
-        $this->includeView('views/admin/create_category.php');
     }
 
     public function createCategory() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Validate CSRF token
-            if (!SecurityHelper::verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-                $_SESSION['error'] = 'Token keamanan tidak valid';
-                header('Location: admin.php?action=manage_categories');
-                exit;
-            }
-
             $data = [
                 'name' => SecurityHelper::sanitizeInput($_POST['name'] ?? ''),
-                'slug' => $this->generateSlug($_POST['name'] ?? ''),
+                'slug' => SecurityHelper::generateSlug($_POST['name'] ?? ''),
                 'description' => SecurityHelper::sanitizeInput($_POST['description'] ?? ''),
                 'status' => 'active',
                 'sort_order' => intval($_POST['sort_order'] ?? 0)
@@ -683,18 +699,11 @@ class AdminController {
             exit;
         }
 
-        include __DIR__ . '/../views/admin/create_category.php';
+        $this->includeView('views/admin/create_category.php');
     }
 
     public function updateCategory() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: admin.php?action=manage_categories');
-            exit;
-        }
-
-        // Validate CSRF token
-        if (!SecurityHelper::verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-            $_SESSION['error'] = 'Token keamanan tidak valid';
             header('Location: admin.php?action=manage_categories');
             exit;
         }
@@ -767,16 +776,28 @@ class AdminController {
 
     // ==================== ORDER MANAGEMENT ====================
     
-     public function manageOrders() {
-        $page = max(1, intval($_GET['page'] ?? 1));
-        $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
-        $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
-        
-        $orders = $this->admin->getOrders($page, 20, $search, $status);
-        $totalOrders = $this->admin->countOrders($search, $status);
-        $totalPages = ceil($totalOrders / 20);
-        
-        $this->includeView('views/admin/manage_orders.php', compact('orders', 'totalOrders', 'totalPages', 'page', 'search', 'status'));
+    public function manageOrders() {
+        try {
+            $page = max(1, intval($_GET['page'] ?? 1));
+            $search = SecurityHelper::sanitizeInput($_GET['search'] ?? '');
+            $status = SecurityHelper::sanitizeInput($_GET['status'] ?? '');
+            
+            $orders = $this->admin->getOrders($page, 20, $search, $status);
+            $totalOrders = $this->admin->countOrders($search, $status);
+            $totalPages = ceil($totalOrders / 20);
+            
+            $this->includeView('views/admin/manage_order.php', compact('orders', 'totalOrders', 'totalPages', 'page', 'search', 'status'));
+        } catch (Exception $e) {
+            error_log("Manage orders error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error loading orders data';
+            $orders = [];
+            $totalOrders = 0;
+            $totalPages = 1;
+            $page = 1;
+            $search = '';
+            $status = '';
+            $this->includeView('views/admin/manage_order.php', compact('orders', 'totalOrders', 'totalPages', 'page', 'search', 'status'));
+        }
     }
 
     public function viewOrder() {
@@ -796,7 +817,7 @@ class AdminController {
             }
 
             $orderItems = $this->admin->getOrderItems($id);
-            include __DIR__ . '/../views/admin/view_order.php';
+            $this->includeView('views/admin/view_order.php', compact('order', 'orderItems'));
         } catch (Exception $e) {
             error_log("View order error: " . $e->getMessage());
             $_SESSION['error'] = 'Error loading order data';
@@ -854,14 +875,17 @@ class AdminController {
             $totalReviews = $this->admin->countReviews($search, $status);
             $totalPages = ceil($totalReviews / 20);
             
-            include __DIR__ . '/../views/admin/manage_reviews.php';
+            $this->includeView('views/admin/manage_reviews.php', compact('reviews', 'totalReviews', 'totalPages', 'page', 'search', 'status'));
         } catch (Exception $e) {
             error_log("Manage reviews error: " . $e->getMessage());
             $_SESSION['error'] = 'Error loading reviews data';
             $reviews = [];
             $totalReviews = 0;
             $totalPages = 1;
-            include __DIR__ . '/../views/admin/manage_reviews.php';
+            $page = 1;
+            $search = '';
+            $status = '';
+            $this->includeView('views/admin/manage_reviews.php', compact('reviews', 'totalReviews', 'totalPages', 'page', 'search', 'status'));
         }
     }
 
@@ -993,14 +1017,17 @@ class AdminController {
             $totalPosts = $this->admin->countForumPosts($search, $status);
             $totalPages = ceil($totalPosts / 20);
             
-            include __DIR__ . '/../views/admin/manage_forum.php';
+            $this->includeView('views/admin/manage_forum.php', compact('posts', 'totalPosts', 'totalPages', 'page', 'search', 'status'));
         } catch (Exception $e) {
             error_log("Manage forum error: " . $e->getMessage());
             $_SESSION['error'] = 'Error loading forum data';
             $posts = [];
             $totalPosts = 0;
             $totalPages = 1;
-            include __DIR__ . '/../views/admin/manage_forum.php';
+            $page = 1;
+            $search = '';
+            $status = '';
+            $this->includeView('views/admin/manage_forum.php', compact('posts', 'totalPosts', 'totalPages', 'page', 'search', 'status'));
         }
     }
 
@@ -1088,24 +1115,17 @@ class AdminController {
     public function manageSettings() {
         try {
             $settings = $this->admin->getSettings();
-            include __DIR__ . '/../views/admin/manage_settings.php';
+            $this->includeView('views/admin/manage_settings.php', compact('settings'));
         } catch (Exception $e) {
             error_log("Manage settings error: " . $e->getMessage());
             $_SESSION['error'] = 'Error loading settings';
             $settings = [];
-            include __DIR__ . '/../views/admin/manage_settings.php';
+            $this->includeView('views/admin/manage_settings.php', compact('settings'));
         }
     }
 
     public function updateSettings() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: admin.php?action=manage_settings');
-            exit;
-        }
-
-        // Validate CSRF token
-        if (!SecurityHelper::verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-            $_SESSION['error'] = 'Token keamanan tidak valid';
             header('Location: admin.php?action=manage_settings');
             exit;
         }
@@ -1314,24 +1334,17 @@ class AdminController {
     public function showProfile() {
         try {
             $admin = $this->admin->getAdminById($_SESSION['admin_id']);
-            include __DIR__ . '/../views/admin/profile.php';
+            $this->includeView('views/admin/profile.php', compact('admin'));
         } catch (Exception $e) {
             error_log("Show profile error: " . $e->getMessage());
             $_SESSION['error'] = 'Error loading profile';
             $admin = [];
-            include __DIR__ . '/../views/admin/profile.php';
+            $this->includeView('views/admin/profile.php', compact('admin'));
         }
     }
 
     public function updateProfile() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: admin.php?action=profile');
-            exit;
-        }
-
-        // Validate CSRF token
-        if (!SecurityHelper::verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-            $_SESSION['error'] = 'Token keamanan tidak valid';
             header('Location: admin.php?action=profile');
             exit;
         }
@@ -1373,13 +1386,6 @@ class AdminController {
 
     public function changePassword() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: admin.php?action=profile');
-            exit;
-        }
-
-        // Validate CSRF token
-        if (!SecurityHelper::verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-            $_SESSION['error'] = 'Token keamanan tidak valid';
             header('Location: admin.php?action=profile');
             exit;
         }
@@ -1431,14 +1437,20 @@ class AdminController {
             $totalActivities = $this->admin->countActivityLog($search, $activity_type, $admin_id, $date_from, $date_to);
             $totalPages = ceil($totalActivities / 50);
             
-            include __DIR__ . '/../views/admin/activity_logs.php';
+            $this->includeView('views/admin/activity_logs.php', compact('activities', 'totalActivities', 'totalPages', 'page', 'search', 'activity_type', 'admin_id', 'date_from', 'date_to'));
         } catch (Exception $e) {
             error_log("Activity log error: " . $e->getMessage());
             $_SESSION['error'] = 'Error loading activity log';
             $activities = [];
             $totalActivities = 0;
             $totalPages = 1;
-            include __DIR__ . '/../views/admin/activity_logs.php';
+            $page = 1;
+            $search = '';
+            $activity_type = '';
+            $admin_id = 0;
+            $date_from = '';
+            $date_to = '';
+            $this->includeView('views/admin/activity_logs.php', compact('activities', 'totalActivities', 'totalPages', 'page', 'search', 'activity_type', 'admin_id', 'date_from', 'date_to'));
         }
     }
 
@@ -1501,23 +1513,6 @@ class AdminController {
         } catch (Exception $e) {
             error_log("Log invalid access error: " . $e->getMessage());
         }
-    }
-
-    // Helper method to generate slug
-    private function generateSlug($text) {
-        // Convert to lowercase
-        $slug = strtolower($text);
-        
-        // Replace spaces and special characters with hyphens
-        $slug = preg_replace('/[^a-z0-9\-]/', '-', $slug);
-        
-        // Remove multiple consecutive hyphens
-        $slug = preg_replace('/-+/', '-', $slug);
-        
-        // Remove leading and trailing hyphens
-        $slug = trim($slug, '-');
-        
-        return $slug;
     }
 }
 ?>

@@ -1,12 +1,12 @@
 <?php
-// admin.php - Enhanced Admin Panel Router (Bagian yang diperbaiki)
+// admin.php - Enhanced Admin Panel Router
 session_start();
 
 // Include required files dengan error handling
 $required_files = [
     'config/database.php',
     'controllers/AdminController.php', 
-    'helpers/SecurityHelper.php',
+    'helper/SecurityHelper.php',
     'middleware/AdminMiddleware.php'
 ];
 
