@@ -1,365 +1,758 @@
+<?php
+// views/admin/manage_categories.php - Manage Categories Page
+$pageTitle = 'Kelola Kategori';
+
+// Security function
+function sanitizeOutput($value) {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kelola Kategori - Admin Campus Hub</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title><?= $pageTitle ?> - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/admin.css">
     <style>
-        .sidebar-gradient {
-            background: linear-gradient(180deg, #1f2937 0%, #374151 100%);
+        .categories-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 25px;
+            align-items: start;
         }
-        .table-hover:hover {
-            background-color: #f8fafc;
+
+        .category-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .category-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.1);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .category-info h4 {
+            margin: 0 0 5px;
+            color: #495057;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .category-slug {
+            font-size: 12px;
+            color: #667eea;
+            font-family: monospace;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .category-description {
+            color: #6c757d;
+            font-size: 14px;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+
+        .category-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f1f3f4;
+        }
+
+        .category-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .category-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .drag-handle {
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: grab;
+            color: #6c757d;
+            padding: 10px 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .category-item:hover .drag-handle {
+            opacity: 1;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .sortable-ghost {
+            opacity: 0.5;
+        }
+
+        .sortable-chosen {
+            transform: scale(1.02);
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .create-category-form {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 100px;
+        }
+
+        .form-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin: -25px -25px 25px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .form-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .edit-mode .form-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-control {
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .slug-display {
+            font-size: 12px;
+            color: #667eea;
+            margin-top: 5px;
+            font-family: monospace;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .category-stats-overview {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .bulk-actions {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .bulk-actions.show {
+            display: flex;
+        }
+
+        .sort-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .create-category-form {
+                position: static;
+                order: -1;
+            }
+
+            .category-actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <?php include_once 'views/admin/partials/sidebar.php'; ?>
+<body>
+    <div class="admin-layout">
+        <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
-    <!-- Main Content -->
-    <div class="ml-64 min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Kelola Kategori</h1>
-                        <p class="text-gray-600">Manajemen kategori bootcamp dan kursus</p>
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1><?= $pageTitle ?></h1>
+                    <div class="breadcrumb">
+                        <i class="fas fa-home"></i> Admin / 
+                        <a href="admin.php?action=manage_bootcamps" style="color: #667eea; text-decoration: none;">
+                            <i class="fas fa-graduation-cap"></i> Kelola Bootcamps
+                        </a> / 
+                        <i class="fas fa-tags"></i> Kategori
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <button onclick="openCreateModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
-                            <i class="fas fa-plus mr-2"></i>
-                            Tambah Kategori
-                        </button>
-                    </div>
+                </div>
+                <div class="page-actions">
+                    <a href="admin.php?action=manage_bootcamps" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Kembali ke Bootcamps
+                    </a>
                 </div>
             </div>
-        </header>
 
-        <!-- Main Content -->
-        <main class="p-6">
-            <!-- Alerts -->
-            <?php if (isset($_SESSION['success'])): ?>
-                <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-                    <i class="fas fa-check-circle mr-3"></i>
-                    <span><?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></span>
-                </div>
-            <?php endif; ?>
-
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-                    <i class="fas fa-exclamation-triangle mr-3"></i>
-                    <span><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></span>
-                </div>
-            <?php endif; ?>
-
-            <!-- Categories Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                <?php if (!empty($categories)): ?>
-                    <?php foreach ($categories as $category): ?>
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <?php if (!empty($category['icon'])): ?>
-                                        <img src="assets/images/categories/<?php echo htmlspecialchars($category['icon']); ?>" 
-                                             alt="<?php echo htmlspecialchars($category['name']); ?>"
-                                             class="w-8 h-8 object-contain">
-                                    <?php else: ?>
-                                        <i class="fas fa-tag text-blue-600"></i>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button onclick="editCategory(<?php echo $category['id']; ?>, '<?php echo htmlspecialchars($category['name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($category['description'] ?? '', ENT_QUOTES); ?>')" 
-                                            class="text-blue-600 hover:text-blue-900 transition-colors" 
-                                            title="Edit Kategori">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button onclick="deleteCategory(<?php echo $category['id']; ?>, '<?php echo htmlspecialchars($category['name'], ENT_QUOTES); ?>')" 
-                                            class="text-red-600 hover:text-red-900 transition-colors" 
-                                            title="Hapus Kategori">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2"><?php echo htmlspecialchars($category['name']); ?></h3>
-                            
-                            <?php if (!empty($category['description'])): ?>
-                                <p class="text-sm text-gray-600 mb-4"><?php echo htmlspecialchars($category['description']); ?></p>
-                            <?php endif; ?>
-                            
-                            <div class="flex items-center justify-between text-sm text-gray-500">
-                                <span>
-                                    <?php echo $category['bootcamp_count'] ?? 0; ?> bootcamps
-                                </span>
-                                <span>
-                                    Sort: <?php echo $category['sort_order'] ?? 0; ?>
-                                </span>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="col-span-full text-center py-12">
-                        <i class="fas fa-tags text-4xl text-gray-400 mb-4"></i>
-                        <p class="text-lg font-medium text-gray-900">Belum ada kategori</p>
-                        <p class="text-gray-600 mb-4">Mulai dengan menambahkan kategori pertama</p>
-                        <button onclick="openCreateModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg">
-                            <i class="fas fa-plus mr-2"></i>
-                            Tambah Kategori
-                        </button>
+            <div class="content-wrapper">
+                <!-- Alert Messages -->
+                <?php if (isset($_SESSION['success'])): ?>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <?= sanitizeOutput($_SESSION['success']) ?>
                     </div>
+                    <?php unset($_SESSION['success']); ?>
                 <?php endif; ?>
-            </div>
 
-            <!-- Categories Table -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">Detail Kategori</h3>
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <?= sanitizeOutput($_SESSION['error']) ?>
+                    </div>
+                    <?php unset($_SESSION['error']); ?>
+                <?php endif; ?>
+
+                <!-- Category Stats Overview -->
+                <div class="category-stats-overview">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number"><?= number_format(count($categories ?? [])) ?></div>
+                            <div class="stat-label">Total Kategori</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">
+                                <?php
+                                $activeCount = 0;
+                                if (isset($categories)) {
+                                    foreach ($categories as $category) {
+                                        if (($category['status'] ?? 'active') === 'active') $activeCount++;
+                                    }
+                                }
+                                echo number_format($activeCount);
+                                ?>
+                            </div>
+                            <div class="stat-label">Kategori Aktif</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">
+                                <?php
+                                $totalBootcamps = 0;
+                                if (isset($categories)) {
+                                    foreach ($categories as $category) {
+                                        $totalBootcamps += $category['bootcamp_count'] ?? 0;
+                                    }
+                                }
+                                echo number_format($totalBootcamps);
+                                ?>
+                            </div>
+                            <div class="stat-label">Total Bootcamps</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">
+                                <?php
+                                $maxBootcamps = 0;
+                                if (isset($categories)) {
+                                    foreach ($categories as $category) {
+                                        $maxBootcamps = max($maxBootcamps, $category['bootcamp_count'] ?? 0);
+                                    }
+                                }
+                                echo number_format($maxBootcamps);
+                                ?>
+                            </div>
+                            <div class="stat-label">Terpopuler</div>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bootcamps</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sort Order</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dibuat</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <?php if (!empty($categories)): ?>
+
+                <!-- Sort Info -->
+                <div class="sort-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Info:</strong> Drag & drop kategori untuk mengubah urutan tampilan. Perubahan akan tersimpan otomatis.
+                </div>
+
+                <!-- Categories Grid -->
+                <div class="categories-grid">
+                    <!-- Categories List -->
+                    <div class="categories-list">
+                        <?php if (!empty($categories)): ?>
+                            <div id="sortableCategories">
                                 <?php foreach ($categories as $category): ?>
-                                    <tr class="table-hover">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                    <?php if (!empty($category['icon'])): ?>
-                                                        <img src="assets/images/categories/<?php echo htmlspecialchars($category['icon']); ?>" 
-                                                             alt="<?php echo htmlspecialchars($category['name']); ?>"
-                                                             class="w-6 h-6 object-contain">
-                                                    <?php else: ?>
-                                                        <i class="fas fa-tag text-blue-600"></i>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($category['name']); ?></div>
-                                                    <div class="text-sm text-gray-500">ID: #<?php echo $category['id']; ?></div>
-                                                </div>
+                                    <div class="category-item" data-category-id="<?= $category['id'] ?>">
+                                        <div class="drag-handle">
+                                            <i class="fas fa-grip-vertical"></i>
+                                        </div>
+                                        
+                                        <div class="category-header">
+                                            <div class="category-info">
+                                                <h4><?= sanitizeOutput($category['name']) ?></h4>
+                                                <span class="category-slug">/category/<?= sanitizeOutput($category['slug']) ?></span>
                                             </div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm text-gray-900 max-w-xs truncate">
-                                                <?php echo htmlspecialchars($category['description'] ?? '-'); ?>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="text-sm text-gray-900"><?php echo $category['bootcamp_count'] ?? 0; ?></span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="text-sm text-gray-900"><?php echo $category['sort_order'] ?? 0; ?></span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <?php echo date('d M Y', strtotime($category['created_at'])); ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <div class="flex items-center space-x-2">
-                                                <button onclick="editCategory(<?php echo $category['id']; ?>, '<?php echo htmlspecialchars($category['name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($category['description'] ?? '', ENT_QUOTES); ?>')" 
-                                                        class="text-blue-600 hover:text-blue-900 transition-colors" 
+                                            <div class="category-actions">
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-primary edit-category-btn" 
+                                                        data-category='<?= json_encode($category) ?>'
                                                         title="Edit Kategori">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button onclick="deleteCategory(<?php echo $category['id']; ?>, '<?php echo htmlspecialchars($category['name'], ENT_QUOTES); ?>')" 
-                                                        class="text-red-600 hover:text-red-900 transition-colors" 
-                                                        title="Hapus Kategori">
+                                                <a href="admin.php?action=delete_category&id=<?= $category['id'] ?>" 
+                                                   class="btn btn-sm btn-danger" 
+                                                   title="Hapus Kategori"
+                                                   onclick="return confirm('Yakin ingin menghapus kategori <?= sanitizeOutput($category['name']) ?>? Bootcamps dalam kategori ini akan menjadi uncategorized.')">
                                                     <i class="fas fa-trash"></i>
-                                                </button>
+                                                </a>
                                             </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="6" class="px-6 py-12 text-center">
-                                        <div class="text-gray-500">
-                                            <i class="fas fa-tags text-4xl mb-4"></i>
-                                            <p class="text-lg font-medium">Tidak ada kategori ditemukan</p>
                                         </div>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+
+                                        <?php if (!empty($category['description'])): ?>
+                                            <div class="category-description">
+                                                <?= sanitizeOutput($category['description']) ?>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <div class="category-meta">
+                                            <div class="category-stats">
+                                                <div class="stat-item">
+                                                    <i class="fas fa-graduation-cap"></i>
+                                                    <span class="stat-value"><?= number_format($category['bootcamp_count'] ?? 0) ?></span>
+                                                    <span>Bootcamps</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <i class="fas fa-sort-numeric-up"></i>
+                                                    <span class="stat-value"><?= $category['sort_order'] ?? 0 ?></span>
+                                                    <span>Urutan</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <i class="fas fa-calendar"></i>
+                                                    <span><?= date('d M Y', strtotime($category['created_at'] ?? '')) ?></span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <span class="badge badge-<?= ($category['status'] ?? 'active') === 'active' ? 'success' : 'secondary' ?>">
+                                                    <?= ucfirst($category['status'] ?? 'active') ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="empty-state">
+                                <i class="fas fa-tags"></i>
+                                <h3>Belum ada kategori</h3>
+                                <p>Buat kategori pertama untuk mengorganisir bootcamps Anda.</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Create/Edit Category Form -->
+                    <div class="create-category-form" id="categoryForm">
+                        <div class="form-header">
+                            <h3 id="formTitle">
+                                <i class="fas fa-plus"></i>
+                                Tambah Kategori Baru
+                            </h3>
+                        </div>
+
+                        <form method="POST" action="admin.php?action=create_category" id="categoryFormElement">
+                            <input type="hidden" name="csrf_token" value="<?= sanitizeOutput($_SESSION['csrf_token'] ?? '') ?>">
+                            <input type="hidden" name="id" id="categoryId">
+                            
+                            <div class="form-group">
+                                <label for="categoryName">
+                                    <i class="fas fa-tag"></i>
+                                    Nama Kategori <span style="color: #dc3545;">*</span>
+                                </label>
+                                <input type="text" 
+                                       id="categoryName" 
+                                       name="name" 
+                                       class="form-control" 
+                                       placeholder="Contoh: Web Development"
+                                       required
+                                       maxlength="100">
+                                <div class="slug-display" id="slugDisplay"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="categoryDescription">
+                                    <i class="fas fa-align-left"></i>
+                                    Deskripsi
+                                </label>
+                                <textarea id="categoryDescription" 
+                                          name="description" 
+                                          class="form-control" 
+                                          rows="4"
+                                          placeholder="Deskripsi singkat tentang kategori ini..."
+                                          maxlength="500"></textarea>
+                                <div style="font-size: 12px; color: #6c757d; text-align: right; margin-top: 5px;">
+                                    <span id="descCounter">0</span>/500
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sortOrder">
+                                    <i class="fas fa-sort-numeric-up"></i>
+                                    Urutan Tampilan
+                                </label>
+                                <input type="number" 
+                                       id="sortOrder" 
+                                       name="sort_order" 
+                                       class="form-control" 
+                                       placeholder="0"
+                                       min="0"
+                                       max="999"
+                                       value="<?= count($categories ?? []) ?>">
+                                <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                                    Semakin kecil angka, semakin atas posisinya
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i class="fas fa-save"></i>
+                                    <span id="submitText">Simpan Kategori</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="cancelBtn" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                    Batal
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Create/Edit Category Modal -->
-    <div id="categoryModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-                <h3 id="modalTitle" class="text-lg font-medium text-gray-900 mb-4">Tambah Kategori</h3>
-                <form id="categoryForm" method="POST" action="admin.php?action=create_category" enctype="multipart/form-data">
-                    <input type="hidden" id="categoryId" name="id" value="">
-                    <input type="hidden" name="csrf_token" value="<?php echo SecurityHelper::generateCSRFToken(); ?>">
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label for="categoryName" class="block text-sm font-medium text-gray-700 mb-2">Nama Kategori *</label>
-                            <input type="text" 
-                                   id="categoryName" 
-                                   name="name" 
-                                   required 
-                                   maxlength="100"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   placeholder="Masukkan nama kategori">
-                        </div>
-                        
-                        <div>
-                            <label for="categoryDescription" class="block text-sm font-medium text-gray-700 mb-2">Deskripsi</label>
-                            <textarea id="categoryDescription" 
-                                      name="description" 
-                                      rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      placeholder="Deskripsi kategori (opsional)"></textarea>
-                        </div>
-                        
-                        <div>
-                            <label for="categoryIcon" class="block text-sm font-medium text-gray-700 mb-2">Icon Kategori</label>
-                            <input type="file" 
-                                   id="categoryIcon" 
-                                   name="icon" 
-                                   accept="image/*"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, GIF (Max: 2MB)</p>
-                        </div>
-                        
-                        <div>
-                            <label for="sortOrder" class="block text-sm font-medium text-gray-700 mb-2">Urutan Tampil</label>
-                            <input type="number" 
-                                   id="sortOrder" 
-                                   name="sort_order" 
-                                   min="0"
-                                   value="0"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   placeholder="0">
-                            <p class="text-xs text-gray-500 mt-1">Semakin kecil angka, semakin awal tampil</p>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6 flex justify-end space-x-3">
-                        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-gray-800 text-sm font-medium rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                            Batal
-                        </button>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <i class="fas fa-save mr-1"></i>
-                            Simpan
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3 text-center">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                    <i class="fas fa-exclamation-triangle text-red-600"></i>
-                </div>
-                <h3 class="text-lg font-medium text-gray-900 mt-4">Hapus Kategori</h3>
-                <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500">
-                        Apakah Anda yakin ingin menghapus kategori <span id="deleteCategoryName" class="font-medium"></span>? 
-                        Semua bootcamp dalam kategori ini akan dipindah ke kategori "Lainnya".
-                    </p>
-                </div>
-                <div class="items-center px-4 py-3 flex space-x-4">
-                    <button id="cancelDelete" class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                        Batal
-                    </button>
-                    <button id="confirmDelete" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                        Hapus
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Include SortableJS for drag & drop -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
     <script>
-        let categoryToDelete = null;
+        document.addEventListener('DOMContentLoaded', function() {
+            const categoryForm = document.getElementById('categoryFormElement');
+            const formTitle = document.getElementById('formTitle');
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const categoryId = document.getElementById('categoryId');
+            const categoryName = document.getElementById('categoryName');
+            const categoryDescription = document.getElementById('categoryDescription');
+            const sortOrder = document.getElementById('sortOrder');
+            const slugDisplay = document.getElementById('slugDisplay');
+            const descCounter = document.getElementById('descCounter');
 
-        function openCreateModal() {
-            document.getElementById('modalTitle').textContent = 'Tambah Kategori';
-            document.getElementById('categoryForm').action = 'admin.php?action=create_category';
-            document.getElementById('categoryId').value = '';
-            document.getElementById('categoryName').value = '';
-            document.getElementById('categoryDescription').value = '';
-            document.getElementById('categoryIcon').value = '';
-            document.getElementById('sortOrder').value = '0';
-            document.getElementById('categoryModal').classList.remove('hidden');
-        }
+            let isEditMode = false;
 
-        function editCategory(id, name, description) {
-            document.getElementById('modalTitle').textContent = 'Edit Kategori';
-            document.getElementById('categoryForm').action = 'admin.php?action=update_category';
-            document.getElementById('categoryId').value = id;
-            document.getElementById('categoryName').value = name;
-            document.getElementById('categoryDescription').value = description || '';
-            document.getElementById('categoryModal').classList.remove('hidden');
-        }
+            // Slug generation
+            categoryName.addEventListener('input', function() {
+                const slug = generateSlug(this.value);
+                slugDisplay.textContent = slug ? `URL: /category/${slug}` : '';
+            });
 
-        function closeModal() {
-            document.getElementById('categoryModal').classList.add('hidden');
-        }
-
-        function deleteCategory(id, name) {
-            categoryToDelete = id;
-            document.getElementById('deleteCategoryName').textContent = name;
-            document.getElementById('deleteModal').classList.remove('hidden');
-        }
-
-        // Delete modal handlers
-        document.getElementById('cancelDelete').addEventListener('click', function() {
-            document.getElementById('deleteModal').classList.add('hidden');
-            categoryToDelete = null;
-        });
-
-        document.getElementById('confirmDelete').addEventListener('click', function() {
-            if (categoryToDelete) {
-                window.location.href = `admin.php?action=delete_category&id=${categoryToDelete}`;
+            function generateSlug(text) {
+                return text
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
             }
-        });
 
-        // Close modals when clicking outside
-        document.getElementById('categoryModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
+            // Character counter for description
+            categoryDescription.addEventListener('input', function() {
+                descCounter.textContent = this.value.length;
+            });
+
+            // Edit category
+            document.querySelectorAll('.edit-category-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const categoryData = JSON.parse(this.dataset.category);
+                    editCategory(categoryData);
+                });
+            });
+
+            function editCategory(category) {
+                isEditMode = true;
+                
+                // Update form
+                categoryForm.action = 'admin.php?action=update_category';
+                categoryId.value = category.id;
+                categoryName.value = category.name;
+                categoryDescription.value = category.description || '';
+                sortOrder.value = category.sort_order || 0;
+                
+                // Update UI
+                formTitle.innerHTML = '<i class="fas fa-edit"></i> Edit Kategori';
+                submitText.textContent = 'Update Kategori';
+                cancelBtn.style.display = 'inline-flex';
+                document.getElementById('categoryForm').classList.add('edit-mode');
+                
+                // Update slug display and counter
+                const slug = generateSlug(category.name);
+                slugDisplay.textContent = slug ? `URL: /category/${slug}` : '';
+                descCounter.textContent = (category.description || '').length;
+                
+                // Scroll to form
+                document.getElementById('categoryForm').scrollIntoView({ behavior: 'smooth' });
             }
-        });
 
-        document.getElementById('deleteModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.classList.add('hidden');
-                categoryToDelete = null;
+            // Cancel edit
+            cancelBtn.addEventListener('click', function() {
+                resetForm();
+            });
+
+            function resetForm() {
+                isEditMode = false;
+                
+                // Reset form
+                categoryForm.action = 'admin.php?action=create_category';
+                categoryForm.reset();
+                categoryId.value = '';
+                
+                // Reset UI
+                formTitle.innerHTML = '<i class="fas fa-plus"></i> Tambah Kategori Baru';
+                submitText.textContent = 'Simpan Kategori';
+                cancelBtn.style.display = 'none';
+                document.getElementById('categoryForm').classList.remove('edit-mode');
+                
+                // Reset displays
+                slugDisplay.textContent = '';
+                descCounter.textContent = '0';
+                sortOrder.value = <?= count($categories ?? []) ?>;
             }
-        });
 
-        // Form validation
-        document.getElementById('categoryForm').addEventListener('submit', function(e) {
-            const name = document.getElementById('categoryName').value.trim();
-            
-            if (name.length < 2) {
+            // Form validation
+            categoryForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                alert('Nama kategori minimal 2 karakter');
-                return;
+                
+                if (!categoryName.value.trim()) {
+                    alert('Nama kategori harus diisi!');
+                    categoryName.focus();
+                    return;
+                }
+                
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                
+                // Submit form
+                this.submit();
+            });
+
+            // Sortable categories
+            const sortableList = document.getElementById('sortableCategories');
+            if (sortableList) {
+                new Sortable(sortableList, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    onEnd: function(evt) {
+                        // Get new order
+                        const categoryIds = Array.from(sortableList.children).map(item => {
+                            return item.dataset.categoryId;
+                        });
+                        
+                        // Update sort order
+                        updateSortOrder(categoryIds);
+                    }
+                });
             }
+
+            function updateSortOrder(categoryIds) {
+                fetch('admin.php?action=update_category_order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        category_ids: categoryIds,
+                        csrf_token: '<?= sanitizeOutput($_SESSION['csrf_token'] ?? '') ?>'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update sort order values in the UI
+                        categoryIds.forEach((id, index) => {
+                            const categoryItem = document.querySelector(`[data-category-id="${id}"]`);
+                            const sortOrderSpan = categoryItem.querySelector('.stat-value');
+                            if (sortOrderSpan) {
+                                sortOrderSpan.textContent = index + 1;
+                            }
+                        });
+                        
+                        console.log('Sort order updated successfully');
+                    } else {
+                        alert('Gagal mengupdate urutan kategori: ' + data.message);
+                        // Reload page to reset order
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating sort order:', error);
+                    alert('Terjadi kesalahan saat mengupdate urutan kategori');
+                    location.reload();
+                });
+            }
+
+            // Auto-save draft
+            let autoSaveTimer;
+            function scheduleAutoSave() {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(() => {
+                    if (!isEditMode && (categoryName.value.trim() || categoryDescription.value.trim())) {
+                        const draft = {
+                            name: categoryName.value,
+                            description: categoryDescription.value,
+                            sort_order: sortOrder.value
+                        };
+                        localStorage.setItem('category_draft', JSON.stringify(draft));
+                    }
+                }, 2000);
+            }
+
+            // Load draft
+            const savedDraft = localStorage.getItem('category_draft');
+            if (savedDraft && !isEditMode) {
+                try {
+                    const draft = JSON.parse(savedDraft);
+                    if (confirm('Ada draft kategori yang belum tersimpan. Muat draft tersebut?')) {
+                        categoryName.value = draft.name || '';
+                        categoryDescription.value = draft.description || '';
+                        sortOrder.value = draft.sort_order || 0;
+                        
+                        // Update displays
+                        const slug = generateSlug(draft.name || '');
+                        slugDisplay.textContent = slug ? `URL: /category/${slug}` : '';
+                        descCounter.textContent = (draft.description || '').length;
+                    }
+                    localStorage.removeItem('category_draft');
+                } catch (e) {
+                    console.error('Failed to load draft:', e);
+                }
+            }
+
+            // Auto-save on input
+            [categoryName, categoryDescription, sortOrder].forEach(input => {
+                input.addEventListener('input', scheduleAutoSave);
+            });
+
+            // Clear draft on form submit
+            categoryForm.addEventListener('submit', function() {
+                localStorage.removeItem('category_draft');
+            });
         });
     </script>
 </body>

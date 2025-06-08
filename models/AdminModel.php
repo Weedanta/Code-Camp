@@ -1,50 +1,38 @@
 <?php
-// models/AdminModel.php - Enhanced Admin Model
+// models/AdminModel.php - Complete Admin Model Implementation
 
 class AdminModel {
     private $conn;
-    private $admin_table = 'admin';
-    private $users_table = 'users';
-    private $bootcamps_table = 'bootcamps';
-    private $categories_table = 'categories';
-    private $orders_table = 'orders';
-    private $reviews_table = 'reviews';
-    private $forum_posts_table = 'forum_posts';
-    private $settings_table = 'settings';
-    private $activity_log_table = 'admin_activity_log';
 
-    public function __construct($db) {
-        $this->conn = $db;
+    public function __construct($database) {
+        $this->conn = $database;
     }
 
     // ==================== AUTHENTICATION ====================
     
     public function login($email, $password) {
         try {
-            $query = "SELECT * FROM " . $this->admin_table . " WHERE email = :email AND status = 'active' LIMIT 1";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':email', $email);
-            $stmt->execute();
-
-            if ($stmt->rowCount() > 0) {
-                $admin = $stmt->fetch(PDO::FETCH_ASSOC);
-                if (password_verify($password, $admin['password'])) {
-                    return $admin;
-                }
+            $stmt = $this->conn->prepare("SELECT * FROM admins WHERE email = ? AND status = 'active'");
+            $stmt->execute([$email]);
+            $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($admin && password_verify($password, $admin['password'])) {
+                return $admin;
             }
+            
             return false;
         } catch (PDOException $e) {
+            error_log("Admin login error: " . $e->getMessage());
             return false;
         }
     }
-    
-    public function updateLastLogin($admin_id) {
+
+    public function updateLastLogin($adminId) {
         try {
-            $query = "UPDATE " . $this->admin_table . " SET last_login = NOW() WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':id', $admin_id);
-            return $stmt->execute();
+            $stmt = $this->conn->prepare("UPDATE admins SET last_login = NOW() WHERE id = ?");
+            return $stmt->execute([$adminId]);
         } catch (PDOException $e) {
+            error_log("Update last login error: " . $e->getMessage());
             return false;
         }
     }
@@ -56,120 +44,119 @@ class AdminModel {
             $stats = [];
             
             // Total users
-            $query = "SELECT COUNT(*) as total FROM " . $this->users_table;
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['total_users'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM users");
+            $stats['total_users'] = $stmt->fetchColumn();
             
             // New users this month
-            $query = "SELECT COUNT(*) as total FROM " . $this->users_table . " WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['new_users_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM users WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+            $stats['new_users_month'] = $stmt->fetchColumn();
             
             // Total bootcamps
-            $query = "SELECT COUNT(*) as total FROM " . $this->bootcamps_table;
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['total_bootcamps'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM bootcamps");
+            $stats['total_bootcamps'] = $stmt->fetchColumn();
             
             // Active bootcamps
-            $query = "SELECT COUNT(*) as total FROM " . $this->bootcamps_table . " WHERE status = 'active'";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['active_bootcamps'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM bootcamps WHERE status = 'active'");
+            $stats['active_bootcamps'] = $stmt->fetchColumn();
             
             // Total orders
-            $query = "SELECT COUNT(*) as total FROM " . $this->orders_table;
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['total_orders'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM orders");
+            $stats['total_orders'] = $stmt->fetchColumn();
             
             // Orders this month
-            $query = "SELECT COUNT(*) as total FROM " . $this->orders_table . " WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['orders_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM orders WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+            $stats['orders_month'] = $stmt->fetchColumn();
             
             // Total revenue
-            $query = "SELECT SUM(final_amount) as total FROM " . $this->orders_table . " WHERE payment_status = 'completed'";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['total_revenue'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+            $stmt = $this->conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'completed'");
+            $stats['total_revenue'] = $stmt->fetchColumn();
             
             // Revenue this month
-            $query = "SELECT SUM(final_amount) as total FROM " . $this->orders_table . " WHERE payment_status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['revenue_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+            $stmt = $this->conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'completed' AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+            $stats['revenue_month'] = $stmt->fetchColumn();
             
             // Pending reviews
-            $query = "SELECT COUNT(*) as total FROM " . $this->reviews_table . " WHERE status = 'pending'";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['pending_reviews'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-            
-            // Total forum posts
-            $query = "SELECT COUNT(*) as total FROM " . $this->forum_posts_table . " WHERE is_deleted = 0";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['total_forum_posts'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM reviews WHERE status = 'pending'");
+            $stats['pending_reviews'] = $stmt->fetchColumn();
             
             return $stats;
         } catch (PDOException $e) {
-            return [];
+            error_log("Get dashboard stats error: " . $e->getMessage());
+            return [
+                'total_users' => 0,
+                'new_users_month' => 0,
+                'total_bootcamps' => 0,
+                'active_bootcamps' => 0,
+                'total_orders' => 0,
+                'orders_month' => 0,
+                'total_revenue' => 0,
+                'revenue_month' => 0,
+                'pending_reviews' => 0
+            ];
         }
     }
-    
-    public function getRecentActivities($limit = 10) {
+
+    public function getDetailedStats() {
         try {
-            $query = "SELECT al.*, a.name as admin_name 
-                     FROM " . $this->activity_log_table . " al
-                     LEFT JOIN " . $this->admin_table . " a ON al.admin_id = a.id
-                     ORDER BY al.created_at DESC LIMIT :limit";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $stats = $this->getDashboardStats();
+            
+            // Additional detailed stats
+            $stmt = $this->conn->query("SELECT COALESCE(AVG(total_amount), 0) as avg FROM orders WHERE payment_status = 'completed'");
+            $stats['avg_order_value'] = $stmt->fetchColumn();
+            
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM enrollments");
+            $stats['total_enrollments'] = $stmt->fetchColumn();
+            
+            // Top bootcamps by revenue
+            $stmt = $this->conn->query("
+                SELECT b.id, b.title, COUNT(o.id) as enrollments, COALESCE(SUM(o.total_amount), 0) as revenue 
+                FROM bootcamps b 
+                LEFT JOIN order_items oi ON b.id = oi.bootcamp_id 
+                LEFT JOIN orders o ON oi.order_id = o.id AND o.payment_status = 'completed'
+                GROUP BY b.id, b.title 
+                ORDER BY revenue DESC 
+                LIMIT 10
+            ");
+            $stats['top_bootcamps'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return $stats;
         } catch (PDOException $e) {
+            error_log("Get detailed stats error: " . $e->getMessage());
             return [];
         }
     }
-    
+
     public function getSystemAlerts() {
         $alerts = [];
         
         try {
-            // Check for failed orders
-            $query = "SELECT COUNT(*) as total FROM " . $this->orders_table . " WHERE payment_status = 'failed' AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $failed_orders = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            // Check for pending reviews
+            $stmt = $this->conn->query("SELECT COUNT(*) as count FROM reviews WHERE status = 'pending'");
+            $pendingReviews = $stmt->fetchColumn();
             
-            if ($failed_orders > 0) {
+            if ($pendingReviews > 0) {
                 $alerts[] = [
                     'type' => 'warning',
-                    'message' => "$failed_orders order gagal dalam 24 jam terakhir"
+                    'message' => "Ada $pendingReviews review yang menunggu moderasi"
                 ];
             }
             
-            // Check for pending reviews
-            $query = "SELECT COUNT(*) as total FROM " . $this->reviews_table . " WHERE status = 'pending'";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $pending_reviews = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            // Check for failed orders
+            $stmt = $this->conn->query("SELECT COUNT(*) as count FROM orders WHERE payment_status = 'failed' AND DATE(created_at) = CURDATE()");
+            $failedOrders = $stmt->fetchColumn();
             
-            if ($pending_reviews > 10) {
+            if ($failedOrders > 5) {
                 $alerts[] = [
-                    'type' => 'info',
-                    'message' => "$pending_reviews review menunggu persetujuan"
+                    'type' => 'warning',
+                    'message' => "Banyak order gagal hari ini: $failedOrders orders"
                 ];
             }
             
-            return $alerts;
         } catch (PDOException $e) {
-            return [];
+            error_log("Get system alerts error: " . $e->getMessage());
         }
+        
+        return $alerts;
     }
 
     // ==================== USER MANAGEMENT ====================
@@ -177,129 +164,144 @@ class AdminModel {
     public function getUsers($page = 1, $limit = 20, $search = '', $status = '') {
         try {
             $offset = ($page - 1) * $limit;
-            $conditions = [];
+            $where = "WHERE 1=1";
             $params = [];
             
-            if (!empty($search)) {
-                $conditions[] = "(u.name LIKE :search OR u.alamat_email LIKE :search OR u.no_telepon LIKE :search)";
-                $params[':search'] = "%$search%";
+            if ($search) {
+                $where .= " AND (name LIKE ? OR alamat_email LIKE ? OR no_telepon LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
             }
             
-            if (!empty($status)) {
-                $conditions[] = "u.status = :status";
-                $params[':status'] = $status;
+            if ($status) {
+                $where .= " AND status = ?";
+                $params[] = $status;
             }
             
-            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $sql = "SELECT u.*, 
+                           COALESCE(COUNT(o.id), 0) as total_orders,
+                           COALESCE(SUM(o.total_amount), 0) as total_spent
+                    FROM users u 
+                    LEFT JOIN orders o ON u.id = o.user_id AND o.payment_status = 'completed'
+                    $where 
+                    GROUP BY u.id
+                    ORDER BY u.created_at DESC 
+                    LIMIT $limit OFFSET $offset";
             
-            $query = "SELECT u.*, 
-                            COUNT(DISTINCT o.id) as total_orders,
-                            SUM(CASE WHEN o.payment_status = 'completed' THEN o.final_amount ELSE 0 END) as total_spent
-                     FROM " . $this->users_table . " u
-                     LEFT JOIN " . $this->orders_table . " o ON u.id = o.user_id
-                     $whereClause
-                     GROUP BY u.id
-                     ORDER BY u.created_at DESC
-                     LIMIT :limit OFFSET :offset";
-            
-            $stmt = $this->conn->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
             
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get users error: " . $e->getMessage());
             return [];
         }
     }
-    
+
     public function countUsers($search = '', $status = '') {
         try {
-            $conditions = [];
+            $where = "WHERE 1=1";
             $params = [];
             
-            if (!empty($search)) {
-                $conditions[] = "(name LIKE :search OR alamat_email LIKE :search OR no_telepon LIKE :search)";
-                $params[':search'] = "%$search%";
+            if ($search) {
+                $where .= " AND (name LIKE ? OR alamat_email LIKE ? OR no_telepon LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
             }
             
-            if (!empty($status)) {
-                $conditions[] = "status = :status";
-                $params[':status'] = $status;
+            if ($status) {
+                $where .= " AND status = ?";
+                $params[] = $status;
             }
             
-            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM users $where");
+            $stmt->execute($params);
             
-            $query = "SELECT COUNT(*) as total FROM " . $this->users_table . " $whereClause";
-            $stmt = $this->conn->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            $stmt->execute();
-            return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            return $stmt->fetchColumn();
         } catch (PDOException $e) {
+            error_log("Count users error: " . $e->getMessage());
             return 0;
         }
     }
-    
+
     public function getUserById($id) {
         try {
-            $query = "SELECT * FROM " . $this->users_table . " WHERE id = :id LIMIT 1";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt = $this->conn->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt->execute([$id]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get user by id error: " . $e->getMessage());
             return false;
         }
     }
-    
+
     public function updateUser($id, $name, $email, $phone, $status) {
         try {
             // Check if email already exists for other users
-            $checkQuery = "SELECT id FROM " . $this->users_table . " WHERE alamat_email = :email AND id != :id";
-            $checkStmt = $this->conn->prepare($checkQuery);
-            $checkStmt->bindParam(':email', $email);
-            $checkStmt->bindParam(':id', $id, PDO::PARAM_INT);
-            $checkStmt->execute();
-
-            if ($checkStmt->rowCount() > 0) {
+            $stmt = $this->conn->prepare("SELECT id FROM users WHERE alamat_email = ? AND id != ?");
+            $stmt->execute([$email, $id]);
+            if ($stmt->fetch()) {
                 return ['success' => false, 'message' => 'Email sudah digunakan oleh user lain'];
             }
-
-            $query = "UPDATE " . $this->users_table . " 
-                     SET name = :name, alamat_email = :email, no_telepon = :phone, status = :status, updated_at = NOW() 
-                     WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':name', $name);
-            $stmt->bindParam(':email', $email);
-            $stmt->bindParam(':phone', $phone);
-            $stmt->bindParam(':status', $status);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            if ($stmt->execute()) {
+            
+            $stmt = $this->conn->prepare("UPDATE users SET name = ?, alamat_email = ?, no_telepon = ?, status = ?, updated_at = NOW() WHERE id = ?");
+            $success = $stmt->execute([$name, $email, $phone, $status, $id]);
+            
+            if ($success) {
                 return ['success' => true, 'message' => 'Data user berhasil diupdate'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengupdate data user'];
             }
-            return ['success' => false, 'message' => 'Gagal mengupdate data user'];
         } catch (PDOException $e) {
+            error_log("Update user error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
-    
+
     public function deleteUser($id) {
         try {
-            $query = "DELETE FROM " . $this->users_table . " WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            if ($stmt->execute()) {
-                return ['success' => true, 'message' => 'User berhasil dihapus'];
+            // Check if user has orders
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM orders WHERE user_id = ?");
+            $stmt->execute([$id]);
+            $orderCount = $stmt->fetchColumn();
+            
+            if ($orderCount > 0) {
+                return ['success' => false, 'message' => 'User tidak dapat dihapus karena memiliki riwayat order'];
             }
-            return ['success' => false, 'message' => 'Gagal menghapus user'];
+            
+            $stmt = $this->conn->prepare("DELETE FROM users WHERE id = ?");
+            $success = $stmt->execute([$id]);
+            
+            if ($success) {
+                return ['success' => true, 'message' => 'User berhasil dihapus'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal menghapus user'];
+            }
         } catch (PDOException $e) {
+            error_log("Delete user error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+        }
+    }
+
+    public function resetUserPassword($id) {
+        try {
+            $newPassword = 'password123';
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            
+            $stmt = $this->conn->prepare("UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?");
+            $success = $stmt->execute([$hashedPassword, $id]);
+            
+            if ($success) {
+                return ['success' => true, 'message' => "Password berhasil direset ke: $newPassword"];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mereset password'];
+            }
+        } catch (PDOException $e) {
+            error_log("Reset user password error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
@@ -309,661 +311,1094 @@ class AdminModel {
     public function getBootcamps($page = 1, $limit = 20, $search = '', $category = 0, $status = '') {
         try {
             $offset = ($page - 1) * $limit;
-            $conditions = [];
+            $where = "WHERE 1=1";
             $params = [];
             
-            if (!empty($search)) {
-                $conditions[] = "(b.title LIKE :search OR b.description LIKE :search OR b.instructor_name LIKE :search)";
-                $params[':search'] = "%$search%";
+            if ($search) {
+                $where .= " AND (b.title LIKE ? OR b.description LIKE ? OR b.instructor_name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
             }
             
-            if ($category > 0) {
-                $conditions[] = "b.category_id = :category";
-                $params[':category'] = $category;
+            if ($category) {
+                $where .= " AND b.category_id = ?";
+                $params[] = $category;
             }
             
-            if (!empty($status)) {
-                $conditions[] = "b.status = :status";
-                $params[':status'] = $status;
+            if ($status) {
+                $where .= " AND b.status = ?";
+                $params[] = $status;
             }
             
-            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $sql = "SELECT b.*, c.name as category_name,
+                           COALESCE(COUNT(DISTINCT e.id), 0) as total_enrollments,
+                           COALESCE(AVG(r.rating), 0) as avg_rating,
+                           COALESCE(COUNT(DISTINCT r.id), 0) as review_count
+                    FROM bootcamps b 
+                    LEFT JOIN categories c ON b.category_id = c.id
+                    LEFT JOIN enrollments e ON b.id = e.bootcamp_id
+                    LEFT JOIN reviews r ON b.id = r.bootcamp_id AND r.status = 'published'
+                    $where 
+                    GROUP BY b.id
+                    ORDER BY b.created_at DESC 
+                    LIMIT $limit OFFSET $offset";
             
-            $query = "SELECT b.*, c.name as category_name,
-                            COUNT(DISTINCT oi.order_id) as total_enrollments,
-                            AVG(r.rating) as avg_rating,
-                            COUNT(DISTINCT r.id) as review_count
-                     FROM " . $this->bootcamps_table . " b
-                     LEFT JOIN " . $this->categories_table . " c ON b.category_id = c.id
-                     LEFT JOIN order_items oi ON b.id = oi.bootcamp_id
-                     LEFT JOIN orders o ON oi.order_id = o.id AND o.payment_status = 'completed'
-                     LEFT JOIN " . $this->reviews_table . " r ON b.id = r.bootcamp_id AND r.status = 'published'
-                     $whereClause
-                     GROUP BY b.id
-                     ORDER BY b.created_at DESC
-                     LIMIT :limit OFFSET :offset";
-            
-            $stmt = $this->conn->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
             
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get bootcamps error: " . $e->getMessage());
             return [];
-        }
-    }
-    
-    public function countBootcamps($search = '', $category = 0, $status = '') {
-        try {
-            $conditions = [];
-            $params = [];
-            
-            if (!empty($search)) {
-                $conditions[] = "(title LIKE :search OR description LIKE :search OR instructor_name LIKE :search)";
-                $params[':search'] = "%$search%";
-            }
-            
-            if ($category > 0) {
-                $conditions[] = "category_id = :category";
-                $params[':category'] = $category;
-            }
-            
-            if (!empty($status)) {
-                $conditions[] = "status = :status";
-                $params[':status'] = $status;
-            }
-            
-            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
-            
-            $query = "SELECT COUNT(*) as total FROM " . $this->bootcamps_table . " $whereClause";
-            $stmt = $this->conn->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            $stmt->execute();
-            return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-        } catch (PDOException $e) {
-            return 0;
         }
     }
 
-    public function getCategories() {
+    public function countBootcamps($search = '', $category = 0, $status = '') {
         try {
-            $query = "SELECT * FROM " . $this->categories_table . " ORDER BY sort_order ASC, name ASC";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $where = "WHERE 1=1";
+            $params = [];
+            
+            if ($search) {
+                $where .= " AND (title LIKE ? OR description LIKE ? OR instructor_name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+            
+            if ($category) {
+                $where .= " AND category_id = ?";
+                $params[] = $category;
+            }
+            
+            if ($status) {
+                $where .= " AND status = ?";
+                $params[] = $status;
+            }
+            
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM bootcamps $where");
+            $stmt->execute($params);
+            
+            return $stmt->fetchColumn();
         } catch (PDOException $e) {
-            return [];
+            error_log("Count bootcamps error: " . $e->getMessage());
+            return 0;
         }
     }
 
     public function getBootcampById($id) {
         try {
-            $query = "SELECT b.*, c.name as category_name FROM " . $this->bootcamps_table . " b 
-                     LEFT JOIN " . $this->categories_table . " c ON b.category_id = c.id 
-                     WHERE b.id = :id LIMIT 1";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt = $this->conn->prepare("
+                SELECT b.*, c.name as category_name,
+                       COALESCE(COUNT(DISTINCT e.id), 0) as total_enrollments,
+                       COALESCE(AVG(r.rating), 0) as avg_rating,
+                       COALESCE(COUNT(DISTINCT r.id), 0) as review_count
+                FROM bootcamps b 
+                LEFT JOIN categories c ON b.category_id = c.id
+                LEFT JOIN enrollments e ON b.id = e.bootcamp_id
+                LEFT JOIN reviews r ON b.id = r.bootcamp_id AND r.status = 'published'
+                WHERE b.id = ?
+                GROUP BY b.id
+            ");
+            $stmt->execute([$id]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get bootcamp by id error: " . $e->getMessage());
             return false;
         }
     }
 
     public function createBootcamp($data) {
         try {
-            $query = "INSERT INTO " . $this->bootcamps_table . " 
-                     (title, slug, description, category_id, instructor_name, price, discount_price, 
-                      start_date, duration, image, status, featured, max_participants, created_at) 
-                     VALUES (:title, :slug, :description, :category_id, :instructor_name, :price, 
-                             :discount_price, :start_date, :duration, :image, :status, :featured, 
-                             :max_participants, NOW())";
-            
-            $stmt = $this->conn->prepare($query);
-            
-            foreach ($data as $key => $value) {
-                $stmt->bindValue(":$key", $value);
+            // Check if slug already exists
+            if (!empty($data['slug'])) {
+                $stmt = $this->conn->prepare("SELECT id FROM bootcamps WHERE slug = ?");
+                $stmt->execute([$data['slug']]);
+                if ($stmt->fetch()) {
+                    return ['success' => false, 'message' => 'Slug sudah digunakan'];
+                }
             }
             
-            if ($stmt->execute()) {
+            $stmt = $this->conn->prepare("
+                INSERT INTO bootcamps (title, slug, description, category_id, instructor_name, price, discount_price, 
+                                     start_date, duration, status, featured, max_participants, image, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ");
+            
+            $success = $stmt->execute([
+                $data['title'],
+                $data['slug'],
+                $data['description'],
+                $data['category_id'],
+                $data['instructor_name'],
+                $data['price'],
+                $data['discount_price'],
+                $data['start_date'],
+                $data['duration'],
+                $data['status'],
+                $data['featured'],
+                $data['max_participants'],
+                $data['image'] ?? null
+            ]);
+            
+            if ($success) {
                 return ['success' => true, 'message' => 'Bootcamp berhasil dibuat'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal membuat bootcamp'];
             }
-            return ['success' => false, 'message' => 'Gagal membuat bootcamp'];
         } catch (PDOException $e) {
+            error_log("Create bootcamp error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
 
     public function updateBootcamp($id, $data) {
         try {
-            $setParts = [];
-            $params = [':id' => $id];
-            
-            foreach ($data as $key => $value) {
-                $setParts[] = "$key = :$key";
-                $params[":$key"] = $value;
+            // Check if slug already exists for other bootcamps
+            if (!empty($data['slug'])) {
+                $stmt = $this->conn->prepare("SELECT id FROM bootcamps WHERE slug = ? AND id != ?");
+                $stmt->execute([$data['slug'], $id]);
+                if ($stmt->fetch()) {
+                    return ['success' => false, 'message' => 'Slug sudah digunakan'];
+                }
             }
             
-            $query = "UPDATE " . $this->bootcamps_table . " SET " . implode(', ', $setParts) . ", updated_at = NOW() WHERE id = :id";
+            $sql = "UPDATE bootcamps SET title = ?, slug = ?, description = ?, category_id = ?, instructor_name = ?, 
+                    price = ?, discount_price = ?, start_date = ?, duration = ?, status = ?, featured = ?, 
+                    max_participants = ?, updated_at = NOW()";
+            $params = [
+                $data['title'],
+                $data['slug'],
+                $data['description'],
+                $data['category_id'],
+                $data['instructor_name'],
+                $data['price'],
+                $data['discount_price'],
+                $data['start_date'],
+                $data['duration'],
+                $data['status'],
+                $data['featured'],
+                $data['max_participants']
+            ];
             
-            $stmt = $this->conn->prepare($query);
-            
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
+            if (isset($data['image'])) {
+                $sql .= ", image = ?";
+                $params[] = $data['image'];
             }
             
-            if ($stmt->execute()) {
+            $sql .= " WHERE id = ?";
+            $params[] = $id;
+            
+            $stmt = $this->conn->prepare($sql);
+            $success = $stmt->execute($params);
+            
+            if ($success) {
                 return ['success' => true, 'message' => 'Bootcamp berhasil diupdate'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengupdate bootcamp'];
             }
-            return ['success' => false, 'message' => 'Gagal mengupdate bootcamp'];
         } catch (PDOException $e) {
+            error_log("Update bootcamp error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
 
     public function deleteBootcamp($id) {
         try {
-            $query = "DELETE FROM " . $this->bootcamps_table . " WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            if ($stmt->execute()) {
-                return ['success' => true, 'message' => 'Bootcamp berhasil dihapus'];
+            // Check if bootcamp has enrollments
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM enrollments WHERE bootcamp_id = ?");
+            $stmt->execute([$id]);
+            $enrollmentCount = $stmt->fetchColumn();
+            
+            if ($enrollmentCount > 0) {
+                return ['success' => false, 'message' => 'Bootcamp tidak dapat dihapus karena sudah memiliki peserta'];
             }
-            return ['success' => false, 'message' => 'Gagal menghapus bootcamp'];
+            
+            $stmt = $this->conn->prepare("DELETE FROM bootcamps WHERE id = ?");
+            $success = $stmt->execute([$id]);
+            
+            if ($success) {
+                return ['success' => true, 'message' => 'Bootcamp berhasil dihapus'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal menghapus bootcamp'];
+            }
         } catch (PDOException $e) {
+            error_log("Delete bootcamp error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
 
-    // ==================== ACTIVITY LOGGING ====================
-    
-    public function logActivity($admin_id, $activity_type, $description, $ip_address = null, $user_agent = null) {
+    public function toggleBootcampFeatured($id, $featured) {
         try {
-            $query = "INSERT INTO " . $this->activity_log_table . " 
-                     (admin_id, activity_type, description, ip_address, user_agent, created_at) 
-                     VALUES (:admin_id, :activity_type, :description, :ip_address, :user_agent, NOW())";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':admin_id', $admin_id);
-            $stmt->bindParam(':activity_type', $activity_type);
-            $stmt->bindParam(':description', $description);
-            $stmt->bindParam(':ip_address', $ip_address);
-            $stmt->bindParam(':user_agent', $user_agent);
-            $stmt->execute();
+            $stmt = $this->conn->prepare("UPDATE bootcamps SET featured = ?, updated_at = NOW() WHERE id = ?");
+            $success = $stmt->execute([$featured, $id]);
+            
+            if ($success) {
+                $status = $featured ? 'featured' : 'unfeatured';
+                return ['success' => true, 'message' => "Bootcamp berhasil di-$status"];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengubah status featured'];
+            }
         } catch (PDOException $e) {
-            // Log error silently
+            error_log("Toggle bootcamp featured error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
 
-    // ==================== ORDERS ====================
+    // ==================== CATEGORY MANAGEMENT ====================
+    
+    public function getCategories() {
+        try {
+            $stmt = $this->conn->query("
+                SELECT c.*, COUNT(b.id) as bootcamp_count 
+                FROM categories c 
+                LEFT JOIN bootcamps b ON c.id = b.category_id 
+                WHERE c.status = 'active'
+                GROUP BY c.id 
+                ORDER BY c.sort_order, c.name
+            ");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get categories error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function createCategory($data) {
+        try {
+            // Check if name already exists
+            $stmt = $this->conn->prepare("SELECT id FROM categories WHERE name = ?");
+            $stmt->execute([$data['name']]);
+            if ($stmt->fetch()) {
+                return ['success' => false, 'message' => 'Nama kategori sudah digunakan'];
+            }
+            
+            $stmt = $this->conn->prepare("
+                INSERT INTO categories (name, slug, description, status, sort_order, created_at) 
+                VALUES (?, ?, ?, ?, ?, NOW())
+            ");
+            
+            $success = $stmt->execute([
+                $data['name'],
+                $data['slug'],
+                $data['description'],
+                $data['status'],
+                $data['sort_order']
+            ]);
+            
+            if ($success) {
+                return ['success' => true, 'message' => 'Kategori berhasil dibuat'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal membuat kategori'];
+            }
+        } catch (PDOException $e) {
+            error_log("Create category error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+        }
+    }
+
+    public function updateCategory($id, $data) {
+        try {
+            // Check if name already exists for other categories
+            $stmt = $this->conn->prepare("SELECT id FROM categories WHERE name = ? AND id != ?");
+            $stmt->execute([$data['name'], $id]);
+            if ($stmt->fetch()) {
+                return ['success' => false, 'message' => 'Nama kategori sudah digunakan'];
+            }
+            
+            $stmt = $this->conn->prepare("
+                UPDATE categories SET name = ?, description = ?, sort_order = ?, updated_at = NOW() 
+                WHERE id = ?
+            ");
+            
+            $success = $stmt->execute([
+                $data['name'],
+                $data['description'],
+                $data['sort_order'],
+                $id
+            ]);
+            
+            if ($success) {
+                return ['success' => true, 'message' => 'Kategori berhasil diupdate'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengupdate kategori'];
+            }
+        } catch (PDOException $e) {
+            error_log("Update category error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+        }
+    }
+
+    public function deleteCategory($id) {
+        try {
+            // Check if category has bootcamps
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM bootcamps WHERE category_id = ?");
+            $stmt->execute([$id]);
+            $bootcampCount = $stmt->fetchColumn();
+            
+            if ($bootcampCount > 0) {
+                return ['success' => false, 'message' => 'Kategori tidak dapat dihapus karena masih memiliki bootcamp'];
+            }
+            
+            $stmt = $this->conn->prepare("DELETE FROM categories WHERE id = ?");
+            $success = $stmt->execute([$id]);
+            
+            if ($success) {
+                return ['success' => true, 'message' => 'Kategori berhasil dihapus'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal menghapus kategori'];
+            }
+        } catch (PDOException $e) {
+            error_log("Delete category error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+        }
+    }
+
+    // ==================== ORDER MANAGEMENT ====================
     
     public function getOrders($page = 1, $limit = 20, $search = '', $status = '') {
         try {
             $offset = ($page - 1) * $limit;
-            $conditions = [];
+            $where = "WHERE 1=1";
             $params = [];
             
-            if (!empty($search)) {
-                $conditions[] = "(o.order_number LIKE :search OR u.name LIKE :search OR u.alamat_email LIKE :search)";
-                $params[':search'] = "%$search%";
+            if ($search) {
+                $where .= " AND (o.id LIKE ? OR u.name LIKE ? OR u.alamat_email LIKE ? OR o.transaction_id LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
             }
             
-            if (!empty($status)) {
-                $conditions[] = "o.payment_status = :status";
-                $params[':status'] = $status;
+            if ($status) {
+                $where .= " AND o.payment_status = ?";
+                $params[] = $status;
             }
             
-            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $sql = "SELECT o.*, u.name as user_name, u.alamat_email as user_email, u.no_telepon as user_phone,
+                           COUNT(oi.id) as item_count
+                    FROM orders o 
+                    LEFT JOIN users u ON o.user_id = u.id
+                    LEFT JOIN order_items oi ON o.id = oi.order_id
+                    $where 
+                    GROUP BY o.id
+                    ORDER BY o.created_at DESC 
+                    LIMIT $limit OFFSET $offset";
             
-            $query = "SELECT o.*, u.name as user_name, u.alamat_email as user_email,
-                            COUNT(oi.id) as item_count
-                     FROM " . $this->orders_table . " o
-                     LEFT JOIN " . $this->users_table . " u ON o.user_id = u.id
-                     LEFT JOIN order_items oi ON o.id = oi.order_id
-                     $whereClause
-                     GROUP BY o.id
-                     ORDER BY o.created_at DESC
-                     LIMIT :limit OFFSET :offset";
-            
-            $stmt = $this->conn->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
             
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get orders error: " . $e->getMessage());
             return [];
         }
     }
 
     public function countOrders($search = '', $status = '') {
         try {
-            $conditions = [];
+            $where = "WHERE 1=1";
             $params = [];
             
-            if (!empty($search)) {
-                $conditions[] = "(o.order_number LIKE :search OR u.name LIKE :search OR u.alamat_email LIKE :search)";
-                $params[':search'] = "%$search%";
+            if ($search) {
+                $where .= " AND (o.id LIKE ? OR u.name LIKE ? OR u.alamat_email LIKE ? OR o.transaction_id LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
             }
             
-            if (!empty($status)) {
-                $conditions[] = "o.payment_status = :status";
-                $params[':status'] = $status;
+            if ($status) {
+                $where .= " AND o.payment_status = ?";
+                $params[] = $status;
             }
             
-            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM orders o LEFT JOIN users u ON o.user_id = u.id $where");
+            $stmt->execute($params);
             
-            $query = "SELECT COUNT(*) as total FROM " . $this->orders_table . " o
-                     LEFT JOIN " . $this->users_table . " u ON o.user_id = u.id
-                     $whereClause";
-            $stmt = $this->conn->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            $stmt->execute();
-            return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            return $stmt->fetchColumn();
         } catch (PDOException $e) {
+            error_log("Count orders error: " . $e->getMessage());
             return 0;
         }
     }
 
     public function getOrderById($id) {
         try {
-            $query = "SELECT o.*, u.name as user_name, u.alamat_email as user_email, u.no_telepon as user_phone
-                     FROM " . $this->orders_table . " o
-                     LEFT JOIN " . $this->users_table . " u ON o.user_id = u.id
-                     WHERE o.id = :id LIMIT 1";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt = $this->conn->prepare("
+                SELECT o.*, u.name as user_name, u.alamat_email as user_email, u.no_telepon as user_phone
+                FROM orders o 
+                LEFT JOIN users u ON o.user_id = u.id
+                WHERE o.id = ?
+            ");
+            $stmt->execute([$id]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get order by id error: " . $e->getMessage());
             return false;
         }
     }
 
-    public function getOrderItems($order_id) {
+    public function getOrderItems($orderId) {
         try {
-            $query = "SELECT oi.*, b.title as bootcamp_title, b.image as bootcamp_image
-                     FROM order_items oi
-                     LEFT JOIN " . $this->bootcamps_table . " b ON oi.bootcamp_id = b.id
-                     WHERE oi.order_id = :order_id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':order_id', $order_id, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt = $this->conn->prepare("
+                SELECT oi.*, b.title as bootcamp_title, b.image as bootcamp_image
+                FROM order_items oi 
+                LEFT JOIN bootcamps b ON oi.bootcamp_id = b.id
+                WHERE oi.order_id = ?
+            ");
+            $stmt->execute([$orderId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get order items error: " . $e->getMessage());
             return [];
         }
     }
 
     public function updateOrderStatus($id, $status) {
         try {
-            $query = "UPDATE " . $this->orders_table . " SET payment_status = :status, updated_at = NOW() WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':status', $status);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            if ($stmt->execute()) {
-                return ['success' => true, 'message' => 'Status order berhasil diupdate'];
+            $stmt = $this->conn->prepare("UPDATE orders SET payment_status = ?, updated_at = NOW() WHERE id = ?");
+            $success = $stmt->execute([$status, $id]);
+            
+            if ($success) {
+                return ['success' => true, 'message' => "Status order berhasil diubah menjadi $status"];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengubah status order'];
             }
-            return ['success' => false, 'message' => 'Gagal mengupdate status order'];
         } catch (PDOException $e) {
+            error_log("Update order status error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
 
-    // ==================== REVIEWS ====================
+    // ==================== REVIEW MANAGEMENT ====================
     
     public function getReviews($page = 1, $limit = 20, $search = '', $status = '') {
         try {
             $offset = ($page - 1) * $limit;
-            $conditions = [];
+            $where = "WHERE 1=1";
             $params = [];
             
-            if (!empty($search)) {
-                $conditions[] = "(b.title LIKE :search OR u.name LIKE :search OR r.review_text LIKE :search)";
-                $params[':search'] = "%$search%";
+            if ($search) {
+                $where .= " AND (r.review_text LIKE ? OR u.name LIKE ? OR b.title LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
             }
             
-            if (!empty($status)) {
-                $conditions[] = "r.status = :status";
-                $params[':status'] = $status;
+            if ($status) {
+                $where .= " AND r.status = ?";
+                $params[] = $status;
             }
             
-            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $sql = "SELECT r.*, u.name as user_name, b.title as bootcamp_title
+                    FROM reviews r 
+                    LEFT JOIN users u ON r.user_id = u.id
+                    LEFT JOIN bootcamps b ON r.bootcamp_id = b.id
+                    $where 
+                    ORDER BY r.created_at DESC 
+                    LIMIT $limit OFFSET $offset";
             
-            $query = "SELECT r.*, u.name as user_name, b.title as bootcamp_title
-                     FROM " . $this->reviews_table . " r
-                     LEFT JOIN " . $this->users_table . " u ON r.user_id = u.id
-                     LEFT JOIN " . $this->bootcamps_table . " b ON r.bootcamp_id = b.id
-                     $whereClause
-                     ORDER BY r.created_at DESC
-                     LIMIT :limit OFFSET :offset";
-            
-            $stmt = $this->conn->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
             
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get reviews error: " . $e->getMessage());
             return [];
         }
     }
 
     public function countReviews($search = '', $status = '') {
         try {
-            $conditions = [];
+            $where = "WHERE 1=1";
             $params = [];
             
-            if (!empty($search)) {
-                $conditions[] = "(b.title LIKE :search OR u.name LIKE :search OR r.review_text LIKE :search)";
-                $params[':search'] = "%$search%";
+            if ($search) {
+                $where .= " AND (r.review_text LIKE ? OR u.name LIKE ? OR b.title LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
             }
             
-            if (!empty($status)) {
-                $conditions[] = "r.status = :status";
-                $params[':status'] = $status;
+            if ($status) {
+                $where .= " AND r.status = ?";
+                $params[] = $status;
             }
             
-            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM reviews r LEFT JOIN users u ON r.user_id = u.id LEFT JOIN bootcamps b ON r.bootcamp_id = b.id $where");
+            $stmt->execute($params);
             
-            $query = "SELECT COUNT(*) as total FROM " . $this->reviews_table . " r
-                     LEFT JOIN " . $this->users_table . " u ON r.user_id = u.id
-                     LEFT JOIN " . $this->bootcamps_table . " b ON r.bootcamp_id = b.id
-                     $whereClause";
-            $stmt = $this->conn->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            $stmt->execute();
-            return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            return $stmt->fetchColumn();
         } catch (PDOException $e) {
+            error_log("Count reviews error: " . $e->getMessage());
             return 0;
         }
     }
 
     public function updateReviewStatus($id, $status) {
         try {
-            $query = "UPDATE " . $this->reviews_table . " SET status = :status, updated_at = NOW() WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':status', $status);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            if ($stmt->execute()) {
-                return ['success' => true, 'message' => 'Status review berhasil diupdate'];
+            $stmt = $this->conn->prepare("UPDATE reviews SET status = ?, updated_at = NOW() WHERE id = ?");
+            $success = $stmt->execute([$status, $id]);
+            
+            if ($success) {
+                return ['success' => true, 'message' => "Review berhasil di-$status"];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengubah status review'];
             }
-            return ['success' => false, 'message' => 'Gagal mengupdate status review'];
         } catch (PDOException $e) {
+            error_log("Update review status error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
 
-    // ==================== FORUM ====================
+    public function deleteReview($id) {
+        try {
+            $stmt = $this->conn->prepare("DELETE FROM reviews WHERE id = ?");
+            $success = $stmt->execute([$id]);
+            
+            if ($success) {
+                return ['success' => true, 'message' => 'Review berhasil dihapus'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal menghapus review'];
+            }
+        } catch (PDOException $e) {
+            error_log("Delete review error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+        }
+    }
+
+    public function bulkApproveReviews() {
+        try {
+            $stmt = $this->conn->prepare("UPDATE reviews SET status = 'published', updated_at = NOW() WHERE status = 'pending'");
+            $success = $stmt->execute();
+            
+            if ($success) {
+                $count = $stmt->rowCount();
+                return ['success' => true, 'message' => "$count review berhasil disetujui", 'count' => $count];
+            } else {
+                return ['success' => false, 'message' => 'Gagal menyetujui review'];
+            }
+        } catch (PDOException $e) {
+            error_log("Bulk approve reviews error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+        }
+    }
+
+    // ==================== FORUM MANAGEMENT ====================
     
     public function getForumPosts($page = 1, $limit = 20, $search = '', $status = '') {
         try {
             $offset = ($page - 1) * $limit;
-            $conditions = ['fp.is_deleted = 0'];
+            $where = "WHERE 1=1";
             $params = [];
             
-            if (!empty($search)) {
-                $conditions[] = "(fp.title LIKE :search OR fp.content LIKE :search OR u.name LIKE :search)";
-                $params[':search'] = "%$search%";
+            if ($search) {
+                $where .= " AND (fp.title LIKE ? OR fp.content LIKE ? OR u.name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
             }
             
-            if (!empty($status)) {
-                $conditions[] = "fp.status = :status";
-                $params[':status'] = $status;
+            if ($status) {
+                $where .= " AND fp.status = ?";
+                $params[] = $status;
             }
             
-            $whereClause = "WHERE " . implode(" AND ", $conditions);
+            $sql = "SELECT fp.*, u.name as user_name,
+                           COUNT(fpr.id) as reply_count
+                    FROM forum_posts fp 
+                    LEFT JOIN users u ON fp.user_id = u.id
+                    LEFT JOIN forum_post_replies fpr ON fp.id = fpr.post_id
+                    $where 
+                    GROUP BY fp.id
+                    ORDER BY fp.is_pinned DESC, fp.updated_at DESC 
+                    LIMIT $limit OFFSET $offset";
             
-            $query = "SELECT fp.*, u.name as user_name
-                     FROM " . $this->forum_posts_table . " fp
-                     LEFT JOIN " . $this->users_table . " u ON fp.user_id = u.id
-                     $whereClause
-                     ORDER BY fp.created_at DESC
-                     LIMIT :limit OFFSET :offset";
-            
-            $stmt = $this->conn->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
             
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get forum posts error: " . $e->getMessage());
             return [];
         }
     }
 
     public function countForumPosts($search = '', $status = '') {
         try {
-            $conditions = ['fp.is_deleted = 0'];
+            $where = "WHERE 1=1";
             $params = [];
             
-            if (!empty($search)) {
-                $conditions[] = "(fp.title LIKE :search OR fp.content LIKE :search OR u.name LIKE :search)";
-                $params[':search'] = "%$search%";
+            if ($search) {
+                $where .= " AND (fp.title LIKE ? OR fp.content LIKE ? OR u.name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
             }
             
-            if (!empty($status)) {
-                $conditions[] = "fp.status = :status";
-                $params[':status'] = $status;
+            if ($status) {
+                $where .= " AND fp.status = ?";
+                $params[] = $status;
             }
             
-            $whereClause = "WHERE " . implode(" AND ", $conditions);
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM forum_posts fp LEFT JOIN users u ON fp.user_id = u.id $where");
+            $stmt->execute($params);
             
-            $query = "SELECT COUNT(*) as total FROM " . $this->forum_posts_table . " fp
-                     LEFT JOIN " . $this->users_table . " u ON fp.user_id = u.id
-                     $whereClause";
-            $stmt = $this->conn->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            $stmt->execute();
-            return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            return $stmt->fetchColumn();
         } catch (PDOException $e) {
+            error_log("Count forum posts error: " . $e->getMessage());
             return 0;
         }
     }
 
-    public function pinForumPost($id, $pin) {
+    public function pinForumPost($id, $pinned) {
         try {
-            $query = "UPDATE " . $this->forum_posts_table . " SET is_pinned = :pin WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':pin', $pin, PDO::PARAM_INT);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            if ($stmt->execute()) {
-                return ['success' => true, 'message' => 'Post berhasil ' . ($pin ? 'di-pin' : 'di-unpin')];
+            $stmt = $this->conn->prepare("UPDATE forum_posts SET is_pinned = ?, updated_at = NOW() WHERE id = ?");
+            $success = $stmt->execute([$pinned, $id]);
+            
+            if ($success) {
+                $status = $pinned ? 'pinned' : 'unpinned';
+                return ['success' => true, 'message' => "Post berhasil $status"];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengubah status pin'];
             }
-            return ['success' => false, 'message' => 'Gagal mengupdate post'];
         } catch (PDOException $e) {
+            error_log("Pin forum post error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
 
-    public function lockForumPost($id, $lock) {
+    public function lockForumPost($id, $locked) {
         try {
-            $query = "UPDATE " . $this->forum_posts_table . " SET is_locked = :lock WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':lock', $lock, PDO::PARAM_INT);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            if ($stmt->execute()) {
-                return ['success' => true, 'message' => 'Post berhasil ' . ($lock ? 'dikunci' : 'dibuka')];
+            $stmt = $this->conn->prepare("UPDATE forum_posts SET is_locked = ?, updated_at = NOW() WHERE id = ?");
+            $success = $stmt->execute([$locked, $id]);
+            
+            if ($success) {
+                $status = $locked ? 'locked' : 'unlocked';
+                return ['success' => true, 'message' => "Post berhasil $status"];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengubah status lock'];
             }
-            return ['success' => false, 'message' => 'Gagal mengupdate post'];
         } catch (PDOException $e) {
+            error_log("Lock forum post error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
 
-    // ==================== SETTINGS ====================
+    public function deleteForumPost($id) {
+        try {
+            $this->conn->beginTransaction();
+            
+            // Delete replies first
+            $stmt = $this->conn->prepare("DELETE FROM forum_post_replies WHERE post_id = ?");
+            $stmt->execute([$id]);
+            
+            // Delete post
+            $stmt = $this->conn->prepare("DELETE FROM forum_posts WHERE id = ?");
+            $success = $stmt->execute([$id]);
+            
+            if ($success) {
+                $this->conn->commit();
+                return ['success' => true, 'message' => 'Post dan balasan berhasil dihapus'];
+            } else {
+                $this->conn->rollback();
+                return ['success' => false, 'message' => 'Gagal menghapus post'];
+            }
+        } catch (PDOException $e) {
+            $this->conn->rollback();
+            error_log("Delete forum post error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+        }
+    }
+
+    // ==================== SETTINGS MANAGEMENT ====================
     
     public function getSettings() {
         try {
-            $query = "SELECT * FROM " . $this->settings_table . " ORDER BY setting_key ASC";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
+            $stmt = $this->conn->query("SELECT * FROM settings ORDER BY setting_key");
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get settings error: " . $e->getMessage());
             return [];
         }
     }
 
     public function updateSetting($key, $value) {
         try {
-            $query = "UPDATE " . $this->settings_table . " SET setting_value = :value, updated_at = NOW() WHERE setting_key = :key";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':value', $value);
-            $stmt->bindParam(':key', $key);
-
-            if ($stmt->execute()) {
+            $stmt = $this->conn->prepare("
+                INSERT INTO settings (setting_key, setting_value, updated_at) 
+                VALUES (?, ?, NOW()) 
+                ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()
+            ");
+            $success = $stmt->execute([$key, $value, $value]);
+            
+            if ($success) {
                 return ['success' => true, 'message' => 'Setting berhasil diupdate'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengupdate setting'];
             }
-            return ['success' => false, 'message' => 'Gagal mengupdate setting'];
         } catch (PDOException $e) {
+            error_log("Update setting error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
 
     // ==================== SYSTEM TOOLS ====================
     
-    public function cleanOldLogs() {
+    public function createDatabaseBackup($filename) {
         try {
-            $query = "DELETE FROM " . $this->activity_log_table . " WHERE created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH)";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $deleted = $stmt->rowCount();
+            // This is a simplified backup - in production, use mysqldump or similar
+            $tables = ['users', 'admins', 'bootcamps', 'categories', 'orders', 'order_items', 'reviews', 'settings'];
+            $backup = "-- Database Backup " . date('Y-m-d H:i:s') . "\n\n";
             
-            return ['success' => true, 'message' => "Berhasil menghapus $deleted log lama"];
-        } catch (PDOException $e) {
+            foreach ($tables as $table) {
+                $stmt = $this->conn->query("SELECT * FROM $table");
+                $backup .= "-- Table: $table\n";
+                $backup .= "DELETE FROM $table;\n";
+                
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $values = array_map(function($v) { return "'" . addslashes($v) . "'"; }, array_values($row));
+                    $backup .= "INSERT INTO $table VALUES (" . implode(", ", $values) . ");\n";
+                }
+                $backup .= "\n";
+            }
+            
+            if (file_put_contents($filename, $backup)) {
+                return ['success' => true, 'message' => 'Backup berhasil dibuat'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal membuat backup'];
+            }
+        } catch (Exception $e) {
+            error_log("Create database backup error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
     }
 
+    public function cleanOldLogs() {
+        try {
+            $stmt = $this->conn->prepare("DELETE FROM admin_activity_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH)");
+            $success = $stmt->execute();
+            
+            if ($success) {
+                $count = $stmt->rowCount();
+                return ['success' => true, 'message' => "$count log lama berhasil dibersihkan"];
+            } else {
+                return ['success' => false, 'message' => 'Gagal membersihkan log'];
+            }
+        } catch (PDOException $e) {
+            error_log("Clean old logs error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+        }
+    }
+
+    public function optimizeDatabase() {
+        try {
+            $tables = ['users', 'admins', 'bootcamps', 'categories', 'orders', 'order_items', 'reviews', 'settings', 'admin_activity_logs'];
+            
+            foreach ($tables as $table) {
+                $stmt = $this->conn->query("OPTIMIZE TABLE $table");
+            }
+            
+            return ['success' => true, 'message' => 'Database berhasil dioptimasi'];
+        } catch (PDOException $e) {
+            error_log("Optimize database error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+        }
+    }
+
+    public function checkSystemHealth() {
+        try {
+            $health = [
+                'database' => 'OK',
+                'disk_space' => 'OK',
+                'memory' => 'OK',
+                'errors' => []
+            ];
+            
+            // Check database connection
+            $stmt = $this->conn->query("SELECT 1");
+            if (!$stmt) {
+                $health['database'] = 'ERROR';
+                $health['errors'][] = 'Database connection failed';
+            }
+            
+            // Check disk space (simplified)
+            $totalSpace = disk_total_space('.');
+            $freeSpace = disk_free_space('.');
+            $usedPercent = (($totalSpace - $freeSpace) / $totalSpace) * 100;
+            
+            if ($usedPercent > 90) {
+                $health['disk_space'] = 'WARNING';
+                $health['errors'][] = 'Disk space usage over 90%';
+            }
+            
+            return $health;
+        } catch (Exception $e) {
+            error_log("Check system health error: " . $e->getMessage());
+            return [
+                'database' => 'ERROR',
+                'disk_space' => 'UNKNOWN',
+                'memory' => 'UNKNOWN',
+                'errors' => ['System health check failed']
+            ];
+        }
+    }
+
+    // ==================== EXPORT FUNCTIONS ====================
+    
     public function exportUsers() {
         try {
-            $query = "SELECT id, name, alamat_email, no_telepon, status, email_verified, created_at FROM " . $this->users_table . " ORDER BY created_at DESC";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
+            $stmt = $this->conn->query("
+                SELECT id, name, alamat_email, no_telepon, status, created_at, updated_at 
+                FROM users 
+                ORDER BY created_at DESC
+            ");
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Export users error: " . $e->getMessage());
             return [];
         }
     }
 
     public function exportBootcamps() {
         try {
-            $query = "SELECT b.*, c.name as category_name FROM " . $this->bootcamps_table . " b 
-                     LEFT JOIN " . $this->categories_table . " c ON b.category_id = c.id 
-                     ORDER BY b.created_at DESC";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
+            $stmt = $this->conn->query("
+                SELECT b.id, b.title, b.slug, b.instructor_name, b.price, b.discount_price, 
+                       b.start_date, b.duration, b.status, b.featured, c.name as category,
+                       b.created_at, b.updated_at
+                FROM bootcamps b 
+                LEFT JOIN categories c ON b.category_id = c.id
+                ORDER BY b.created_at DESC
+            ");
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Export bootcamps error: " . $e->getMessage());
             return [];
         }
     }
 
     public function exportOrders() {
         try {
-            $query = "SELECT o.*, u.name as user_name, u.alamat_email as user_email FROM " . $this->orders_table . " o 
-                     LEFT JOIN " . $this->users_table . " u ON o.user_id = u.id 
-                     ORDER BY o.created_at DESC";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
+            $stmt = $this->conn->query("
+                SELECT o.id, o.transaction_id, u.name as user_name, u.alamat_email as user_email,
+                       o.total_amount, o.payment_status, o.payment_method, o.created_at, o.updated_at
+                FROM orders o 
+                LEFT JOIN users u ON o.user_id = u.id
+                ORDER BY o.created_at DESC
+            ");
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Export orders error: " . $e->getMessage());
             return [];
         }
     }
 
-    // ==================== CATEGORIES ====================
+    // ==================== ADMIN PROFILE ====================
     
-    public function createCategory($data) {
+    public function getAdminById($id) {
         try {
-            $query = "INSERT INTO " . $this->categories_table . " 
-                     (name, slug, description, status, sort_order, created_at) 
-                     VALUES (:name, :slug, :description, :status, :sort_order, NOW())";
-            
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':name', $data['name']);
-            $stmt->bindParam(':slug', $data['slug']);
-            $stmt->bindParam(':description', $data['description']);
-            $stmt->bindParam(':status', $data['status']);
-            $stmt->bindParam(':sort_order', $data['sort_order']);
-            
-            if ($stmt->execute()) {
-                return ['success' => true, 'message' => 'Kategori berhasil dibuat'];
-            }
-            return ['success' => false, 'message' => 'Gagal membuat kategori'];
+            $stmt = $this->conn->prepare("SELECT * FROM admins WHERE id = ?");
+            $stmt->execute([$id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Get admin by id error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function updateAdminProfile($id, $data) {
+        try {
+            $stmt = $this->conn->prepare("
+                UPDATE admins SET name = ?, email = ?, phone = ?, department = ?, 
+                       timezone = ?, language = ?, updated_at = NOW() 
+                WHERE id = ?
+            ");
+            
+            $success = $stmt->execute([
+                $data['name'],
+                $data['email'],
+                $data['phone'],
+                $data['department'],
+                $data['timezone'],
+                $data['language'],
+                $id
+            ]);
+            
+            if ($success) {
+                return ['success' => true, 'message' => 'Profile berhasil diupdate'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengupdate profile'];
+            }
+        } catch (PDOException $e) {
+            error_log("Update admin profile error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
     }
 
-    // ==================== DETAILED STATS ====================
-    
-    public function getDetailedStats() {
+    public function changeAdminPassword($id, $currentPassword, $newPassword) {
         try {
-            $stats = [];
+            // Verify current password
+            $stmt = $this->conn->prepare("SELECT password FROM admins WHERE id = ?");
+            $stmt->execute([$id]);
+            $admin = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            // Revenue by month (last 12 months)
-            $query = "SELECT DATE_FORMAT(created_at, '%Y-%m') as month, 
-                            SUM(final_amount) as revenue,
-                            COUNT(*) as orders
-                     FROM " . $this->orders_table . " 
-                     WHERE payment_status = 'completed' 
-                     AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-                     GROUP BY month 
-                     ORDER BY month ASC";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['revenue_by_month'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if (!$admin || !password_verify($currentPassword, $admin['password'])) {
+                return ['success' => false, 'message' => 'Password lama tidak benar'];
+            }
             
-            // Top bootcamps by enrollment
-            $query = "SELECT b.title, COUNT(DISTINCT oi.order_id) as enrollments
-                     FROM " . $this->bootcamps_table . " b
-                     LEFT JOIN order_items oi ON b.id = oi.bootcamp_id
-                     LEFT JOIN " . $this->orders_table . " o ON oi.order_id = o.id AND o.payment_status = 'completed'
-                     GROUP BY b.id
-                     ORDER BY enrollments DESC
-                     LIMIT 10";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['top_bootcamps'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Update password
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            $stmt = $this->conn->prepare("UPDATE admins SET password = ?, updated_at = NOW() WHERE id = ?");
+            $success = $stmt->execute([$hashedPassword, $id]);
             
-            // User registration by month
-            $query = "SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as users
-                     FROM " . $this->users_table . " 
-                     WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-                     GROUP BY month 
-                     ORDER BY month ASC";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            $stats['users_by_month'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            return $stats;
+            if ($success) {
+                return ['success' => true, 'message' => 'Password berhasil diubah'];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengubah password'];
+            }
         } catch (PDOException $e) {
+            error_log("Change admin password error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+        }
+    }
+
+    // ==================== ACTIVITY LOG ====================
+    
+    public function logActivity($adminId, $activityType, $description, $ipAddress = null, $userAgent = null) {
+        try {
+            $stmt = $this->conn->prepare("
+                INSERT INTO admin_activity_logs (admin_id, activity_type, description, ip_address, user_agent, created_at) 
+                VALUES (?, ?, ?, ?, ?, NOW())
+            ");
+            
+            return $stmt->execute([
+                $adminId,
+                $activityType,
+                $description,
+                $ipAddress,
+                $userAgent
+            ]);
+        } catch (PDOException $e) {
+            error_log("Log activity error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getActivityLog($page = 1, $limit = 50, $search = '', $activityType = '', $adminId = 0, $dateFrom = '', $dateTo = '') {
+        try {
+            $offset = ($page - 1) * $limit;
+            $where = "WHERE 1=1";
+            $params = [];
+            
+            if ($search) {
+                $where .= " AND (aal.description LIKE ? OR a.name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+            
+            if ($activityType) {
+                $where .= " AND aal.activity_type = ?";
+                $params[] = $activityType;
+            }
+            
+            if ($adminId) {
+                $where .= " AND aal.admin_id = ?";
+                $params[] = $adminId;
+            }
+            
+            if ($dateFrom) {
+                $where .= " AND DATE(aal.created_at) >= ?";
+                $params[] = $dateFrom;
+            }
+            
+            if ($dateTo) {
+                $where .= " AND DATE(aal.created_at) <= ?";
+                $params[] = $dateTo;
+            }
+            
+            $sql = "SELECT aal.*, a.name as admin_name
+                    FROM admin_activity_logs aal 
+                    LEFT JOIN admins a ON aal.admin_id = a.id
+                    $where 
+                    ORDER BY aal.created_at DESC 
+                    LIMIT $limit OFFSET $offset";
+            
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get activity log error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function countActivityLog($search = '', $activityType = '', $adminId = 0, $dateFrom = '', $dateTo = '') {
+        try {
+            $where = "WHERE 1=1";
+            $params = [];
+            
+            if ($search) {
+                $where .= " AND (aal.description LIKE ? OR a.name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+            
+            if ($activityType) {
+                $where .= " AND aal.activity_type = ?";
+                $params[] = $activityType;
+            }
+            
+            if ($adminId) {
+                $where .= " AND aal.admin_id = ?";
+                $params[] = $adminId;
+            }
+            
+            if ($dateFrom) {
+                $where .= " AND DATE(aal.created_at) >= ?";
+                $params[] = $dateFrom;
+            }
+            
+            if ($dateTo) {
+                $where .= " AND DATE(aal.created_at) <= ?";
+                $params[] = $dateTo;
+            }
+            
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM admin_activity_logs aal LEFT JOIN admins a ON aal.admin_id = a.id $where");
+            $stmt->execute($params);
+            
+            return $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Count activity log error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function getRecentActivities($limit = 10) {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT aal.*, a.name as admin_name
+                FROM admin_activity_logs aal 
+                LEFT JOIN admins a ON aal.admin_id = a.id
+                ORDER BY aal.created_at DESC 
+                LIMIT ?
+            ");
+            $stmt->execute([$limit]);
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get recent activities error: " . $e->getMessage());
             return [];
         }
     }

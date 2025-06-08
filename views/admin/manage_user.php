@@ -1,509 +1,754 @@
+<?php
+// views/admin/manage_user.php - Manage Users Page
+$pageTitle = 'Kelola Users';
+
+// Get current page and filters
+$currentPage = $page ?? 1;
+$searchTerm = $_GET['search'] ?? '';
+$statusFilter = $_GET['status'] ?? '';
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kelola Users - Admin Campus Hub</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title><?= $pageTitle ?> - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .sidebar-gradient {
-            background: linear-gradient(180deg, #1f2937 0%, #374151 100%);
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 0;
         }
-        .table-hover:hover {
-            background-color: #f8fafc;
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
         }
-        .status-badge {
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .admin-sidebar.collapsed + .main-content {
+            margin-left: 70px;
+        }
+
+        .content-wrapper {
+            padding: 30px;
+        }
+
+        .page-header {
+            background: white;
+            padding: 20px 30px;
+            margin: -30px -30px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            color: #495057;
+            font-size: 28px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .breadcrumb {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .filters-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filters-form {
+            display: grid;
+            grid-template-columns: 1fr 200px 120px 120px;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
             display: inline-flex;
             align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
+            gap: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .users-table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #495057;
+        }
+
+        .bulk-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .users-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .users-table td {
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .users-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .user-details h4 {
+            margin: 0 0 3px;
+            font-size: 14px;
             font-weight: 500;
         }
-        .status-active {
-            background-color: #dcfce7;
-            color: #16a34a;
+
+        .user-details span {
+            font-size: 12px;
+            color: #6c757d;
         }
-        .status-inactive {
-            background-color: #fee2e2;
-            color: #dc2626;
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
         }
-        .status-suspended {
-            background-color: #fef3c7;
-            color: #d97706;
+
+        .status-badge.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .pagination a:hover {
+            background: #e9ecef;
+        }
+
+        .pagination .current {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .checkbox-cell {
+            width: 40px;
+        }
+
+        .checkbox-cell input[type="checkbox"] {
+            transform: scale(1.2);
+            accent-color: #667eea;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .content-wrapper {
+                padding: 20px;
+            }
+            
+            .page-header {
+                padding: 15px 20px;
+                margin: -20px -20px 20px;
+            }
+            
+            .filters-form {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .users-table-container {
+                overflow-x: auto;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 z-50 w-64 sidebar-gradient shadow-xl">
-        <div class="flex flex-col h-full">
-            <!-- Logo -->
-            <div class="flex items-center justify-center h-16 bg-black bg-opacity-20">
-                <i class="fas fa-graduation-cap text-2xl text-white mr-3"></i>
-                <span class="text-xl font-bold text-white">Campus Hub</span>
-            </div>
-            
-            <!-- Navigation -->
-            <nav class="flex-1 px-4 py-6 space-y-2">
-                <a href="admin.php?action=dashboard" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-                    <i class="fas fa-tachometer-alt mr-3"></i>
-                    Dashboard
-                </a>
-                <a href="admin.php?action=manage_users" class="flex items-center px-4 py-3 text-white bg-indigo-600 rounded-lg">
-                    <i class="fas fa-users mr-3"></i>
-                    Kelola Users
-                </a>
-                <a href="admin.php?action=manage_bootcamps" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-                    <i class="fas fa-laptop-code mr-3"></i>
-                    Kelola Bootcamps
-                </a>
-                <a href="admin.php?action=manage_categories" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-                    <i class="fas fa-tags mr-3"></i>
-                    Kelola Kategori
-                </a>
-                <a href="admin.php?action=manage_orders" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-                    <i class="fas fa-shopping-cart mr-3"></i>
-                    Kelola Orders
-                </a>
-                <a href="admin.php?action=manage_reviews" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-                    <i class="fas fa-star mr-3"></i>
-                    Kelola Reviews
-                </a>
-                <a href="admin.php?action=manage_forum" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-                    <i class="fas fa-comments mr-3"></i>
-                    Kelola Forum
-                </a>
-                <a href="admin.php?action=manage_settings" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-                    <i class="fas fa-cog mr-3"></i>
-                    Pengaturan
-                </a>
-            </nav>
-            
-            <!-- User Info -->
-            <div class="p-4 border-t border-gray-600">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center">
-                        <i class="fas fa-user text-white"></i>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-white"><?php echo htmlspecialchars($_SESSION['admin_name']); ?></p>
-                        <p class="text-xs text-gray-400"><?php echo htmlspecialchars($_SESSION['admin_role']); ?></p>
-                    </div>
-                </div>
-                <a href="admin.php?action=logout" class="mt-3 w-full flex items-center justify-center px-4 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
-                    <i class="fas fa-sign-out-alt mr-2"></i>
-                    Logout
-                </a>
-            </div>
-        </div>
-    </div>
+<body>
+    <div class="admin-layout">
+        <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
-    <!-- Main Content -->
-    <div class="ml-64 min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Kelola Users</h1>
-                        <p class="text-gray-600">Manajemen akun pengguna sistem</p>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <button onclick="exportUsers()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
-                            <i class="fas fa-download mr-2"></i>
-                            Export CSV
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="p-6">
-            <!-- Alerts -->
-            <?php if (isset($_SESSION['success'])): ?>
-                <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-                    <i class="fas fa-check-circle mr-3"></i>
-                    <span><?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></span>
-                </div>
-            <?php endif; ?>
-
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-                    <i class="fas fa-exclamation-triangle mr-3"></i>
-                    <span><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></span>
-                </div>
-            <?php endif; ?>
-
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-blue-100 rounded-lg">
-                            <i class="fas fa-users text-blue-600"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Total Users</p>
-                            <p class="text-2xl font-bold text-gray-900"><?php echo number_format($totalUsers); ?></p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-green-100 rounded-lg">
-                            <i class="fas fa-user-check text-green-600"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Active Users</p>
-                            <p class="text-2xl font-bold text-gray-900">
-                                <?php echo count(array_filter($users, function($u) { return $u['status'] === 'active'; })); ?>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-yellow-100 rounded-lg">
-                            <i class="fas fa-user-clock text-yellow-600"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Inactive Users</p>
-                            <p class="text-2xl font-bold text-gray-900">
-                                <?php echo count(array_filter($users, function($u) { return $u['status'] === 'inactive'; })); ?>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-red-100 rounded-lg">
-                            <i class="fas fa-user-slash text-red-600"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Suspended</p>
-                            <p class="text-2xl font-bold text-gray-900">
-                                <?php echo count(array_filter($users, function($u) { return $u['status'] === 'suspended'; })); ?>
-                            </p>
-                        </div>
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1><?= $pageTitle ?></h1>
+                    <div class="breadcrumb">
+                        <i class="fas fa-home"></i> Admin / <i class="fas fa-users"></i> Kelola Users
                     </div>
                 </div>
             </div>
 
-            <!-- Filters and Search -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <form method="GET" action="admin.php" class="flex flex-wrap items-center gap-4">
-                    <input type="hidden" name="action" value="manage_users">
-                    
-                    <!-- Search -->
-                    <div class="flex-1 min-w-64">
-                        <div class="relative">
-                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <div class="content-wrapper">
+                <!-- Alert Messages -->
+                <?php if (isset($_SESSION['success'])): ?>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <?= htmlspecialchars($_SESSION['success']) ?>
+                    </div>
+                    <?php unset($_SESSION['success']); ?>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <?= htmlspecialchars($_SESSION['error']) ?>
+                    </div>
+                    <?php unset($_SESSION['error']); ?>
+                <?php endif; ?>
+
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-number"><?= number_format($totalUsers ?? 0) ?></div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">
+                            <?php
+                            $activeUsers = 0;
+                            if (isset($users)) {
+                                foreach ($users as $user) {
+                                    if ($user['status'] === 'active') $activeUsers++;
+                                }
+                            }
+                            echo number_format($activeUsers);
+                            ?>
+                        </div>
+                        <div class="stat-label">Users Aktif</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">
+                            <?php
+                            $newUsers = 0;
+                            if (isset($users)) {
+                                foreach ($users as $user) {
+                                    if (isset($user['created_at']) && strtotime($user['created_at']) > strtotime('-30 days')) {
+                                        $newUsers++;
+                                    }
+                                }
+                            }
+                            echo number_format($newUsers);
+                            ?>
+                        </div>
+                        <div class="stat-label">Baru (30 Hari)</div>
+                    </div>
+                </div>
+
+                <!-- Filters Section -->
+                <div class="filters-section">
+                    <form method="GET" action="admin.php" class="filters-form">
+                        <input type="hidden" name="action" value="manage_users">
+                        
+                        <div class="form-group">
+                            <label for="search">Cari Users</label>
                             <input type="text" 
+                                   id="search" 
                                    name="search" 
-                                   value="<?php echo htmlspecialchars($search ?? ''); ?>"
-                                   placeholder="Cari nama, email, atau telepon..." 
-                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                   class="form-control" 
+                                   placeholder="Nama, email, atau telepon..."
+                                   value="<?= htmlspecialchars($searchTerm) ?>">
                         </div>
-                    </div>
-                    
-                    <!-- Status Filter -->
-                    <div>
-                        <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Semua Status</option>
-                            <option value="active" <?php echo ($status ?? '') === 'active' ? 'selected' : ''; ?>>Active</option>
-                            <option value="inactive" <?php echo ($status ?? '') === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                            <option value="suspended" <?php echo ($status ?? '') === 'suspended' ? 'selected' : ''; ?>>Suspended</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Search Button -->
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors flex items-center">
-                        <i class="fas fa-search mr-2"></i>
-                        Filter
-                    </button>
-                    
-                    <!-- Reset Button -->
-                    <a href="admin.php?action=manage_users" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors flex items-center">
-                        <i class="fas fa-redo mr-2"></i>
-                        Reset
-                    </a>
-                </form>
-            </div>
-
-            <!-- Users Table -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-gray-900">Daftar Users</h3>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-sm text-gray-600">Showing <?php echo count($users); ?> of <?php echo $totalUsers; ?> users</span>
-                        <button onclick="toggleBulkActions()" id="bulkToggle" class="text-blue-600 hover:text-blue-800 text-sm">
-                            Bulk Actions
+                        
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status" name="status" class="form-control">
+                                <option value="">Semua Status</option>
+                                <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Aktif</option>
+                                <option value="inactive" <?= $statusFilter === 'inactive' ? 'selected' : '' ?>>Tidak Aktif</option>
+                                <option value="pending" <?= $statusFilter === 'pending' ? 'selected' : '' ?>>Pending</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                            Cari
                         </button>
-                    </div>
-                </div>
-                
-                <!-- Bulk Actions Bar (Hidden by default) -->
-                <div id="bulkActionsBar" class="hidden bg-blue-50 border-b border-blue-200 px-6 py-3">
-                    <form method="POST" action="admin.php?action=delete_users_bulk" onsubmit="return confirmBulkDelete()">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <span class="text-sm text-blue-700">
-                                    <span id="selectedCount">0</span> users selected
-                                </span>
-                                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm transition-colors">
-                                    <i class="fas fa-trash mr-1"></i>
-                                    Delete Selected
-                                </button>
-                            </div>
-                            <button type="button" onclick="toggleBulkActions()" class="text-blue-600 hover:text-blue-800 text-sm">
-                                Cancel
-                            </button>
-                        </div>
+                        
+                        <a href="admin.php?action=manage_users" class="btn btn-secondary">
+                            <i class="fas fa-undo"></i>
+                            Reset
+                        </a>
                     </form>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="hidden px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" id="bulkCheckboxHeader">
-                                    <input type="checkbox" id="selectAll" onchange="toggleAllUsers()" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontak</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bergabung</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <?php if (!empty($users)): ?>
-                                <?php foreach ($users as $user): ?>
-                                    <tr class="table-hover">
-                                        <td class="hidden px-6 py-4 whitespace-nowrap bulkCheckboxCell">
-                                            <input type="checkbox" name="selected_users[]" value="<?php echo $user['id']; ?>" onchange="updateSelectedCount()" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 user-checkbox">
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                                    <i class="fas fa-user text-gray-600"></i>
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($user['name']); ?></div>
-                                                    <div class="text-sm text-gray-500">ID: #<?php echo $user['id']; ?></div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900"><?php echo htmlspecialchars($user['alamat_email']); ?></div>
-                                            <div class="text-sm text-gray-500"><?php echo htmlspecialchars($user['no_telepon'] ?? 'No phone'); ?></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="status-badge status-<?php echo $user['status']; ?>">
-                                                <i class="fas fa-circle text-xs mr-1"></i>
-                                                <?php echo ucfirst($user['status']); ?>
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <div><?php echo number_format($user['total_orders'] ?? 0); ?> orders</div>
-                                            <div class="text-gray-500">Rp <?php echo number_format($user['total_spent'] ?? 0); ?></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <?php echo date('d M Y', strtotime($user['created_at'])); ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <div class="flex items-center space-x-2">
-                                                <a href="admin.php?action=edit_user&id=<?php echo $user['id']; ?>" 
-                                                   class="text-blue-600 hover:text-blue-900 transition-colors" 
-                                                   title="Edit User">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <button onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['name'], ENT_QUOTES); ?>')" 
-                                                        class="text-red-600 hover:text-red-900 transition-colors" 
-                                                        title="Delete User">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center">
-                                        <div class="text-gray-500">
-                                            <i class="fas fa-users text-4xl mb-4"></i>
-                                            <p class="text-lg font-medium">Tidak ada users ditemukan</p>
-                                            <p class="mt-2">Coba ubah filter pencarian Anda</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <?php if ($totalPages > 1): ?>
-                    <div class="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-                        <div class="flex-1 flex justify-between sm:hidden">
-                            <?php if ($page > 1): ?>
-                                <a href="?action=manage_users&page=<?php echo ($page - 1); ?>&search=<?php echo urlencode($search ?? ''); ?>&status=<?php echo urlencode($status ?? ''); ?>" 
-                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                                    Previous
-                                </a>
-                            <?php endif; ?>
-                            
-                            <?php if ($page < $totalPages): ?>
-                                <a href="?action=manage_users&page=<?php echo ($page + 1); ?>&search=<?php echo urlencode($search ?? ''); ?>&status=<?php echo urlencode($status ?? ''); ?>" 
-                                   class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                                    Next
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <p class="text-sm text-gray-700">
-                                    Showing page <span class="font-medium"><?php echo $page; ?></span> of <span class="font-medium"><?php echo $totalPages; ?></span>
-                                </p>
-                            </div>
-                            <div>
-                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                    <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
-                                        <a href="?action=manage_users&page=<?php echo $i; ?>&search=<?php echo urlencode($search ?? ''); ?>&status=<?php echo urlencode($status ?? ''); ?>" 
-                                           class="<?php echo $i === $page ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'; ?> relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                            <?php echo $i; ?>
-                                        </a>
-                                    <?php endfor; ?>
-                                </nav>
-                            </div>
+                <!-- Users Table -->
+                <div class="users-table-container">
+                    <div class="table-header">
+                        <h3>Daftar Users (<?= number_format($totalUsers ?? 0) ?>)</h3>
+                        <div class="bulk-actions">
+                            <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteBtn" disabled>
+                                <i class="fas fa-trash"></i>
+                                Hapus Terpilih
+                            </button>
                         </div>
                     </div>
-                <?php endif; ?>
+
+                    <?php if (!empty($users)): ?>
+                        <form id="bulkForm" method="POST" action="admin.php?action=delete_users_bulk">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                            
+                            <table class="users-table">
+                                <thead>
+                                    <tr>
+                                        <th class="checkbox-cell">
+                                            <input type="checkbox" id="selectAll">
+                                        </th>
+                                        <th>User</th>
+                                        <th>Kontak</th>
+                                        <th>Status</th>
+                                        <th>Terdaftar</th>
+                                        <th>Orders</th>
+                                        <th>Total Belanja</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($users as $user): ?>
+                                        <tr>
+                                            <td class="checkbox-cell">
+                                                <input type="checkbox" 
+                                                       name="selected_users[]" 
+                                                       value="<?= $user['id'] ?>"
+                                                       class="user-checkbox">
+                                            </td>
+                                            <td>
+                                                <div class="user-info">
+                                                    <div class="user-avatar">
+                                                        <?= strtoupper(substr($user['name'], 0, 2)) ?>
+                                                    </div>
+                                                    <div class="user-details">
+                                                        <h4><?= htmlspecialchars($user['name']) ?></h4>
+                                                        <span>ID: <?= $user['id'] ?></span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <i class="fas fa-envelope"></i>
+                                                    <?= htmlspecialchars($user['alamat_email']) ?>
+                                                </div>
+                                                <?php if (!empty($user['no_telepon'])): ?>
+                                                    <div style="margin-top: 5px;">
+                                                        <i class="fas fa-phone"></i>
+                                                        <?= htmlspecialchars($user['no_telepon']) ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <span class="status-badge <?= htmlspecialchars($user['status']) ?>">
+                                                    <?= ucfirst(htmlspecialchars($user['status'])) ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <?= date('d M Y', strtotime($user['created_at'])) ?>
+                                            </td>
+                                            <td>
+                                                <strong><?= number_format($user['total_orders'] ?? 0) ?></strong>
+                                            </td>
+                                            <td>
+                                                <strong>Rp <?= number_format($user['total_spent'] ?? 0) ?></strong>
+                                            </td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <a href="admin.php?action=edit_user&id=<?= $user['id'] ?>" 
+                                                       class="btn btn-primary btn-sm" 
+                                                       title="Edit User">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    
+                                                    <a href="admin.php?action=reset_user_password&id=<?= $user['id'] ?>" 
+                                                       class="btn btn-warning btn-sm" 
+                                                       title="Reset Password"
+                                                       onclick="return confirm('Yakin ingin reset password user ini?')">
+                                                        <i class="fas fa-key"></i>
+                                                    </a>
+                                                    
+                                                    <a href="admin.php?action=delete_user&id=<?= $user['id'] ?>" 
+                                                       class="btn btn-danger btn-sm" 
+                                                       title="Hapus User"
+                                                       onclick="return confirm('Yakin ingin menghapus user <?= htmlspecialchars($user['name']) ?>? Tindakan ini tidak dapat dibatalkan!')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </form>
+
+                        <!-- Pagination -->
+                        <?php if ($totalPages > 1): ?>
+                            <div class="pagination">
+                                <?php
+                                $baseUrl = "admin.php?action=manage_users";
+                                if ($searchTerm) $baseUrl .= "&search=" . urlencode($searchTerm);
+                                if ($statusFilter) $baseUrl .= "&status=" . urlencode($statusFilter);
+
+                                // Previous page
+                                if ($currentPage > 1): ?>
+                                    <a href="<?= $baseUrl ?>&page=<?= $currentPage - 1 ?>">‹ Sebelumnya</a>
+                                <?php endif;
+
+                                // Page numbers
+                                $startPage = max(1, $currentPage - 2);
+                                $endPage = min($totalPages, $currentPage + 2);
+
+                                for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                    <?php if ($i == $currentPage): ?>
+                                        <span class="current"><?= $i ?></span>
+                                    <?php else: ?>
+                                        <a href="<?= $baseUrl ?>&page=<?= $i ?>"><?= $i ?></a>
+                                    <?php endif; ?>
+                                <?php endfor;
+
+                                // Next page
+                                if ($currentPage < $totalPages): ?>
+                                    <a href="<?= $baseUrl ?>&page=<?= $currentPage + 1 ?>">Selanjutnya ›</a>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                    <?php else: ?>
+                        <div class="no-data">
+                            <i class="fas fa-users"></i>
+                            <h3>Tidak ada users ditemukan</h3>
+                            <p>Belum ada data users atau sesuaikan filter pencarian Anda.</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3 text-center">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                    <i class="fas fa-exclamation-triangle text-red-600"></i>
-                </div>
-                <h3 class="text-lg font-medium text-gray-900 mt-4">Hapus User</h3>
-                <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500">
-                        Apakah Anda yakin ingin menghapus user <span id="deleteUserName" class="font-medium"></span>? 
-                        Tindakan ini tidak dapat dibatalkan.
-                    </p>
-                </div>
-                <div class="items-center px-4 py-3 flex space-x-4">
-                    <button id="cancelDelete" class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                        Batal
-                    </button>
-                    <button id="confirmDelete" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                        Hapus
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        let userToDelete = null;
-
-        function deleteUser(id, name) {
-            userToDelete = id;
-            document.getElementById('deleteUserName').textContent = name;
-            document.getElementById('deleteModal').classList.remove('hidden');
-        }
-
-        function exportUsers() {
-            window.open('admin.php?action=export_data&type=users', '_blank');
-        }
-
-        function toggleBulkActions() {
-            const bulkActionsBar = document.getElementById('bulkActionsBar');
-            const bulkCheckboxHeader = document.getElementById('bulkCheckboxHeader');
-            const bulkCheckboxCells = document.querySelectorAll('.bulkCheckboxCell');
-            const bulkToggle = document.getElementById('bulkToggle');
-            
-            if (bulkActionsBar.classList.contains('hidden')) {
-                bulkActionsBar.classList.remove('hidden');
-                bulkCheckboxHeader.classList.remove('hidden');
-                bulkCheckboxCells.forEach(cell => cell.classList.remove('hidden'));
-                bulkToggle.textContent = 'Cancel';
-            } else {
-                bulkActionsBar.classList.add('hidden');
-                bulkCheckboxHeader.classList.add('hidden');
-                bulkCheckboxCells.forEach(cell => cell.classList.add('hidden'));
-                bulkToggle.textContent = 'Bulk Actions';
-                // Reset checkboxes
-                document.getElementById('selectAll').checked = false;
-                document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
-                updateSelectedCount();
-            }
-        }
-
-        function toggleAllUsers() {
-            const selectAll = document.getElementById('selectAll');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Select all functionality
+            const selectAllCheckbox = document.getElementById('selectAll');
             const userCheckboxes = document.querySelectorAll('.user-checkbox');
-            
-            userCheckboxes.forEach(checkbox => {
-                checkbox.checked = selectAll.checked;
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            const bulkForm = document.getElementById('bulkForm');
+
+            // Handle select all
+            selectAllCheckbox.addEventListener('change', function() {
+                userCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateBulkDeleteButton();
             });
-            
-            updateSelectedCount();
-        }
 
-        function updateSelectedCount() {
-            const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
-            document.getElementById('selectedCount').textContent = selectedCheckboxes.length;
-        }
+            // Handle individual checkboxes
+            userCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateSelectAllState();
+                    updateBulkDeleteButton();
+                });
+            });
 
-        function confirmBulkDelete() {
-            const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
-            if (selectedCheckboxes.length === 0) {
-                alert('Pilih minimal satu user untuk dihapus');
-                return false;
+            function updateSelectAllState() {
+                const checkedCount = document.querySelectorAll('.user-checkbox:checked').length;
+                const totalCount = userCheckboxes.length;
+                
+                selectAllCheckbox.checked = checkedCount === totalCount;
+                selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < totalCount;
             }
-            
-            return confirm(`Apakah Anda yakin ingin menghapus ${selectedCheckboxes.length} user yang dipilih? Tindakan ini tidak dapat dibatalkan.`);
-        }
 
-        // Modal event handlers
-        document.getElementById('cancelDelete').addEventListener('click', function() {
-            document.getElementById('deleteModal').classList.add('hidden');
-            userToDelete = null;
-        });
-
-        document.getElementById('confirmDelete').addEventListener('click', function() {
-            if (userToDelete) {
-                window.location.href = `admin.php?action=delete_user&id=${userToDelete}`;
+            function updateBulkDeleteButton() {
+                const checkedCount = document.querySelectorAll('.user-checkbox:checked').length;
+                bulkDeleteBtn.disabled = checkedCount === 0;
+                bulkDeleteBtn.textContent = checkedCount > 0 ? 
+                    `Hapus ${checkedCount} Terpilih` : 'Hapus Terpilih';
             }
-        });
 
-        // Close modal when clicking outside
-        document.getElementById('deleteModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.classList.add('hidden');
-                userToDelete = null;
-            }
-        });
+            // Handle bulk delete
+            bulkDeleteBtn.addEventListener('click', function() {
+                const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+                if (checkedBoxes.length === 0) {
+                    alert('Pilih minimal satu user untuk dihapus.');
+                    return;
+                }
 
-        // Keyboard navigation
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                document.getElementById('deleteModal').classList.add('hidden');
-                userToDelete = null;
-            }
+                const userNames = Array.from(checkedBoxes).map(checkbox => {
+                    const row = checkbox.closest('tr');
+                    return row.querySelector('.user-details h4').textContent;
+                });
+
+                const confirmText = `Yakin ingin menghapus ${checkedBoxes.length} user berikut?\n\n${userNames.join('\n')}\n\nTindakan ini tidak dapat dibatalkan!`;
+                
+                if (confirm(confirmText)) {
+                    bulkForm.submit();
+                }
+            });
+
+            // Auto-submit search form on enter
+            const searchInput = document.getElementById('search');
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    this.closest('form').submit();
+                }
+            });
+
+            // Real-time search with debounce
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    if (this.value.length >= 3 || this.value.length === 0) {
+                        this.closest('form').submit();
+                    }
+                }, 500);
+            });
+
+            // Confirmation for delete actions
+            document.querySelectorAll('a[onclick*="confirm"]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const confirmText = this.getAttribute('onclick').match(/confirm\('([^']+)'\)/)[1];
+                    if (confirm(confirmText)) {
+                        window.location.href = this.href;
+                    }
+                });
+            });
         });
     </script>
 </body>

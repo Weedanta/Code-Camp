@@ -1,372 +1,809 @@
+<?php
+// views/admin/profile.php - Admin Profile Page
+$pageTitle = 'Profile Admin';
+
+// Security function
+function sanitizeOutput($value) {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
+
+// Get current admin info
+$currentAdmin = AdminMiddleware::getCurrentAdmin();
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil Admin - Campus Hub</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title><?= $pageTitle ?> - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/admin.css">
     <style>
-        .sidebar-gradient {
-            background: linear-gradient(180deg, #1f2937 0%, #374151 100%);
+        .profile-container {
+            max-width: 1000px;
+            margin: 0 auto;
         }
-        .profile-gradient {
+
+        .profile-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 25px;
+            color: white;
+            position: relative;
+            overflow: hidden;
         }
-        .form-gradient {
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: rotate(0deg) translate(-50%, -50%); }
+            100% { transform: rotate(360deg) translate(-50%, -50%); }
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 600;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-avatar:hover {
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .avatar-upload {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 30px;
+            height: 30px;
+            background: #28a745;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            border: 3px solid white;
+        }
+
+        .profile-details h2 {
+            margin: 0 0 8px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .profile-role {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .profile-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .profile-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .profile-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #f8f9fa;
+            padding: 20px 25px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #495057;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-content {
+            padding: 25px;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-control {
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-control:disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+
+        .input-group .form-control {
+            padding-left: 45px;
+        }
+
+        .password-requirements {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .requirement.valid {
+            color: #28a745;
+        }
+
+        .requirement.invalid {
+            color: #dc3545;
+        }
+
+        .activity-summary {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .activity-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .recent-activity {
+            margin-top: 15px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .activity-text {
+            flex: 1;
+            font-size: 13px;
+            color: #495057;
+        }
+
+        .activity-time {
+            font-size: 11px;
+            color: #6c757d;
+        }
+
+        .security-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .security-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .security-item:last-child {
+            border-bottom: none;
+        }
+
+        .security-label {
+            font-size: 13px;
+            color: #495057;
+        }
+
+        .security-value {
+            font-size: 12px;
+            color: #6c757d;
+            font-family: monospace;
+        }
+
+        .session-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .password-strength {
+            height: 4px;
+            border-radius: 2px;
+            margin-top: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .strength-weak { background: #dc3545; width: 25%; }
+        .strength-fair { background: #ffc107; width: 50%; }
+        .strength-good { background: #28a745; width: 75%; }
+        .strength-strong { background: #17a2b8; width: 100%; }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 768px) {
+            .profile-sections {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile-info {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .profile-meta {
+                justify-content: center;
+            }
+            
+            .activity-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <?php include_once 'views/admin/partials/sidebar.php'; ?>
+<body>
+    <div class="admin-layout">
+        <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
-    <!-- Main Content -->
-    <div class="ml-64 min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Profil Admin</h1>
-                        <p class="text-gray-600">Kelola informasi akun dan pengaturan keamanan</p>
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1><?= $pageTitle ?></h1>
+                    <div class="breadcrumb">
+                        <i class="fas fa-home"></i> Admin / 
+                        <i class="fas fa-user"></i> Profile
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <button onclick="toggleEditMode()" id="editToggle" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
-                            <i class="fas fa-edit mr-2"></i>
-                            Edit Profile
-                        </button>
-                    </div>
+                </div>
+                <div class="page-actions">
+                    <a href="admin.php?action=activity_log&admin_id=<?= $currentAdmin['id'] ?>" class="btn btn-secondary">
+                        <i class="fas fa-history"></i>
+                        Aktivitas Saya
+                    </a>
                 </div>
             </div>
-        </header>
 
-        <!-- Main Content -->
-        <main class="p-6">
-            <!-- Alerts -->
-            <?php if (isset($_SESSION['success'])): ?>
-                <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-                    <i class="fas fa-check-circle mr-3"></i>
-                    <span><?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></span>
-                </div>
-            <?php endif; ?>
-
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-                    <i class="fas fa-exclamation-triangle mr-3"></i>
-                    <span><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></span>
-                </div>
-            <?php endif; ?>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Profile Card -->
-                <div class="lg:col-span-1">
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div class="profile-gradient p-6 text-white text-center">
-                            <div class="w-24 h-24 bg-white bg-opacity-20 rounded-full mx-auto flex items-center justify-center mb-4">
-                                <i class="fas fa-user text-4xl"></i>
-                            </div>
-                            <h3 class="text-xl font-semibold"><?php echo htmlspecialchars($_SESSION['admin_name']); ?></h3>
-                            <p class="text-sm opacity-90 capitalize"><?php echo htmlspecialchars($_SESSION['admin_role']); ?></p>
-                            <div class="mt-4 flex justify-center">
-                                <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-xs font-medium">
-                                    ID: #<?php echo $_SESSION['admin_id']; ?>
-                                </span>
-                            </div>
+            <div class="content-wrapper">
+                <div class="profile-container">
+                    <!-- Alert Messages -->
+                    <?php if (isset($_SESSION['success'])): ?>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <?= sanitizeOutput($_SESSION['success']) ?>
                         </div>
-                        
-                        <div class="p-6 space-y-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Status</span>
-                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                                    Active
-                                </span>
+                        <?php unset($_SESSION['success']); ?>
+                    <?php endif; ?>
+
+                    <?php if (isset($_SESSION['error'])): ?>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <?= sanitizeOutput($_SESSION['error']) ?>
+                        </div>
+                        <?php unset($_SESSION['error']); ?>
+                    <?php endif; ?>
+
+                    <!-- Profile Header -->
+                    <div class="profile-header">
+                        <div class="profile-info">
+                            <div class="profile-avatar" onclick="document.getElementById('avatarUpload').click()">
+                                <?= strtoupper(substr($currentAdmin['name'] ?? 'A', 0, 2)) ?>
+                                <div class="avatar-upload">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
                             </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Last Login</span>
-                                <span class="text-sm text-gray-900"><?php echo date('d M Y H:i'); ?></span>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Member Since</span>
-                                <span class="text-sm text-gray-900"><?php echo date('d M Y', strtotime($admin['created_at'] ?? 'now')); ?></span>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Total Sessions</span>
-                                <span class="text-sm text-gray-900"><?php echo rand(100, 500); ?></span>
+                            <div class="profile-details">
+                                <h2><?= sanitizeOutput($currentAdmin['name'] ?? 'Admin') ?></h2>
+                                <div class="profile-role">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <?= ucfirst(sanitizeOutput($currentAdmin['role'] ?? 'admin')) ?>
+                                </div>
+                                <div class="profile-meta">
+                                    <div class="meta-item">
+                                        <i class="fas fa-envelope"></i>
+                                        <span><?= sanitizeOutput($currentAdmin['email'] ?? '') ?></span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-calendar"></i>
+                                        <span>Bergabung <?= date('M Y', strtotime($admin['created_at'] ?? '')) ?></span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Login terakhir: <?= date('d M Y H:i', strtotime($admin['last_login'] ?? '')) ?></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Quick Stats -->
-                    <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Admin Activity</h4>
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <i class="fas fa-users text-blue-600 w-5"></i>
-                                    <span class="text-sm text-gray-600 ml-2">Users Managed</span>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900"><?php echo rand(50, 200); ?></span>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <i class="fas fa-laptop-code text-green-600 w-5"></i>
-                                    <span class="text-sm text-gray-600 ml-2">Bootcamps Created</span>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900"><?php echo rand(10, 50); ?></span>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <i class="fas fa-star text-yellow-600 w-5"></i>
-                                    <span class="text-sm text-gray-600 ml-2">Reviews Moderated</span>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900"><?php echo rand(100, 300); ?></span>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <i class="fas fa-cog text-purple-600 w-5"></i>
-                                    <span class="text-sm text-gray-600 ml-2">Settings Changed</span>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900"><?php echo rand(20, 80); ?></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Profile Form -->
-                <div class="lg:col-span-2">
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Informasi Profile</h3>
-                            <p class="text-sm text-gray-600 mt-1">Update informasi akun dan preferensi</p>
-                        </div>
-                        
-                        <form id="profileForm" method="POST" action="admin.php?action=update_profile" class="p-6 space-y-6">
-                            <input type="hidden" name="csrf_token" value="<?php echo SecurityHelper::generateCSRFToken(); ?>">
-                            
-                            <!-- Personal Information -->
-                            <div>
-                                <h4 class="text-md font-medium text-gray-900 mb-4">Informasi Pribadi</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                                            <i class="fas fa-user mr-2"></i>Nama Lengkap
-                                        </label>
-                                        <input type="text" 
-                                               id="name" 
-                                               name="name" 
-                                               value="<?php echo htmlspecialchars($_SESSION['admin_name']); ?>"
-                                               disabled 
-                                               required 
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-50"
-                                               placeholder="Masukkan nama lengkap">
-                                    </div>
-                                    
-                                    <div>
-                                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                                            <i class="fas fa-envelope mr-2"></i>Email
-                                        </label>
-                                        <input type="email" 
-                                               id="email" 
-                                               name="email" 
-                                               value="<?php echo htmlspecialchars($_SESSION['admin_email']); ?>"
-                                               disabled 
-                                               required 
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-50"
-                                               placeholder="Masukkan email">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Contact Information -->
-                            <div>
-                                <h4 class="text-md font-medium text-gray-900 mb-4">Informasi Kontak</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
-                                            <i class="fas fa-phone mr-2"></i>Nomor Telepon
-                                        </label>
-                                        <input type="tel" 
-                                               id="phone" 
-                                               name="phone" 
-                                               value="<?php echo htmlspecialchars($admin['phone'] ?? ''); ?>"
-                                               disabled 
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-50"
-                                               placeholder="Masukkan nomor telepon">
-                                    </div>
-                                    
-                                    <div>
-                                        <label for="department" class="block text-sm font-medium text-gray-700 mb-2">
-                                            <i class="fas fa-building mr-2"></i>Departemen
-                                        </label>
-                                        <select id="department" 
-                                                name="department" 
-                                                disabled
-                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-50">
-                                            <option value="IT">IT Department</option>
-                                            <option value="Education">Education</option>
-                                            <option value="Marketing">Marketing</option>
-                                            <option value="Finance">Finance</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Preferences -->
-                            <div>
-                                <h4 class="text-md font-medium text-gray-900 mb-4">Preferensi</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label for="timezone" class="block text-sm font-medium text-gray-700 mb-2">
-                                            <i class="fas fa-clock mr-2"></i>Zona Waktu
-                                        </label>
-                                        <select id="timezone" 
-                                                name="timezone" 
-                                                disabled
-                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-50">
-                                            <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
-                                            <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
-                                            <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label for="language" class="block text-sm font-medium text-gray-700 mb-2">
-                                            <i class="fas fa-language mr-2"></i>Bahasa
-                                        </label>
-                                        <select id="language" 
-                                                name="language" 
-                                                disabled
-                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-50">
-                                            <option value="id">Bahasa Indonesia</option>
-                                            <option value="en">English</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Notifications -->
-                            <div>
-                                <h4 class="text-md font-medium text-gray-900 mb-4">Notifikasi</h4>
-                                <div class="space-y-4">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <label for="email_notifications" class="text-sm font-medium text-gray-700">
-                                                Email Notifications
-                                            </label>
-                                            <p class="text-xs text-gray-500">Terima notifikasi via email</p>
-                                        </div>
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" id="email_notifications" name="email_notifications" value="1" 
-                                                   checked disabled class="sr-only peer">
-                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-disabled:opacity-50"></div>
-                                        </label>
-                                    </div>
-                                    
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <label for="sms_notifications" class="text-sm font-medium text-gray-700">
-                                                SMS Notifications
-                                            </label>
-                                            <p class="text-xs text-gray-500">Terima notifikasi via SMS</p>
-                                        </div>
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" id="sms_notifications" name="sms_notifications" value="1" 
-                                                   disabled class="sr-only peer">
-                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-disabled:opacity-50"></div>
-                                        </label>
-                                    </div>
-                                    
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <label for="system_alerts" class="text-sm font-medium text-gray-700">
-                                                System Alerts
-                                            </label>
-                                            <p class="text-xs text-gray-500">Alert penting sistem</p>
-                                        </div>
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" id="system_alerts" name="system_alerts" value="1" 
-                                                   checked disabled class="sr-only peer">
-                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-disabled:opacity-50"></div>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div id="formActions" class="hidden flex items-center justify-between pt-6 border-t border-gray-200">
-                                <div class="flex space-x-4">
-                                    <button type="submit" 
-                                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
-                                        <i class="fas fa-save mr-2"></i>
-                                        Simpan Perubahan
-                                    </button>
-                                    
-                                    <button type="button" 
-                                            onclick="cancelEdit()"
-                                            class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
-                                        <i class="fas fa-times mr-2"></i>
-                                        Batal
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Security Settings -->
-                    <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Keamanan Akun</h3>
-                            <p class="text-sm text-gray-600 mt-1">Kelola password dan pengaturan keamanan</p>
-                        </div>
-                        
-                        <div class="p-6 space-y-6">
-                            <!-- Change Password -->
-                            <div class="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-900">Ubah Password</h4>
-                                    <p class="text-sm text-gray-600 mt-1">
-                                        Password terakhir diubah: <?php echo date('d M Y', strtotime('-' . rand(30, 90) . ' days')); ?>
-                                    </p>
-                                </div>
-                                <button onclick="showChangePasswordModal()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                                    <i class="fas fa-key mr-2"></i>
-                                    Ubah Password
+                    <!-- Profile Sections -->
+                    <div class="profile-sections">
+                        <!-- Personal Information -->
+                        <div class="profile-section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-user"></i>
+                                    Informasi Personal
+                                </h3>
+                                <button type="button" class="btn btn-sm btn-primary" id="editProfileBtn">
+                                    <i class="fas fa-edit"></i>
+                                    Edit
                                 </button>
                             </div>
+                            <div class="section-content">
+                                <form method="POST" action="admin.php?action=update_profile" id="profileForm">
+                                    <input type="hidden" name="csrf_token" value="<?= sanitizeOutput($_SESSION['csrf_token'] ?? '') ?>">
+                                    
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="name">
+                                                <i class="fas fa-user"></i>
+                                                Nama Lengkap
+                                            </label>
+                                            <div class="input-group">
+                                                <i class="fas fa-user input-group-icon"></i>
+                                                <input type="text" 
+                                                       id="name" 
+                                                       name="name" 
+                                                       class="form-control" 
+                                                       value="<?= sanitizeOutput($admin['name'] ?? '') ?>"
+                                                       disabled
+                                                       required>
+                                            </div>
+                                        </div>
 
-                            <!-- Two Factor Authentication -->
-                            <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-900">Two-Factor Authentication</h4>
-                                    <p class="text-sm text-gray-600 mt-1">
-                                        Status: <span class="text-green-600 font-medium">Aktif</span>
-                                    </p>
-                                </div>
-                                <button onclick="manage2FA()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                                    <i class="fas fa-shield-alt mr-2"></i>
-                                    Kelola 2FA
-                                </button>
+                                        <div class="form-group">
+                                            <label for="email">
+                                                <i class="fas fa-envelope"></i>
+                                                Email
+                                            </label>
+                                            <div class="input-group">
+                                                <i class="fas fa-envelope input-group-icon"></i>
+                                                <input type="email" 
+                                                       id="email" 
+                                                       name="email" 
+                                                       class="form-control" 
+                                                       value="<?= sanitizeOutput($admin['email'] ?? '') ?>"
+                                                       disabled
+                                                       required>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="phone">
+                                                <i class="fas fa-phone"></i>
+                                                Nomor Telepon
+                                            </label>
+                                            <div class="input-group">
+                                                <i class="fas fa-phone input-group-icon"></i>
+                                                <input type="tel" 
+                                                       id="phone" 
+                                                       name="phone" 
+                                                       class="form-control" 
+                                                       value="<?= sanitizeOutput($admin['phone'] ?? '') ?>"
+                                                       disabled>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="department">
+                                                <i class="fas fa-building"></i>
+                                                Departemen
+                                            </label>
+                                            <div class="input-group">
+                                                <i class="fas fa-building input-group-icon"></i>
+                                                <input type="text" 
+                                                       id="department" 
+                                                       name="department" 
+                                                       class="form-control" 
+                                                       value="<?= sanitizeOutput($admin['department'] ?? '') ?>"
+                                                       disabled>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="timezone">
+                                                <i class="fas fa-globe"></i>
+                                                Timezone
+                                            </label>
+                                            <select id="timezone" name="timezone" class="form-control" disabled>
+                                                <option value="Asia/Jakarta" <?= ($admin['timezone'] ?? '') === 'Asia/Jakarta' ? 'selected' : '' ?>>Asia/Jakarta (WIB)</option>
+                                                <option value="Asia/Makassar" <?= ($admin['timezone'] ?? '') === 'Asia/Makassar' ? 'selected' : '' ?>>Asia/Makassar (WITA)</option>
+                                                <option value="Asia/Jayapura" <?= ($admin['timezone'] ?? '') === 'Asia/Jayapura' ? 'selected' : '' ?>>Asia/Jayapura (WIT)</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="language">
+                                                <i class="fas fa-language"></i>
+                                                Bahasa
+                                            </label>
+                                            <select id="language" name="language" class="form-control" disabled>
+                                                <option value="id" <?= ($admin['language'] ?? '') === 'id' ? 'selected' : '' ?>>Bahasa Indonesia</option>
+                                                <option value="en" <?= ($admin['language'] ?? '') === 'en' ? 'selected' : '' ?>>English</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-actions" style="display: none;" id="profileActions">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i>
+                                            Simpan Perubahan
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" id="cancelProfileBtn">
+                                            <i class="fas fa-times"></i>
+                                            Batal
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
+                        </div>
 
-                            <!-- Login Sessions -->
-                            <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-900">Sesi Login Aktif</h4>
-                                    <p class="text-sm text-gray-600 mt-1">
-                                        <?php echo rand(1, 3); ?> perangkat aktif saat ini
-                                    </p>
+                        <!-- Security Settings -->
+                        <div class="profile-section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-shield-alt"></i>
+                                    Keamanan
+                                </h3>
+                            </div>
+                            <div class="section-content">
+                                <!-- Change Password Form -->
+                                <form method="POST" action="admin.php?action=change_password" id="passwordForm">
+                                    <input type="hidden" name="csrf_token" value="<?= sanitizeOutput($_SESSION['csrf_token'] ?? '') ?>">
+                                    
+                                    <div class="form-group">
+                                        <label for="current_password">
+                                            <i class="fas fa-lock"></i>
+                                            Password Saat Ini
+                                        </label>
+                                        <div class="input-group">
+                                            <i class="fas fa-lock input-group-icon"></i>
+                                            <input type="password" 
+                                                   id="current_password" 
+                                                   name="current_password" 
+                                                   class="form-control" 
+                                                   required>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="new_password">
+                                            <i class="fas fa-key"></i>
+                                            Password Baru
+                                        </label>
+                                        <div class="input-group">
+                                            <i class="fas fa-key input-group-icon"></i>
+                                            <input type="password" 
+                                                   id="new_password" 
+                                                   name="new_password" 
+                                                   class="form-control" 
+                                                   required>
+                                        </div>
+                                        <div class="password-strength" id="passwordStrength"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="confirm_password">
+                                            <i class="fas fa-check-circle"></i>
+                                            Konfirmasi Password Baru
+                                        </label>
+                                        <div class="input-group">
+                                            <i class="fas fa-check-circle input-group-icon"></i>
+                                            <input type="password" 
+                                                   id="confirm_password" 
+                                                   name="confirm_password" 
+                                                   class="form-control" 
+                                                   required>
+                                        </div>
+                                    </div>
+
+                                    <div class="password-requirements">
+                                        <strong>Syarat Password:</strong>
+                                        <div class="requirement" id="req-length">
+                                            <i class="fas fa-times"></i>
+                                            <span>Minimal 8 karakter</span>
+                                        </div>
+                                        <div class="requirement" id="req-uppercase">
+                                            <i class="fas fa-times"></i>
+                                            <span>Minimal 1 huruf besar</span>
+                                        </div>
+                                        <div class="requirement" id="req-lowercase">
+                                            <i class="fas fa-times"></i>
+                                            <span>Minimal 1 huruf kecil</span>
+                                        </div>
+                                        <div class="requirement" id="req-number">
+                                            <i class="fas fa-times"></i>
+                                            <span>Minimal 1 angka</span>
+                                        </div>
+                                        <div class="requirement" id="req-special">
+                                            <i class="fas fa-times"></i>
+                                            <span>Minimal 1 karakter khusus</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-warning">
+                                            <i class="fas fa-key"></i>
+                                            Ubah Password
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <!-- Security Information -->
+                                <div class="security-info">
+                                    <strong>Informasi Keamanan:</strong>
+                                    <div class="security-item">
+                                        <span class="security-label">IP Address Terakhir:</span>
+                                        <span class="security-value"><?= sanitizeOutput($_SERVER['REMOTE_ADDR'] ?? 'Unknown') ?></span>
+                                    </div>
+                                    <div class="security-item">
+                                        <span class="security-label">Browser:</span>
+                                        <span class="security-value">
+                                            <?php
+                                            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                                            if (strpos($userAgent, 'Chrome') !== false) echo 'Chrome';
+                                            elseif (strpos($userAgent, 'Firefox') !== false) echo 'Firefox';
+                                            elseif (strpos($userAgent, 'Safari') !== false) echo 'Safari';
+                                            elseif (strpos($userAgent, 'Edge') !== false) echo 'Edge';
+                                            else echo 'Unknown';
+                                            ?>
+                                        </span>
+                                    </div>
+                                    <div class="security-item">
+                                        <span class="security-label">Session ID:</span>
+                                        <span class="security-value"><?= substr(session_id(), 0, 12) ?>...</span>
+                                    </div>
                                 </div>
-                                <button onclick="manageSessions()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                                    <i class="fas fa-desktop mr-2"></i>
-                                    Kelola Sesi
-                                </button>
+
+                                <!-- Session Info -->
+                                <div class="session-info">
+                                    <strong>Informasi Sesi:</strong>
+                                    <div class="security-item">
+                                        <span class="security-label">Login Sejak:</span>
+                                        <span class="security-value"><?= date('d M Y H:i:s', $_SESSION['admin_last_activity'] ?? time()) ?></span>
+                                    </div>
+                                    <div class="security-item">
+                                        <span class="security-label">Aktivitas Terakhir:</span>
+                                        <span class="security-value" id="lastActivity"><?= date('d M Y H:i:s') ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Activity Summary (Full Width) -->
+                        <div class="profile-section" style="grid-column: 1 / -1;">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-chart-line"></i>
+                                    Ringkasan Aktivitas
+                                </h3>
+                                <a href="admin.php?action=activity_log&admin_id=<?= $currentAdmin['id'] ?>" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    Lihat Semua
+                                </a>
+                            </div>
+                            <div class="section-content">
+                                <div class="activity-summary">
+                                    <div class="activity-stats">
+                                        <div class="stat-item">
+                                            <div class="stat-number">
+                                                <?php
+                                                // Calculate today's activities
+                                                $todayActivities = 0;
+                                                if (isset($recentActivities)) {
+                                                    foreach ($recentActivities as $activity) {
+                                                        if (date('Y-m-d', strtotime($activity['created_at'])) === date('Y-m-d')) {
+                                                            $todayActivities++;
+                                                        }
+                                                    }
+                                                }
+                                                echo number_format($todayActivities);
+                                                ?>
+                                            </div>
+                                            <div class="stat-label">Aktivitas Hari Ini</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-number">
+                                                <?php
+                                                // Calculate this week's activities
+                                                $weekActivities = 0;
+                                                if (isset($recentActivities)) {
+                                                    $weekStart = date('Y-m-d', strtotime('monday this week'));
+                                                    foreach ($recentActivities as $activity) {
+                                                        if (date('Y-m-d', strtotime($activity['created_at'])) >= $weekStart) {
+                                                            $weekActivities++;
+                                                        }
+                                                    }
+                                                }
+                                                echo number_format($weekActivities);
+                                                ?>
+                                            </div>
+                                            <div class="stat-label">Minggu Ini</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-number"><?= number_format(count($recentActivities ?? [])) ?></div>
+                                            <div class="stat-label">Total Aktivitas</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="recent-activity">
+                                        <strong>Aktivitas Terbaru:</strong>
+                                        <?php if (!empty($recentActivities)): ?>
+                                            <?php foreach (array_slice($recentActivities, 0, 5) as $activity): ?>
+                                                <div class="activity-item">
+                                                    <div class="activity-icon">
+                                                        <?php
+                                                        $icons = [
+                                                            'login' => 'fa-sign-in-alt',
+                                                            'logout' => 'fa-sign-out-alt',
+                                                            'create' => 'fa-plus',
+                                                            'update' => 'fa-edit',
+                                                            'delete' => 'fa-trash'
+                                                        ];
+                                                        $icon = $icons[$activity['activity_type']] ?? 'fa-circle';
+                                                        ?>
+                                                        <i class="fas <?= $icon ?>"></i>
+                                                    </div>
+                                                    <div class="activity-text">
+                                                        <?= sanitizeOutput($activity['description']) ?>
+                                                    </div>
+                                                    <div class="activity-time">
+                                                        <?= date('H:i', strtotime($activity['created_at'])) ?>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <p class="text-muted">Belum ada aktivitas terbaru.</p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -375,153 +812,192 @@
         </main>
     </div>
 
-    <!-- Change Password Modal -->
-    <div id="changePasswordModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Ubah Password</h3>
-                <form method="POST" action="admin.php?action=change_password">
-                    <input type="hidden" name="csrf_token" value="<?php echo SecurityHelper::generateCSRFToken(); ?>">
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label for="current_password" class="block text-sm font-medium text-gray-700 mb-2">Password Lama</label>
-                            <input type="password" 
-                                   id="current_password" 
-                                   name="current_password" 
-                                   required 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        
-                        <div>
-                            <label for="new_password" class="block text-sm font-medium text-gray-700 mb-2">Password Baru</label>
-                            <input type="password" 
-                                   id="new_password" 
-                                   name="new_password" 
-                                   required 
-                                   minlength="8"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        
-                        <div>
-                            <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-2">Konfirmasi Password Baru</label>
-                            <input type="password" 
-                                   id="confirm_password" 
-                                   name="confirm_password" 
-                                   required 
-                                   minlength="8"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6 flex justify-end space-x-3">
-                        <button type="button" onclick="closeChangePasswordModal()" class="px-4 py-2 bg-gray-300 text-gray-800 text-sm font-medium rounded-md hover:bg-gray-400">
-                            Batal
-                        </button>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
-                            <i class="fas fa-save mr-1"></i>
-                            Ubah Password
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <script>
-        let editMode = false;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Edit Profile functionality
+            const editProfileBtn = document.getElementById('editProfileBtn');
+            const profileForm = document.getElementById('profileForm');
+            const profileActions = document.getElementById('profileActions');
+            const cancelProfileBtn = document.getElementById('cancelProfileBtn');
+            const profileInputs = profileForm.querySelectorAll('input, select');
 
-        function toggleEditMode() {
-            editMode = !editMode;
-            const formInputs = document.querySelectorAll('#profileForm input, #profileForm select');
-            const formActions = document.getElementById('formActions');
-            const editToggle = document.getElementById('editToggle');
-            
-            formInputs.forEach(input => {
-                if (input.name !== 'csrf_token') {
-                    input.disabled = !editMode;
+            let originalValues = {};
+
+            editProfileBtn.addEventListener('click', function() {
+                // Store original values
+                profileInputs.forEach(input => {
+                    originalValues[input.name] = input.value;
+                });
+
+                // Enable inputs
+                profileInputs.forEach(input => {
+                    input.disabled = false;
+                });
+
+                // Show actions
+                profileActions.style.display = 'flex';
+                editProfileBtn.style.display = 'none';
+            });
+
+            cancelProfileBtn.addEventListener('click', function() {
+                // Restore original values
+                profileInputs.forEach(input => {
+                    if (originalValues[input.name] !== undefined) {
+                        input.value = originalValues[input.name];
+                    }
+                });
+
+                // Disable inputs
+                profileInputs.forEach(input => {
+                    input.disabled = true;
+                });
+
+                // Hide actions
+                profileActions.style.display = 'none';
+                editProfileBtn.style.display = 'inline-flex';
+            });
+
+            // Password strength checker
+            const newPasswordInput = document.getElementById('new_password');
+            const confirmPasswordInput = document.getElementById('confirm_password');
+            const passwordStrength = document.getElementById('passwordStrength');
+
+            newPasswordInput.addEventListener('input', function() {
+                checkPasswordStrength(this.value);
+                checkPasswordRequirements(this.value);
+            });
+
+            confirmPasswordInput.addEventListener('input', function() {
+                checkPasswordMatch();
+            });
+
+            function checkPasswordStrength(password) {
+                let strength = 0;
+                let className = '';
+
+                if (password.length >= 8) strength++;
+                if (/[a-z]/.test(password)) strength++;
+                if (/[A-Z]/.test(password)) strength++;
+                if (/[0-9]/.test(password)) strength++;
+                if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+                switch (strength) {
+                    case 0:
+                    case 1:
+                        className = 'strength-weak';
+                        break;
+                    case 2:
+                    case 3:
+                        className = 'strength-fair';
+                        break;
+                    case 4:
+                        className = 'strength-good';
+                        break;
+                    case 5:
+                        className = 'strength-strong';
+                        break;
+                }
+
+                passwordStrength.className = `password-strength ${className}`;
+            }
+
+            function checkPasswordRequirements(password) {
+                const requirements = {
+                    'req-length': password.length >= 8,
+                    'req-uppercase': /[A-Z]/.test(password),
+                    'req-lowercase': /[a-z]/.test(password),
+                    'req-number': /[0-9]/.test(password),
+                    'req-special': /[^A-Za-z0-9]/.test(password)
+                };
+
+                Object.entries(requirements).forEach(([id, valid]) => {
+                    const element = document.getElementById(id);
+                    if (valid) {
+                        element.classList.add('valid');
+                        element.classList.remove('invalid');
+                        element.querySelector('i').className = 'fas fa-check';
+                    } else {
+                        element.classList.add('invalid');
+                        element.classList.remove('valid');
+                        element.querySelector('i').className = 'fas fa-times';
+                    }
+                });
+            }
+
+            function checkPasswordMatch() {
+                const newPassword = newPasswordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                if (newPassword && confirmPassword) {
+                    if (newPassword === confirmPassword) {
+                        confirmPasswordInput.classList.remove('is-invalid');
+                        confirmPasswordInput.classList.add('is-valid');
+                    } else {
+                        confirmPasswordInput.classList.remove('is-valid');
+                        confirmPasswordInput.classList.add('is-invalid');
+                    }
+                }
+            }
+
+            // Password form validation
+            const passwordForm = document.getElementById('passwordForm');
+            passwordForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const currentPassword = document.getElementById('current_password').value;
+                const newPassword = newPasswordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                    alert('Semua field password harus diisi!');
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    alert('Konfirmasi password tidak cocok!');
+                    return;
+                }
+
+                // Check password strength
+                if (!SecurityHelper.validatePassword(newPassword)) {
+                    alert('Password baru tidak memenuhi syarat keamanan!');
+                    return;
+                }
+
+                this.submit();
+            });
+
+            // Update last activity time
+            setInterval(function() {
+                document.getElementById('lastActivity').textContent = new Date().toLocaleString('id-ID');
+            }, 60000); // Update every minute
+
+            // Avatar upload
+            document.getElementById('avatarUpload').addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('Ukuran file maksimal 2MB!');
+                        return;
+                    }
+
+                    // Here you would upload the avatar
+                    console.log('Avatar upload:', file.name);
+                    alert('Fitur upload avatar akan segera tersedia!');
                 }
             });
-            
-            if (editMode) {
-                formActions.classList.remove('hidden');
-                editToggle.innerHTML = '<i class="fas fa-times mr-2"></i>Cancel Edit';
-                editToggle.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                editToggle.classList.add('bg-red-600', 'hover:bg-red-700');
-            } else {
-                formActions.classList.add('hidden');
-                editToggle.innerHTML = '<i class="fas fa-edit mr-2"></i>Edit Profile';
-                editToggle.classList.remove('bg-red-600', 'hover:bg-red-700');
-                editToggle.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            }
-        }
-
-        function cancelEdit() {
-            editMode = false;
-            toggleEditMode();
-            // Reset form values
-            document.getElementById('profileForm').reset();
-        }
-
-        function showChangePasswordModal() {
-            document.getElementById('changePasswordModal').classList.remove('hidden');
-        }
-
-        function closeChangePasswordModal() {
-            document.getElementById('changePasswordModal').classList.add('hidden');
-            document.querySelector('#changePasswordModal form').reset();
-        }
-
-        function manage2FA() {
-            alert('Fitur Two-Factor Authentication akan segera tersedia');
-        }
-
-        function manageSessions() {
-            alert('Fitur manajemen sesi login akan segera tersedia');
-        }
-
-        // Password confirmation validation
-        document.getElementById('confirm_password').addEventListener('input', function() {
-            const newPassword = document.getElementById('new_password').value;
-            const confirmPassword = this.value;
-            
-            if (confirmPassword !== newPassword) {
-                this.setCustomValidity('Password tidak cocok');
-            } else {
-                this.setCustomValidity('');
-            }
         });
 
-        // Close modal when clicking outside
-        document.getElementById('changePasswordModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeChangePasswordModal();
+        // Helper functions
+        const SecurityHelper = {
+            validatePassword: function(password) {
+                return password.length >= 8 &&
+                       /[a-z]/.test(password) &&
+                       /[A-Z]/.test(password) &&
+                       /[0-9]/.test(password) &&
+                       /[^A-Za-z0-9]/.test(password);
             }
-        });
-
-        // Form validation
-        document.getElementById('profileForm').addEventListener('submit', function(e) {
-            if (!editMode) {
-                e.preventDefault();
-                return;
-            }
-            
-            const name = document.getElementById('name').value.trim();
-            const email = document.getElementById('email').value.trim();
-            
-            if (name.length < 2) {
-                e.preventDefault();
-                alert('Nama harus minimal 2 karakter');
-                return;
-            }
-            
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                e.preventDefault();
-                alert('Format email tidak valid');
-                return;
-            }
-        });
+        };
     </script>
 </body>
 </html>

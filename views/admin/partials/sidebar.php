@@ -3,6 +3,26 @@
 // Template sidebar untuk halaman admin
 
 $current_action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
+
+// Initialize notification counts (prevent undefined variable errors)
+$pending_users = 0;
+$pending_orders = 0; 
+$pending_reviews = 0;
+
+// Get notification counts if admin is logged in
+if (isset($_SESSION['admin_id']) && isset($this) && method_exists($this, 'admin')) {
+    try {
+        // Get pending counts from model
+        $stats = $this->admin->getDashboardStats();
+        $pending_reviews = $stats['pending_reviews'] ?? 0;
+        
+        // You can add more notification counts here
+        // $pending_orders = $this->admin->getPendingOrdersCount();
+        // $pending_users = $this->admin->getPendingUsersCount();
+    } catch (Exception $e) {
+        // Silently handle errors
+    }
+}
 ?>
 
 <div class="fixed inset-y-0 left-0 z-50 w-64 sidebar-gradient shadow-xl">
@@ -27,7 +47,7 @@ $current_action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
                class="flex items-center px-4 py-3 rounded-lg transition-colors <?php echo in_array($current_action, ['manage_users', 'edit_user']) ? 'text-white bg-indigo-600' : 'text-gray-300 hover:text-white hover:bg-gray-700'; ?>">
                 <i class="fas fa-users mr-3"></i>
                 Kelola Users
-                <?php if (isset($pending_users) && $pending_users > 0): ?>
+                <?php if ($pending_users > 0): ?>
                     <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full"><?php echo $pending_users; ?></span>
                 <?php endif; ?>
             </a>
@@ -51,7 +71,7 @@ $current_action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
                class="flex items-center px-4 py-3 rounded-lg transition-colors <?php echo in_array($current_action, ['manage_orders', 'view_order']) ? 'text-white bg-indigo-600' : 'text-gray-300 hover:text-white hover:bg-gray-700'; ?>">
                 <i class="fas fa-shopping-cart mr-3"></i>
                 Kelola Orders
-                <?php if (isset($pending_orders) && $pending_orders > 0): ?>
+                <?php if ($pending_orders > 0): ?>
                     <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-1 rounded-full"><?php echo $pending_orders; ?></span>
                 <?php endif; ?>
             </a>
@@ -61,7 +81,7 @@ $current_action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
                class="flex items-center px-4 py-3 rounded-lg transition-colors <?php echo $current_action === 'manage_reviews' ? 'text-white bg-indigo-600' : 'text-gray-300 hover:text-white hover:bg-gray-700'; ?>">
                 <i class="fas fa-star mr-3"></i>
                 Kelola Reviews
-                <?php if (isset($pending_reviews) && $pending_reviews > 0): ?>
+                <?php if ($pending_reviews > 0): ?>
                     <span class="ml-auto bg-orange-500 text-white text-xs px-2 py-1 rounded-full"><?php echo $pending_reviews; ?></span>
                 <?php endif; ?>
             </a>
@@ -80,6 +100,13 @@ $current_action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
                 Analytics
             </a>
             
+            <!-- Activity Log -->
+            <a href="admin.php?action=activity_log" 
+               class="flex items-center px-4 py-3 rounded-lg transition-colors <?php echo $current_action === 'activity_log' ? 'text-white bg-indigo-600' : 'text-gray-300 hover:text-white hover:bg-gray-700'; ?>">
+                <i class="fas fa-history mr-3"></i>
+                Log Aktivitas
+            </a>
+            
             <!-- Settings -->
             <a href="admin.php?action=manage_settings" 
                class="flex items-center px-4 py-3 rounded-lg transition-colors <?php echo $current_action === 'manage_settings' ? 'text-white bg-indigo-600' : 'text-gray-300 hover:text-white hover:bg-gray-700'; ?>">
@@ -95,8 +122,12 @@ $current_action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
                     <i class="fas fa-user text-white"></i>
                 </div>
                 <div class="ml-3 flex-1">
-                    <p class="text-sm font-medium text-white truncate"><?php echo htmlspecialchars($_SESSION['admin_name']); ?></p>
-                    <p class="text-xs text-gray-400 capitalize"><?php echo htmlspecialchars($_SESSION['admin_role']); ?></p>
+                    <p class="text-sm font-medium text-white truncate">
+                        <?php echo htmlspecialchars($_SESSION['admin_name'] ?? 'Admin'); ?>
+                    </p>
+                    <p class="text-xs text-gray-400 capitalize">
+                        <?php echo htmlspecialchars($_SESSION['admin_role'] ?? 'Administrator'); ?>
+                    </p>
                 </div>
             </div>
             
