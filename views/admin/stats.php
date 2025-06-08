@@ -3,348 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics - Admin Campus Hub</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <style>
-        .sidebar-gradient {
-            background: linear-gradient(180deg, #1f2937 0%, #374151 100%);
+    <title>Statistik Detail - Code Camp Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#1e40af',
+                    }
+                }
+            }
         }
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        .card-hover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
-        .metric-card {
-            background: linear-gradient(135deg, var(--tw-gradient-from), var(--tw-gradient-to));
-        }
-    </style>
+    </script>
 </head>
 <body class="bg-gray-50">
-    <?php include_once 'views/admin/partials/sidebar.php'; ?>
-
-    <!-- Main Content -->
-    <div class="ml-64 min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Analytics & Statistics</h1>
-                        <p class="text-gray-600">Analisis mendalam performa platform Campus Hub</p>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <select id="dateRange" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="7">7 Hari Terakhir</option>
-                            <option value="30" selected>30 Hari Terakhir</option>
-                            <option value="90">90 Hari Terakhir</option>
-                            <option value="365">1 Tahun Terakhir</option>
-                        </select>
-                        <button onclick="exportReport()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
-                            <i class="fas fa-download mr-2"></i>
-                            Export Report
-                        </button>
-                        <button onclick="refreshData()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
-                            <i class="fas fa-sync-alt mr-2"></i>
-                            Refresh
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
         <!-- Main Content -->
-        <main class="p-6">
-            <!-- Key Metrics -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="metric-card from-blue-500 to-blue-600 text-white p-6 rounded-xl card-hover">
-                    <div class="flex items-center justify-between">
+        <main class="flex-1 lg:ml-64 overflow-y-auto">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-gray-200 p-4 lg:p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4 ml-12 lg:ml-0">
+                        <a 
+                            href="admin.php?action=dashboard" 
+                            class="text-gray-500 hover:text-primary transition-colors duration-200"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </a>
                         <div>
-                            <p class="text-blue-100">Total Revenue</p>
-                            <p class="text-3xl font-bold">Rp <?php echo number_format($detailedStats['total_revenue'] ?? 0); ?></p>
-                            <p class="text-sm text-blue-100 mt-1">
-                                <i class="fas fa-arrow-up mr-1"></i>
-                                +12.5% vs bulan lalu
-                            </p>
+                            <h1 class="text-2xl font-bold text-gray-800">Statistik Detail</h1>
+                            <p class="text-gray-600 mt-1">Analisis mendalam platform Code Camp</p>
                         </div>
-                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-chart-line text-2xl"></i>
+                    </div>
+                    
+                    <!-- Export Options -->
+                    <div class="flex items-center space-x-2">
+                        <div class="relative">
+                            <button 
+                                onclick="toggleExportMenu()" 
+                                class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center"
+                            >
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Export Data
+                            </button>
+                            <div id="exportMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                                <a href="admin.php?action=export_data&type=users" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Export Users</a>
+                                <a href="admin.php?action=export_data&type=bootcamps" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Export Bootcamps</a>
+                                <a href="admin.php?action=export_data&type=orders" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Export Orders</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="p-4 lg:p-6 space-y-6">
+                <!-- Overview Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Users Stats -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Users</p>
+                                <p class="text-3xl font-bold text-gray-900"><?= number_format($detailedStats['total_users'] ?? 0) ?></p>
+                                <p class="text-sm text-green-600">+<?= number_format($detailedStats['new_users_month'] ?? 0) ?> bulan ini</p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-full">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Stats -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Revenue</p>
+                                <p class="text-3xl font-bold text-gray-900">Rp <?= number_format($detailedStats['total_revenue'] ?? 0, 0, ',', '.') ?></p>
+                                <p class="text-sm text-green-600">+Rp <?= number_format($detailedStats['revenue_month'] ?? 0, 0, ',', '.') ?> bulan ini</p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-full">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Avg Order Value -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Avg Order Value</p>
+                                <p class="text-3xl font-bold text-gray-900">Rp <?= number_format($detailedStats['avg_order_value'] ?? 0, 0, ',', '.') ?></p>
+                                <p class="text-sm text-gray-500">per transaksi</p>
+                            </div>
+                            <div class="bg-purple-100 p-3 rounded-full">
+                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Enrollments -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Enrollments</p>
+                                <p class="text-3xl font-bold text-gray-900"><?= number_format($detailedStats['total_enrollments'] ?? 0) ?></p>
+                                <p class="text-sm text-gray-500">peserta terdaftar</p>
+                            </div>
+                            <div class="bg-yellow-100 p-3 rounded-full">
+                                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                </svg>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="metric-card from-green-500 to-green-600 text-white p-6 rounded-xl card-hover">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-green-100">New Users</p>
-                            <p class="text-3xl font-bold"><?php echo number_format($detailedStats['new_users_month'] ?? 0); ?></p>
-                            <p class="text-sm text-green-100 mt-1">
-                                <i class="fas fa-arrow-up mr-1"></i>
-                                +8.2% vs bulan lalu
-                            </p>
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Revenue Chart -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-800">Trend Revenue</h3>
+                            <p class="text-gray-600 mt-1">Perkembangan pendapatan dalam 6 bulan terakhir</p>
                         </div>
-                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-users text-2xl"></i>
+                        <div class="p-6">
+                            <canvas id="revenueChart" height="300"></canvas>
                         </div>
                     </div>
-                </div>
 
-                <div class="metric-card from-purple-500 to-purple-600 text-white p-6 rounded-xl card-hover">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-purple-100">Course Enrollments</p>
-                            <p class="text-3xl font-bold"><?php echo number_format($detailedStats['total_enrollments'] ?? 0); ?></p>
-                            <p class="text-sm text-purple-100 mt-1">
-                                <i class="fas fa-arrow-up mr-1"></i>
-                                +15.3% vs bulan lalu
-                            </p>
+                    <!-- User Growth Chart -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-800">Pertumbuhan User</h3>
+                            <p class="text-gray-600 mt-1">Registrasi user baru dalam 6 bulan terakhir</p>
                         </div>
-                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-graduation-cap text-2xl"></i>
+                        <div class="p-6">
+                            <canvas id="userChart" height="300"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <div class="metric-card from-orange-500 to-orange-600 text-white p-6 rounded-xl card-hover">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-orange-100">Avg. Order Value</p>
-                            <p class="text-3xl font-bold">Rp <?php echo number_format($detailedStats['avg_order_value'] ?? 0); ?></p>
-                            <p class="text-sm text-orange-100 mt-1">
-                                <i class="fas fa-arrow-down mr-1"></i>
-                                -2.1% vs bulan lalu
-                            </p>
-                        </div>
-                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-money-bill text-2xl"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts Row 1 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <!-- Revenue Chart -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900">Revenue Trend</h3>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-sm text-gray-500">Periode:</span>
-                            <select class="text-sm border border-gray-300 rounded px-2 py-1">
-                                <option>30 Hari</option>
-                                <option>90 Hari</option>
-                                <option>1 Tahun</option>
-                            </select>
-                        </div>
-                    </div>
-                    <canvas id="revenueChart" height="300"></canvas>
-                </div>
-
-                <!-- User Growth Chart -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900">User Growth</h3>
-                        <div class="text-sm text-green-600 font-medium">↗ +156 users this month</div>
-                    </div>
-                    <canvas id="userGrowthChart" height="300"></canvas>
-                </div>
-            </div>
-
-            <!-- Charts Row 2 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <!-- Bootcamp Performance -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Top Performing Bootcamps</h3>
-                    <canvas id="bootcampChart" height="300"></canvas>
-                </div>
-
-                <!-- Payment Methods -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Payment Methods Distribution</h3>
-                    <canvas id="paymentChart" height="300"></canvas>
-                </div>
-            </div>
-
-            <!-- Detailed Tables -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <!-- Top Bootcamps Table -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">Top Bootcamps by Revenue</h3>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bootcamp</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Enrollments</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revenue</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <?php if (!empty($detailedStats['top_bootcamps'])): ?>
-                                    <?php foreach ($detailedStats['top_bootcamps'] as $index => $bootcamp): ?>
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="flex items-center">
-                                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-xs font-medium text-blue-600 mr-3">
-                                                        <?php echo $index + 1; ?>
-                                                    </div>
-                                                    <div class="text-sm font-medium text-gray-900 truncate max-w-xs">
-                                                        <?php echo htmlspecialchars($bootcamp['title']); ?>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <?php echo number_format($bootcamp['enrollments']); ?>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                Rp <?php echo number_format($bootcamp['revenue'] ?? 0); ?>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <tr>
-                                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No data available</td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Recent Activity -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">Recent Activities</h3>
+                <!-- Top Bootcamps -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800">Top Bootcamps by Revenue</h3>
+                        <p class="text-gray-600 mt-1">Bootcamp dengan pendapatan tertinggi</p>
                     </div>
                     <div class="p-6">
-                        <div class="space-y-4 max-h-80 overflow-y-auto">
-                            <?php for ($i = 1; $i <= 10; $i++): ?>
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <i class="fas fa-user text-blue-600 text-xs"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-sm text-gray-900">User mendaftar bootcamp "Full Stack Development"</p>
-                                        <p class="text-xs text-gray-500"><?php echo rand(1, 60); ?> menit yang lalu</p>
-                                    </div>
+                        <?php if (empty($detailedStats['top_bootcamps'])): ?>
+                            <div class="text-center py-8">
+                                <div class="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
                                 </div>
-                            <?php endfor; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Additional Metrics -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Conversion Funnel -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Conversion Funnel</h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Website Visitors</span>
-                            <span class="text-sm font-medium">10,245</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-blue-600 h-2 rounded-full" style="width: 100%"></div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Bootcamp Views</span>
-                            <span class="text-sm font-medium">3,456</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-green-600 h-2 rounded-full" style="width: 34%"></div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Add to Cart</span>
-                            <span class="text-sm font-medium">892</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-yellow-600 h-2 rounded-full" style="width: 9%"></div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Completed Purchase</span>
-                            <span class="text-sm font-medium">234</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-purple-600 h-2 rounded-full" style="width: 2.3%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- User Demographics -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-6">User Demographics</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span>Jakarta</span>
-                                <span>45%</span>
+                                <p class="text-gray-500">Belum ada data bootcamp</p>
                             </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-blue-600 h-2 rounded-full" style="width: 45%"></div>
+                        <?php else: ?>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr class="border-b border-gray-200">
+                                            <th class="text-left py-3 px-4 font-medium text-gray-600">Rank</th>
+                                            <th class="text-left py-3 px-4 font-medium text-gray-600">Bootcamp</th>
+                                            <th class="text-left py-3 px-4 font-medium text-gray-600">Enrollments</th>
+                                            <th class="text-left py-3 px-4 font-medium text-gray-600">Revenue</th>
+                                            <th class="text-left py-3 px-4 font-medium text-gray-600">Progress</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php 
+                                        $maxRevenue = max(array_column($detailedStats['top_bootcamps'], 'revenue'));
+                                        foreach ($detailedStats['top_bootcamps'] as $index => $bootcamp): 
+                                            $percentage = $maxRevenue > 0 ? ($bootcamp['revenue'] / $maxRevenue) * 100 : 0;
+                                        ?>
+                                            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                                <td class="py-4 px-4">
+                                                    <div class="flex items-center justify-center w-8 h-8 rounded-full <?= $index < 3 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600' ?> font-semibold text-sm">
+                                                        <?= $index + 1 ?>
+                                                    </div>
+                                                </td>
+                                                <td class="py-4 px-4">
+                                                    <div class="font-medium text-gray-900"><?= htmlspecialchars($bootcamp['title']) ?></div>
+                                                </td>
+                                                <td class="py-4 px-4">
+                                                    <span class="text-gray-700"><?= number_format($bootcamp['enrollments'] ?? 0) ?></span>
+                                                </td>
+                                                <td class="py-4 px-4">
+                                                    <span class="font-semibold text-gray-900">Rp <?= number_format($bootcamp['revenue'] ?? 0, 0, ',', '.') ?></span>
+                                                </td>
+                                                <td class="py-4 px-4">
+                                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                                        <div class="bg-primary h-2 rounded-full" style="width: <?= $percentage ?>%"></div>
+                                                    </div>
+                                                    <span class="text-xs text-gray-500 mt-1"><?= number_format($percentage, 1) ?>%</span>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
                             </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span>Surabaya</span>
-                                <span>20%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-green-600 h-2 rounded-full" style="width: 20%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span>Bandung</span>
-                                <span>15%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-yellow-600 h-2 rounded-full" style="width: 15%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span>Lainnya</span>
-                                <span>20%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-purple-600 h-2 rounded-full" style="width: 20%"></div>
-                            </div>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                <!-- Platform Health -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Platform Health</h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Server Uptime</span>
-                            <span class="text-sm font-medium text-green-600">99.9%</span>
+                <!-- Performance Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Conversion Rate -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div class="text-center">
+                            <div class="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Conversion Rate</h3>
+                            <p class="text-3xl font-bold text-green-600">
+                                <?php 
+                                $conversionRate = ($detailedStats['total_users'] ?? 0) > 0 ? 
+                                    (($detailedStats['total_orders'] ?? 0) / $detailedStats['total_users']) * 100 : 0;
+                                echo number_format($conversionRate, 1);
+                                ?>%
+                            </p>
+                            <p class="text-sm text-gray-500 mt-1">user menjadi customer</p>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Avg. Page Load</span>
-                            <span class="text-sm font-medium text-blue-600">1.2s</span>
+                    </div>
+
+                    <!-- Active Bootcamps -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div class="text-center">
+                            <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Bootcamp Aktif</h3>
+                            <p class="text-3xl font-bold text-blue-600"><?= number_format($detailedStats['active_bootcamps'] ?? 0) ?></p>
+                            <p class="text-sm text-gray-500 mt-1">dari <?= number_format($detailedStats['total_bootcamps'] ?? 0) ?> total</p>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Error Rate</span>
-                            <span class="text-sm font-medium text-green-600">0.02%</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Database Queries</span>
-                            <span class="text-sm font-medium text-yellow-600">45ms avg</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Storage Used</span>
-                            <span class="text-sm font-medium text-orange-600">2.3GB / 10GB</span>
+                    </div>
+
+                    <!-- Pending Reviews -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div class="text-center">
+                            <div class="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Review Pending</h3>
+                            <p class="text-3xl font-bold text-yellow-600"><?= number_format($detailedStats['pending_reviews'] ?? 0) ?></p>
+                            <p class="text-sm text-gray-500 mt-1">menunggu moderasi</p>
                         </div>
                     </div>
                 </div>
@@ -353,17 +279,40 @@
     </div>
 
     <script>
+        // Toggle export menu
+        function toggleExportMenu() {
+            const menu = document.getElementById('exportMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close export menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('exportMenu');
+            const button = e.target.closest('button');
+            if (!button || !button.onclick) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Sample data for charts
+        const monthlyData = {
+            labels: ['Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
+            revenue: [45000000, 52000000, 48000000, 61000000, 55000000, 67000000],
+            users: [120, 145, 132, 178, 156, 189]
+        };
+
         // Revenue Chart
         const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-        const revenueChart = new Chart(revenueCtx, {
+        new Chart(revenueCtx, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                labels: monthlyData.labels,
                 datasets: [{
-                    label: 'Revenue (Juta Rp)',
-                    data: [45, 52, 48, 61, 55, 67, 73, 69, 82, 91, 87, 95],
-                    borderColor: 'rgb(59, 130, 246)',
+                    label: 'Revenue (Rp)',
+                    data: monthlyData.revenue,
+                    borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
                     fill: true,
                     tension: 0.4
                 }]
@@ -371,134 +320,51 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rp ' + (value / 1000000).toFixed(0) + 'M';
+                            }
                         }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 }
             }
         });
 
         // User Growth Chart
-        const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
-        const userGrowthChart = new Chart(userGrowthCtx, {
+        const userCtx = document.getElementById('userChart').getContext('2d');
+        new Chart(userCtx, {
             type: 'bar',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                labels: monthlyData.labels,
                 datasets: [{
                     label: 'New Users',
-                    data: [120, 190, 150, 220, 180, 250, 300, 280, 350, 420, 380, 450],
-                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                    borderColor: 'rgb(16, 185, 129)',
-                    borderWidth: 1
+                    data: monthlyData.users,
+                    backgroundColor: '#10b981',
+                    borderRadius: 8
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
                 plugins: {
                     legend: {
                         display: false
                     }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
                 }
             }
-        });
-
-        // Bootcamp Performance Chart
-        const bootcampCtx = document.getElementById('bootcampChart').getContext('2d');
-        const bootcampChart = new Chart(bootcampCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Full Stack Development', 'Data Science', 'Mobile Development', 'UI/UX Design', 'Others'],
-                datasets: [{
-                    data: [35, 25, 20, 15, 5],
-                    backgroundColor: [
-                        '#3B82F6',
-                        '#10B981',
-                        '#F59E0B',
-                        '#EF4444',
-                        '#8B5CF6'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // Payment Methods Chart
-        const paymentCtx = document.getElementById('paymentChart').getContext('2d');
-        const paymentChart = new Chart(paymentCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Credit Card', 'Bank Transfer', 'E-Wallet', 'Cash'],
-                datasets: [{
-                    data: [45, 30, 20, 5],
-                    backgroundColor: [
-                        '#6366F1',
-                        '#EC4899',
-                        '#14B8A6',
-                        '#F97316'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // Functions
-        function exportReport() {
-            alert('Fitur export report akan segera tersedia');
-        }
-
-        function refreshData() {
-            location.reload();
-        }
-
-        // Date range change handler
-        document.getElementById('dateRange').addEventListener('change', function() {
-            const range = this.value;
-            console.log('Date range changed to:', range);
-            // Implement data refresh based on date range
         });
     </script>
 </body>

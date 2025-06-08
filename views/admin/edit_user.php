@@ -1,731 +1,283 @@
-<?php
-// views/admin/edit_user.php - Edit User Page
-$pageTitle = 'Edit User';
-
-// Security check - prevent XSS
-function sanitizeOutput($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-?>
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $pageTitle ?> - Admin Panel</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
-            margin: 0;
-            padding: 0;
-        }
-
-        .admin-layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .main-content {
-            flex: 1;
-            margin-left: 280px;
-            transition: margin-left 0.3s ease;
-        }
-
-        .admin-sidebar.collapsed + .main-content {
-            margin-left: 70px;
-        }
-
-        .content-wrapper {
-            padding: 30px;
-            max-width: 1200px;
-        }
-
-        .page-header {
-            background: white;
-            padding: 20px 30px;
-            margin: -30px -30px 30px;
-            border-bottom: 1px solid #e9ecef;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .page-header h1 {
-            margin: 0;
-            color: #495057;
-            font-size: 28px;
-            font-weight: 600;
-        }
-
-        .breadcrumb {
-            color: #6c757d;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        .page-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .edit-form-container {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .form-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px 30px;
-        }
-
-        .form-header h3 {
-            margin: 0 0 5px;
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        .form-header p {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .form-content {
-            padding: 30px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group.full-width {
-            grid-column: 1 / -1;
-        }
-
-        .form-group label {
-            font-size: 14px;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .required {
-            color: #dc3545;
-        }
-
-        .form-control {
-            padding: 12px 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            background: #fff;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .form-control:invalid {
-            border-color: #dc3545;
-        }
-
-        .form-control.is-invalid {
-            border-color: #dc3545;
-            background: #fff5f5;
-        }
-
-        .invalid-feedback {
-            color: #dc3545;
-            font-size: 12px;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .form-control.is-invalid + .invalid-feedback {
-            display: block;
-        }
-
-        .input-group {
-            position: relative;
-        }
-
-        .input-group-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
-        }
-
-        .input-group .form-control {
-            padding-left: 45px;
-        }
-
-        .status-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 15px;
-        }
-
-        .status-option {
-            position: relative;
-        }
-
-        .status-option input[type="radio"] {
-            position: absolute;
-            opacity: 0;
-        }
-
-        .status-option label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .status-option input:checked + label {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
-        }
-
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .status-indicator.active { background: #28a745; }
-        .status-indicator.inactive { background: #dc3545; }
-        .status-indicator.pending { background: #ffc107; }
-
-        .user-stats {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #6c757d;
-            font-weight: 500;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 15px;
-            padding-top: 25px;
-            border-top: 1px solid #e9ecef;
-        }
-
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c82333;
-        }
-
-        .alert {
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .security-notice {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.3);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 25px;
-            font-size: 13px;
-            color: #856404;
-        }
-
-        .help-text {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 5px;
-        }
-
-        .verification-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-weight: 500;
-        }
-
-        .verification-status.verified {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .verification-status.unverified {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        @media (max-width: 768px) {
-            .main-content {
-                margin-left: 0;
-            }
-            
-            .content-wrapper {
-                padding: 20px;
-            }
-            
-            .page-header {
-                padding: 15px 20px;
-                margin: -20px -20px 20px;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            
-            .form-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            
-            .form-actions {
-                flex-direction: column;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+    <title>Edit User - Code Camp Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#1e40af',
+                    }
+                }
             }
         }
-    </style>
+    </script>
 </head>
-<body>
-    <div class="admin-layout">
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
         <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
-        <main class="main-content">
-            <div class="page-header">
-                <div>
-                    <h1><?= $pageTitle ?></h1>
-                    <div class="breadcrumb">
-                        <i class="fas fa-home"></i> Admin / 
-                        <a href="admin.php?action=manage_users" style="color: #667eea; text-decoration: none;">
-                            <i class="fas fa-users"></i> Kelola Users
-                        </a> / 
-                        Edit User
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64 overflow-y-auto">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-gray-200 p-4 lg:p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4 ml-12 lg:ml-0">
+                        <a 
+                            href="admin.php?action=manage_users" 
+                            class="text-gray-500 hover:text-primary transition-colors duration-200"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </a>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Edit User</h1>
+                            <p class="text-gray-600 mt-1">Ubah data pengguna</p>
+                        </div>
                     </div>
                 </div>
-                <div class="page-actions">
-                    <a href="admin.php?action=manage_users" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i>
-                        Kembali
-                    </a>
-                </div>
-            </div>
+            </header>
 
-            <div class="content-wrapper">
+            <!-- Content -->
+            <div class="p-4 lg:p-6 max-w-4xl mx-auto">
                 <!-- Alert Messages -->
                 <?php if (isset($_SESSION['success'])): ?>
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <?= sanitizeOutput($_SESSION['success']) ?>
+                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6" role="alert">
+                        <span class="block sm:inline"><?= htmlspecialchars($_SESSION['success']) ?></span>
                     </div>
                     <?php unset($_SESSION['success']); ?>
                 <?php endif; ?>
 
                 <?php if (isset($_SESSION['error'])): ?>
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <?= sanitizeOutput($_SESSION['error']) ?>
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6" role="alert">
+                        <span class="block sm:inline"><?= htmlspecialchars($_SESSION['error']) ?></span>
                     </div>
                     <?php unset($_SESSION['error']); ?>
                 <?php endif; ?>
 
-                <?php if (isset($user) && $user): ?>
-                    <!-- Security Notice -->
-                    <div class="security-notice">
-                        <i class="fas fa-shield-alt"></i>
-                        <strong>Keamanan:</strong> Pastikan data yang dimasukkan valid dan aman. Perubahan akan tercatat dalam log aktivitas.
-                    </div>
-
-                    <!-- User Stats -->
-                    <div class="user-stats">
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-value"><?= number_format($user['total_orders'] ?? 0) ?></div>
-                                <div class="stat-label">Total Orders</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">Rp <?= number_format($user['total_spent'] ?? 0) ?></div>
-                                <div class="stat-label">Total Pembelian</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value"><?= date('d M Y', strtotime($user['created_at'])) ?></div>
-                                <div class="stat-label">Bergabung</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">
-                                    <span class="verification-status <?= $user['email_verified'] ? 'verified' : 'unverified' ?>">
-                                        <i class="fas fa-<?= $user['email_verified'] ? 'check-circle' : 'clock' ?>"></i>
-                                        <?= $user['email_verified'] ? 'Terverifikasi' : 'Belum Verifikasi' ?>
-                                    </span>
-                                </div>
-                                <div class="stat-label">Status Email</div>
+                <!-- User Profile Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="h-16 w-16 rounded-full bg-primary flex items-center justify-center">
+                            <span class="text-xl font-semibold text-white">
+                                <?= strtoupper(substr($user['name'] ?? 'U', 0, 2)) ?>
+                            </span>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-800"><?= htmlspecialchars($user['name'] ?? '') ?></h2>
+                            <p class="text-gray-600"><?= htmlspecialchars($user['alamat_email'] ?? '') ?></p>
+                            <div class="flex items-center space-x-4 mt-2">
+                                <span class="text-sm text-gray-500">
+                                    Bergabung: <?= date('d M Y', strtotime($user['created_at'] ?? 'now')) ?>
+                                </span>
+                                <?php 
+                                $statusClass = match($user['status'] ?? 'active') {
+                                    'active' => 'bg-green-100 text-green-800',
+                                    'suspended' => 'bg-yellow-100 text-yellow-800',
+                                    'banned' => 'bg-red-100 text-red-800',
+                                    default => 'bg-gray-100 text-gray-800'
+                                };
+                                ?>
+                                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full <?= $statusClass ?>">
+                                    <?= ucfirst($user['status'] ?? 'active') ?>
+                                </span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Edit Form -->
-                    <div class="edit-form-container">
-                        <div class="form-header">
-                            <h3>Edit Data User</h3>
-                            <p>ID: <?= sanitizeOutput($user['id']) ?> | Terakhir diupdate: <?= date('d M Y H:i', strtotime($user['updated_at'] ?? $user['created_at'])) ?></p>
-                        </div>
-
-                        <div class="form-content">
-                            <form method="POST" action="admin.php?action=update_user" id="editUserForm" novalidate>
-                                <!-- CSRF Protection -->
-                                <input type="hidden" name="csrf_token" value="<?= sanitizeOutput($_SESSION['csrf_token'] ?? '') ?>">
-                                <input type="hidden" name="id" value="<?= sanitizeOutput($user['id']) ?>">
-
-                                <div class="form-grid">
-                                    <!-- Nama Lengkap -->
-                                    <div class="form-group">
-                                        <label for="name">
-                                            <i class="fas fa-user"></i>
-                                            Nama Lengkap <span class="required">*</span>
-                                        </label>
-                                        <div class="input-group">
-                                            <i class="fas fa-user input-group-icon"></i>
-                                            <input type="text" 
-                                                   id="name" 
-                                                   name="name" 
-                                                   class="form-control" 
-                                                   value="<?= sanitizeOutput($user['name']) ?>"
-                                                   required
-                                                   minlength="2"
-                                                   maxlength="100"
-                                                   pattern="[a-zA-Z\s]+">
-                                            <div class="invalid-feedback">Nama harus diisi dengan minimal 2 karakter (huruf dan spasi saja).</div>
-                                        </div>
-                                        <div class="help-text">Masukkan nama lengkap user</div>
-                                    </div>
-
-                                    <!-- Email -->
-                                    <div class="form-group">
-                                        <label for="email">
-                                            <i class="fas fa-envelope"></i>
-                                            Alamat Email <span class="required">*</span>
-                                        </label>
-                                        <div class="input-group">
-                                            <i class="fas fa-envelope input-group-icon"></i>
-                                            <input type="email" 
-                                                   id="email" 
-                                                   name="email" 
-                                                   class="form-control" 
-                                                   value="<?= sanitizeOutput($user['alamat_email']) ?>"
-                                                   required
-                                                   maxlength="255">
-                                            <div class="invalid-feedback">Masukkan alamat email yang valid.</div>
-                                        </div>
-                                        <div class="help-text">Email akan digunakan untuk login dan komunikasi</div>
-                                    </div>
-
-                                    <!-- Nomor Telepon -->
-                                    <div class="form-group">
-                                        <label for="phone">
-                                            <i class="fas fa-phone"></i>
-                                            Nomor Telepon
-                                        </label>
-                                        <div class="input-group">
-                                            <i class="fas fa-phone input-group-icon"></i>
-                                            <input type="tel" 
-                                                   id="phone" 
-                                                   name="phone" 
-                                                   class="form-control" 
-                                                   value="<?= sanitizeOutput($user['no_telepon']) ?>"
-                                                   pattern="[0-9+\-\s()]+"
-                                                   maxlength="20">
-                                            <div class="invalid-feedback">Masukkan nomor telepon yang valid.</div>
-                                        </div>
-                                        <div class="help-text">Format: +62 atau 08xx (opsional)</div>
-                                    </div>
-
-                                    <!-- Status -->
-                                    <div class="form-group">
-                                        <label>
-                                            <i class="fas fa-toggle-on"></i>
-                                            Status Akun <span class="required">*</span>
-                                        </label>
-                                        <div class="status-options">
-                                            <div class="status-option">
-                                                <input type="radio" 
-                                                       id="status_active" 
-                                                       name="status" 
-                                                       value="active" 
-                                                       <?= $user['status'] === 'active' ? 'checked' : '' ?>
-                                                       required>
-                                                <label for="status_active">
-                                                    <span class="status-indicator active"></span>
-                                                    Aktif
-                                                </label>
-                                            </div>
-                                            <div class="status-option">
-                                                <input type="radio" 
-                                                       id="status_inactive" 
-                                                       name="status" 
-                                                       value="inactive" 
-                                                       <?= $user['status'] === 'inactive' ? 'checked' : '' ?>>
-                                                <label for="status_inactive">
-                                                    <span class="status-indicator inactive"></span>
-                                                    Tidak Aktif
-                                                </label>
-                                            </div>
-                                            <div class="status-option">
-                                                <input type="radio" 
-                                                       id="status_pending" 
-                                                       name="status" 
-                                                       value="pending" 
-                                                       <?= $user['status'] === 'pending' ? 'checked' : '' ?>>
-                                                <label for="status_pending">
-                                                    <span class="status-indicator pending"></span>
-                                                    Pending
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="help-text">Status akan mempengaruhi akses user ke sistem</div>
-                                    </div>
-                                </div>
-
-                                <!-- Form Actions -->
-                                <div class="form-actions">
-                                    <button type="submit" class="btn btn-primary" id="submitBtn">
-                                        <i class="fas fa-save"></i>
-                                        Simpan Perubahan
-                                    </button>
-                                    
-                                    <a href="admin.php?action=manage_users" class="btn btn-secondary">
-                                        <i class="fas fa-times"></i>
-                                        Batal
-                                    </a>
-                                    
-                                    <a href="admin.php?action=reset_user_password&id=<?= $user['id'] ?>" 
-                                       class="btn btn-danger"
-                                       onclick="return confirm('Yakin ingin reset password user ini? Password baru akan dikirim via email.')">
-                                        <i class="fas fa-key"></i>
-                                        Reset Password
-                                    </a>
-                                </div>
-                            </form>
-                        </div>
+                <!-- Edit Form -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800">Informasi User</h3>
+                        <p class="text-gray-600 mt-1">Update data pengguna di bawah ini</p>
                     </div>
 
-                <?php else: ?>
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        User tidak ditemukan atau telah dihapus.
+                    <form method="POST" action="admin.php?action=update_user" class="p-6 space-y-6">
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                        <input type="hidden" name="id" value="<?= $user['id'] ?>">
+
+                        <!-- Name -->
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                                Nama Lengkap <span class="text-red-500">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="name" 
+                                name="name" 
+                                required 
+                                value="<?= htmlspecialchars($user['name'] ?? '') ?>"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
+                                placeholder="Masukkan nama lengkap"
+                            >
+                        </div>
+
+                        <!-- Email -->
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                Email <span class="text-red-500">*</span>
+                            </label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                required 
+                                value="<?= htmlspecialchars($user['alamat_email'] ?? '') ?>"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
+                                placeholder="user@example.com"
+                            >
+                        </div>
+
+                        <!-- Phone -->
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                                Nomor Telepon
+                            </label>
+                            <input 
+                                type="tel" 
+                                id="phone" 
+                                name="phone" 
+                                value="<?= htmlspecialchars($user['no_telepon'] ?? '') ?>"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
+                                placeholder="08xxxxxxxxxx"
+                            >
+                        </div>
+
+                        <!-- Status -->
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
+                                Status <span class="text-red-500">*</span>
+                            </label>
+                            <select 
+                                id="status" 
+                                name="status" 
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
+                            >
+                                <option value="active" <?= ($user['status'] ?? 'active') == 'active' ? 'selected' : '' ?>>
+                                    Aktif - User dapat login dan mengakses semua fitur
+                                </option>
+                                <option value="suspended" <?= ($user['status'] ?? '') == 'suspended' ? 'selected' : '' ?>>
+                                    Suspended - User sementara tidak dapat login
+                                </option>
+                                <option value="banned" <?= ($user['status'] ?? '') == 'banned' ? 'selected' : '' ?>>
+                                    Banned - User dilarang mengakses platform
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex flex-col sm:flex-row gap-4 pt-6">
+                            <button 
+                                type="submit" 
+                                class="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
+                            >
+                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Simpan Perubahan
+                            </button>
+                            
+                            <a 
+                                href="admin.php?action=manage_users" 
+                                class="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors duration-200 text-center"
+                            >
+                                Batal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Additional Actions -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 mt-6">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800">Aksi Tambahan</h3>
+                        <p class="text-gray-600 mt-1">Opsi lainnya untuk user ini</p>
                     </div>
-                <?php endif; ?>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Reset Password -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-2">Reset Password</h4>
+                                <p class="text-sm text-gray-600 mb-4">Reset password user ke password default</p>
+                                <a 
+                                    href="admin.php?action=reset_user_password&id=<?= $user['id'] ?>" 
+                                    class="inline-flex items-center px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 transition-colors duration-200"
+                                    onclick="return confirm('Reset password user ini ke password default?')"
+                                >
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                    </svg>
+                                    Reset Password
+                                </a>
+                            </div>
+
+                            <!-- Delete User -->
+                            <div class="border border-red-200 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-2">Hapus User</h4>
+                                <p class="text-sm text-gray-600 mb-4">Hapus user permanen dari sistem</p>
+                                <a 
+                                    href="admin.php?action=delete_user&id=<?= $user['id'] ?>" 
+                                    class="inline-flex items-center px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors duration-200"
+                                    onclick="return confirm('PERINGATAN: Aksi ini akan menghapus user secara permanen dan tidak dapat dibatalkan. Yakin ingin melanjutkan?')"
+                                >
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Hapus User
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('editUserForm');
-            const submitBtn = document.getElementById('submitBtn');
+        // Auto dismiss alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('[role="alert"]');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s ease-out';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
             
-            // Real-time validation
-            const inputs = form.querySelectorAll('input[required]');
-            inputs.forEach(input => {
-                input.addEventListener('blur', validateField);
-                input.addEventListener('input', clearError);
-            });
-
-            function validateField(e) {
-                const field = e.target;
-                const isValid = field.checkValidity();
-                
-                if (!isValid) {
-                    field.classList.add('is-invalid');
-                } else {
-                    field.classList.remove('is-invalid');
-                }
-            }
-
-            function clearError(e) {
-                e.target.classList.remove('is-invalid');
-            }
-
-            // Email uniqueness check
-            const emailInput = document.getElementById('email');
-            let emailTimeout;
-            
-            emailInput.addEventListener('input', function() {
-                clearTimeout(emailTimeout);
-                const email = this.value.trim();
-                const userId = document.querySelector('input[name="id"]').value;
-                
-                if (email && email !== "<?= sanitizeOutput($user['alamat_email']) ?>") {
-                    emailTimeout = setTimeout(() => {
-                        checkEmailUniqueness(email, userId);
-                    }, 500);
-                }
-            });
-
-            function checkEmailUniqueness(email, userId) {
-                // In a real implementation, this would make an AJAX call
-                // to check if email already exists
-                console.log('Checking email uniqueness:', email);
-            }
-
-            // Phone number formatting
-            const phoneInput = document.getElementById('phone');
-            phoneInput.addEventListener('input', function() {
-                let value = this.value.replace(/[^\d+\-\s()]/g, '');
-                this.value = value;
-            });
-
-            // Form submission
-            form.addEventListener('submit', function(e) {
+            if (!name) {
                 e.preventDefault();
-                
-                // Validate all required fields
-                let isValid = true;
-                inputs.forEach(input => {
-                    if (!input.checkValidity()) {
-                        input.classList.add('is-invalid');
-                        isValid = false;
-                    }
-                });
-
-                if (!isValid) {
-                    alert('Mohon perbaiki error pada form sebelum menyimpan.');
-                    return;
-                }
-
-                // Show loading state
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-
-                // Submit form
-                this.submit();
-            });
-
-            // Prevent multiple submissions
-            let isSubmitting = false;
-            form.addEventListener('submit', function(e) {
-                if (isSubmitting) {
-                    e.preventDefault();
-                    return;
-                }
-                isSubmitting = true;
-            });
-
-            // Auto-save draft (optional enhancement)
-            const autoSaveInterval = setInterval(() => {
-                const formData = new FormData(form);
-                localStorage.setItem(`user_edit_draft_${formData.get('id')}`, JSON.stringify(Object.fromEntries(formData)));
-            }, 30000); // Save every 30 seconds
-
-            // Clean up on page unload
-            window.addEventListener('beforeunload', () => {
-                clearInterval(autoSaveInterval);
-            });
+                alert('Nama lengkap harus diisi');
+                return;
+            }
+            
+            if (!email) {
+                e.preventDefault();
+                alert('Email harus diisi');
+                return;
+            }
+            
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('Format email tidak valid');
+                return;
+            }
         });
     </script>
 </body>

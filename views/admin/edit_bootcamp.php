@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buat Bootcamp - Code Camp Admin</title>
+    <title>Edit Bootcamp - Code Camp Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -38,8 +38,8 @@
                             </svg>
                         </a>
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-800">Buat Bootcamp Baru</h1>
-                            <p class="text-gray-600 mt-1">Tambahkan program bootcamp baru ke platform</p>
+                            <h1 class="text-2xl font-bold text-gray-800">Edit Bootcamp</h1>
+                            <p class="text-gray-600 mt-1">Ubah informasi bootcamp</p>
                         </div>
                     </div>
                 </div>
@@ -62,9 +62,65 @@
                     <?php unset($_SESSION['error']); ?>
                 <?php endif; ?>
 
+                <!-- Bootcamp Overview -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <div class="flex items-center space-x-4">
+                        <!-- Current Image -->
+                        <div class="h-20 w-20 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                            <?php if (!empty($bootcamp['image'])): ?>
+                                <img 
+                                    src="assets/images/bootcamps/<?= htmlspecialchars($bootcamp['image']) ?>" 
+                                    alt="<?= htmlspecialchars($bootcamp['title']) ?>"
+                                    class="w-full h-full object-cover"
+                                >
+                            <?php else: ?>
+                                <div class="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- Bootcamp Info -->
+                        <div class="flex-1">
+                            <h2 class="text-xl font-semibold text-gray-800"><?= htmlspecialchars($bootcamp['title'] ?? '') ?></h2>
+                            <p class="text-gray-600"><?= htmlspecialchars($bootcamp['category_name'] ?? 'Tidak berkategori') ?></p>
+                            <div class="flex items-center space-x-4 mt-2">
+                                <span class="text-sm text-gray-500">
+                                    ID: <?= $bootcamp['id'] ?>
+                                </span>
+                                <?php 
+                                $statusClass = match($bootcamp['status'] ?? 'draft') {
+                                    'active' => 'bg-green-100 text-green-800',
+                                    'draft' => 'bg-gray-100 text-gray-800',
+                                    'archived' => 'bg-red-100 text-red-800',
+                                    default => 'bg-gray-100 text-gray-800'
+                                };
+                                ?>
+                                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full <?= $statusClass ?>">
+                                    <?= ucfirst($bootcamp['status'] ?? 'draft') ?>
+                                </span>
+                                <?php if ($bootcamp['featured'] ?? false): ?>
+                                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                        Featured
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Stats -->
+                        <div class="text-right">
+                            <div class="text-sm text-gray-500">Peserta Terdaftar</div>
+                            <div class="text-2xl font-bold text-primary"><?= number_format($bootcamp['total_enrollments'] ?? 0) ?></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Form -->
-                <form method="POST" action="admin.php?action=create_bootcamp" enctype="multipart/form-data" class="space-y-6">
+                <form method="POST" action="admin.php?action=update_bootcamp" enctype="multipart/form-data" class="space-y-6">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                    <input type="hidden" name="id" value="<?= $bootcamp['id'] ?>">
 
                     <!-- Basic Information -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -84,6 +140,7 @@
                                     id="title" 
                                     name="title" 
                                     required 
+                                    value="<?= htmlspecialchars($bootcamp['title'] ?? '') ?>"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
                                     placeholder="Contoh: Full Stack Web Development Bootcamp"
                                     oninput="generateSlug()"
@@ -100,10 +157,11 @@
                                     id="slug" 
                                     name="slug" 
                                     required 
+                                    value="<?= htmlspecialchars($bootcamp['slug'] ?? '') ?>"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
                                     placeholder="full-stack-web-development-bootcamp"
                                 >
-                                <p class="text-sm text-gray-500 mt-1">URL akan menjadi: codecamp.com/bootcamp/<span id="slug-preview">slug-akan-otomatis</span></p>
+                                <p class="text-sm text-gray-500 mt-1">URL akan menjadi: codecamp.com/bootcamp/<span id="slug-preview"><?= htmlspecialchars($bootcamp['slug'] ?? '') ?></span></p>
                             </div>
 
                             <!-- Description -->
@@ -118,7 +176,7 @@
                                     rows="4"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
                                     placeholder="Jelaskan tentang bootcamp ini, apa yang akan dipelajari, dan manfaatnya..."
-                                ></textarea>
+                                ><?= htmlspecialchars($bootcamp['description'] ?? '') ?></textarea>
                             </div>
 
                             <!-- Category and Instructor -->
@@ -136,7 +194,7 @@
                                     >
                                         <option value="">Pilih Kategori</option>
                                         <?php foreach ($categories as $category): ?>
-                                            <option value="<?= $category['id'] ?>">
+                                            <option value="<?= $category['id'] ?>" <?= ($bootcamp['category_id'] ?? 0) == $category['id'] ? 'selected' : '' ?>>
                                                 <?= htmlspecialchars($category['name']) ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -153,6 +211,7 @@
                                         id="instructor_name" 
                                         name="instructor_name" 
                                         required 
+                                        value="<?= htmlspecialchars($bootcamp['instructor_name'] ?? '') ?>"
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
                                         placeholder="Nama instruktur"
                                     >
@@ -184,6 +243,7 @@
                                             name="price" 
                                             required 
                                             min="0"
+                                            value="<?= $bootcamp['price'] ?? 0 ?>"
                                             class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
                                             placeholder="0"
                                         >
@@ -202,6 +262,7 @@
                                             id="discount_price" 
                                             name="discount_price" 
                                             min="0"
+                                            value="<?= $bootcamp['discount_price'] ?? 0 ?>"
                                             class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
                                             placeholder="0"
                                         >
@@ -221,6 +282,7 @@
                                         id="start_date" 
                                         name="start_date" 
                                         required 
+                                        value="<?= $bootcamp['start_date'] ?? '' ?>"
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
                                     >
                                 </div>
@@ -235,6 +297,7 @@
                                         id="duration" 
                                         name="duration" 
                                         required 
+                                        value="<?= htmlspecialchars($bootcamp['duration'] ?? '') ?>"
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
                                         placeholder="Contoh: 12 minggu, 3 bulan"
                                     >
@@ -251,6 +314,7 @@
                                     id="max_participants" 
                                     name="max_participants" 
                                     min="0"
+                                    value="<?= $bootcamp['max_participants'] ?? 0 ?>"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
                                     placeholder="0 = tidak terbatas"
                                 >
@@ -262,14 +326,28 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
                         <div class="p-6 border-b border-gray-200">
                             <h3 class="text-lg font-semibold text-gray-800">Gambar & Pengaturan</h3>
-                            <p class="text-gray-600 mt-1">Upload gambar dan atur status bootcamp</p>
+                            <p class="text-gray-600 mt-1">Upload gambar baru dan atur status bootcamp</p>
                         </div>
                         
                         <div class="p-6 space-y-6">
+                            <!-- Current Image Display -->
+                            <?php if (!empty($bootcamp['image'])): ?>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Gambar Saat Ini</label>
+                                    <div class="relative inline-block">
+                                        <img 
+                                            src="assets/images/bootcamps/<?= htmlspecialchars($bootcamp['image']) ?>" 
+                                            alt="Current bootcamp image"
+                                            class="w-48 h-32 object-cover rounded-lg shadow-sm"
+                                        >
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+
                             <!-- Image Upload -->
                             <div>
                                 <label for="image" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Gambar Bootcamp
+                                    <?= !empty($bootcamp['image']) ? 'Ganti Gambar' : 'Upload Gambar' ?>
                                 </label>
                                 <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary transition-colors duration-200">
                                     <div class="space-y-1 text-center">
@@ -286,7 +364,7 @@
                                         <p class="text-xs text-gray-500">PNG, JPG, GIF hingga 5MB</p>
                                     </div>
                                 </div>
-                                <!-- Image Preview -->
+                                <!-- New Image Preview -->
                                 <div id="image-preview" class="mt-4 hidden">
                                     <img id="preview-img" src="" alt="Preview" class="w-full max-w-sm rounded-lg shadow-sm">
                                 </div>
@@ -305,9 +383,9 @@
                                         required
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
                                     >
-                                        <option value="draft">Draft - Belum dipublikasikan</option>
-                                        <option value="active">Aktif - Dipublikasikan dan dapat dibeli</option>
-                                        <option value="archived">Arsip - Tidak aktif</option>
+                                        <option value="draft" <?= ($bootcamp['status'] ?? 'draft') == 'draft' ? 'selected' : '' ?>>Draft - Belum dipublikasikan</option>
+                                        <option value="active" <?= ($bootcamp['status'] ?? '') == 'active' ? 'selected' : '' ?>>Aktif - Dipublikasikan dan dapat dibeli</option>
+                                        <option value="archived" <?= ($bootcamp['status'] ?? '') == 'archived' ? 'selected' : '' ?>>Arsip - Tidak aktif</option>
                                     </select>
                                 </div>
 
@@ -322,7 +400,7 @@
                                                 type="radio" 
                                                 name="featured" 
                                                 value="0" 
-                                                checked
+                                                <?= !($bootcamp['featured'] ?? false) ? 'checked' : '' ?>
                                                 class="text-primary focus:ring-primary border-gray-300"
                                             >
                                             <span class="ml-2 text-sm text-gray-700">Normal</span>
@@ -332,6 +410,7 @@
                                                 type="radio" 
                                                 name="featured" 
                                                 value="1"
+                                                <?= ($bootcamp['featured'] ?? false) ? 'checked' : '' ?>
                                                 class="text-primary focus:ring-primary border-gray-300"
                                             >
                                             <span class="ml-2 text-sm text-gray-700">Featured</span>
@@ -353,7 +432,7 @@
                                 <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                 </svg>
-                                Buat Bootcamp
+                                Simpan Perubahan
                             </button>
                             
                             <a 
@@ -365,6 +444,50 @@
                         </div>
                     </div>
                 </form>
+
+                <!-- Additional Actions -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800">Aksi Tambahan</h3>
+                        <p class="text-gray-600 mt-1">Opsi lainnya untuk bootcamp ini</p>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- View Public Page -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-2">Lihat Halaman Publik</h4>
+                                <p class="text-sm text-gray-600 mb-4">Lihat bagaimana bootcamp ini tampil untuk user</p>
+                                <a 
+                                    href="bootcamp/detail.php?slug=<?= htmlspecialchars($bootcamp['slug'] ?? '') ?>" 
+                                    target="_blank"
+                                    class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors duration-200"
+                                >
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-2M7 7l10 10M17 7v4"></path>
+                                    </svg>
+                                    Lihat Halaman
+                                </a>
+                            </div>
+
+                            <!-- Delete Bootcamp -->
+                            <div class="border border-red-200 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-2">Hapus Bootcamp</h4>
+                                <p class="text-sm text-gray-600 mb-4">Hapus bootcamp permanen dari sistem</p>
+                                <a 
+                                    href="admin.php?action=delete_bootcamp&id=<?= $bootcamp['id'] ?>" 
+                                    class="inline-flex items-center px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors duration-200"
+                                    onclick="return confirm('PERINGATAN: Aksi ini akan menghapus bootcamp secara permanen dan tidak dapat dibatalkan. Yakin ingin melanjutkan?')"
+                                >
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Hapus Bootcamp
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>

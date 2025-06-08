@@ -1,476 +1,152 @@
+<?php
+if (isset($_GET['timeout'])) {
+    $timeout_message = "Sesi Anda telah berakhir. Silakan login kembali.";
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Code Camp</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .login-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            max-width: 400px;
-            width: 100%;
-            margin: 20px;
-            position: relative;
-        }
-
-        .login-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 30px 30px;
-            text-align: center;
-            position: relative;
-        }
-
-        .login-header::before {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 20px solid #764ba2;
-        }
-
-        .logo {
-            width: 60px;
-            height: 60px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 24px;
-        }
-
-        .login-header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-
-        .login-header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .login-form {
-            padding: 40px 30px 30px;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-            position: relative;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 45px 12px 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .input-icon {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
-            font-size: 16px;
-        }
-
-        .form-group.has-label .input-icon {
-            top: calc(50% + 10px);
-        }
-
-        .password-toggle {
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        .password-toggle:hover {
-            color: #667eea;
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-login:active {
-            transform: translateY(0);
-        }
-
-        .btn-login:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .alert {
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 25px;
-        }
-
-        .remember-me input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: #667eea;
-        }
-
-        .remember-me label {
-            font-size: 14px;
-            color: #6c757d;
-            margin: 0;
-        }
-
-        .login-footer {
-            text-align: center;
-            padding: 20px 30px;
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-        }
-
-        .login-footer p {
-            font-size: 12px;
-            color: #6c757d;
-            margin: 0;
-        }
-
-        .security-notice {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.3);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 25px;
-            font-size: 13px;
-            color: #856404;
-        }
-
-        .security-notice i {
-            color: #ffc107;
-            margin-right: 8px;
-        }
-
-        .loading-spinner {
-            display: none;
-            margin-right: 10px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .btn-login.loading .loading-spinner {
-            display: inline-block;
-        }
-
-        /* Responsive */
-        @media (max-width: 480px) {
-            .login-container {
-                margin: 10px;
-            }
-            
-            .login-header {
-                padding: 30px 20px 25px;
-            }
-            
-            .login-form {
-                padding: 30px 20px 25px;
-            }
-            
-            .login-footer {
-                padding: 15px 20px;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#1e40af',
+                    }
+                }
             }
         }
-
-        /* Floating particles animation */
-        .particles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: -1;
-        }
-
-        .particle {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            animation: float 15s infinite linear;
-        }
-
-        @keyframes float {
-            0% {
-                opacity: 0;
-                transform: translateY(100vh) rotate(0deg);
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-100px) rotate(360deg);
-            }
-        }
-    </style>
+    </script>
 </head>
-<body>
-    <div class="particles" id="particles"></div>
-
-    <div class="login-container">
-        <div class="login-header">
-            <div class="logo">
-                <i class="fas fa-shield-alt"></i>
+<body class="bg-gradient-to-br from-primary to-secondary min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <div class="bg-primary rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
+                </svg>
             </div>
-            <h1>Admin Panel</h1>
-            <p>Masuk untuk mengakses dashboard admin</p>
+            <h2 class="text-2xl font-bold text-gray-800">Admin Login</h2>
+            <p class="text-gray-600 mt-2">Masuk ke panel admin Code Camp</p>
         </div>
 
-        <form class="login-form" method="POST" action="admin.php?action=process_login" id="loginForm">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-            
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <?= htmlspecialchars($_SESSION['error']) ?>
+        <!-- Alert Messages -->
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4" role="alert">
+                <span class="block sm:inline"><?= htmlspecialchars($_SESSION['error']) ?></span>
+            </div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
+
+        <?php if (isset($timeout_message)): ?>
+            <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mb-4" role="alert">
+                <span class="block sm:inline"><?= htmlspecialchars($timeout_message) ?></span>
+            </div>
+        <?php endif; ?>
+
+        <!-- Login Form -->
+        <form method="POST" action="admin.php?action=process_login" class="space-y-6">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
+                    placeholder="admin@codecamp.com"
+                    value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
+                >
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <div class="relative">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        required 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-200"
+                        placeholder="••••••••"
+                    >
+                    <button 
+                        type="button" 
+                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                        onclick="togglePassword()"
+                    >
+                        <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                    </button>
                 </div>
-                <?php unset($_SESSION['error']); ?>
-            <?php endif; ?>
+            </div>
 
-            <?php if (isset($_SESSION['success'])): ?>
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>
-                    <?= htmlspecialchars($_SESSION['success']) ?>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input 
+                        id="remember" 
+                        name="remember" 
+                        type="checkbox" 
+                        class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                    >
+                    <label for="remember" class="ml-2 block text-sm text-gray-700">
+                        Ingat saya
+                    </label>
                 </div>
-                <?php unset($_SESSION['success']); ?>
-            <?php endif; ?>
-
-            <div class="security-notice">
-                <i class="fas fa-shield-alt"></i>
-                <strong>Peringatan Keamanan:</strong> Hanya administrator yang memiliki email dengan kata 'admin' yang dapat mengakses panel ini.
             </div>
 
-            <div class="form-group has-label">
-                <label for="email">Email Admin</label>
-                <input type="email" 
-                       class="form-control" 
-                       id="email" 
-                       name="email" 
-                       placeholder="Masukkan email admin Anda"
-                       required 
-                       autocomplete="username">
-                <i class="fas fa-envelope input-icon"></i>
-            </div>
-
-            <div class="form-group has-label">
-                <label for="password">Password</label>
-                <input type="password" 
-                       class="form-control" 
-                       id="password" 
-                       name="password" 
-                       placeholder="Masukkan password Anda"
-                       required 
-                       autocomplete="current-password">
-                <i class="fas fa-eye password-toggle input-icon" id="passwordToggle"></i>
-            </div>
-
-            <div class="remember-me">
-                <input type="checkbox" id="remember" name="remember" value="1">
-                <label for="remember">Ingat saya</label>
-            </div>
-
-            <button type="submit" class="btn-login" id="loginBtn">
-                <i class="fas fa-spinner loading-spinner"></i>
-                <span class="btn-text">Masuk ke Admin Panel</span>
+            <button 
+                type="submit" 
+                class="w-full bg-primary hover:bg-secondary text-white font-semibold py-3 px-4 rounded-lg transition duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
+            >
+                Masuk
             </button>
         </form>
 
-        <div class="login-footer">
-            <p>&copy; <?= date('Y') ?> Code Camp. Sistem Admin Panel.</p>
+        <!-- Footer -->
+        <div class="mt-8 text-center">
+            <p class="text-sm text-gray-600">
+                © <?= date('Y') ?> Code Camp. All rights reserved.
+            </p>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Create floating particles
-            function createParticles() {
-                const particles = document.getElementById('particles');
-                for (let i = 0; i < 50; i++) {
-                    const particle = document.createElement('div');
-                    particle.className = 'particle';
-                    particle.style.width = Math.random() * 4 + 1 + 'px';
-                    particle.style.height = particle.style.width;
-                    particle.style.left = Math.random() * 100 + '%';
-                    particle.style.animationDelay = Math.random() * 15 + 's';
-                    particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
-                    particles.appendChild(particle);
-                }
-            }
-            createParticles();
-
-            // Password toggle
-            const passwordToggle = document.getElementById('passwordToggle');
+        function togglePassword() {
             const passwordInput = document.getElementById('password');
-
-            passwordToggle.addEventListener('click', function() {
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    this.className = 'fas fa-eye-slash password-toggle input-icon';
-                } else {
-                    passwordInput.type = 'password';
-                    this.className = 'fas fa-eye password-toggle input-icon';
-                }
-            });
-
-            // Form submission with loading state
-            const loginForm = document.getElementById('loginForm');
-            const loginBtn = document.getElementById('loginBtn');
-            const btnText = loginBtn.querySelector('.btn-text');
-
-            loginForm.addEventListener('submit', function(e) {
-                const email = document.getElementById('email').value;
-                
-                // Check if email contains 'admin'
-                if (!email.toLowerCase().includes('admin')) {
-                    e.preventDefault();
-                    alert('Email harus mengandung kata "admin" untuk mengakses panel admin.');
-                    return;
-                }
-
-                // Show loading state
-                loginBtn.disabled = true;
-                loginBtn.classList.add('loading');
-                btnText.textContent = 'Memverifikasi...';
-
-                // If validation passes, allow form submission
-                // The loading state will be maintained until page reload
-            });
-
-            // Input validation
-            const emailInput = document.getElementById('email');
-            emailInput.addEventListener('input', function() {
-                const email = this.value.toLowerCase();
-                if (email && !email.includes('admin')) {
-                    this.style.borderColor = '#dc3545';
-                    this.style.background = '#fff5f5';
-                } else {
-                    this.style.borderColor = '#e1e5e9';
-                    this.style.background = '#f8f9fa';
-                }
-            });
-
-            // Auto-focus on email field
-            emailInput.focus();
-
-            // Prevent multiple rapid submissions
-            let isSubmitting = false;
-            loginForm.addEventListener('submit', function(e) {
-                if (isSubmitting) {
-                    e.preventDefault();
-                    return;
-                }
-                isSubmitting = true;
-            });
-
-            // Security warning for non-HTTPS
-            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                console.warn('⚠️ Koneksi tidak aman! Gunakan HTTPS untuk keamanan login admin.');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                `;
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                `;
             }
-        });
+        }
 
-        // Prevent back button after logout
-        window.history.pushState(null, "", window.location.href);
-        window.onpopstate = function() {
-            window.history.pushState(null, "", window.location.href);
-        };
+        // Auto dismiss alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('[role="alert"]');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s ease-out';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
     </script>
 </body>
 </html>

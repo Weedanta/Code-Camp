@@ -3,407 +3,375 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Order - Admin Campus Hub</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .sidebar-gradient {
-            background: linear-gradient(180deg, #1f2937 0%, #374151 100%);
+    <title>Detail Order #<?= $order['id'] ?? '' ?> - Code Camp Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#1e40af',
+                    }
+                }
+            }
         }
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-        .status-pending {
-            background-color: #fef3c7;
-            color: #d97706;
-        }
-        .status-completed {
-            background-color: #dcfce7;
-            color: #16a34a;
-        }
-        .status-failed {
-            background-color: #fee2e2;
-            color: #dc2626;
-        }
-        .status-refunded {
-            background-color: #e0e7ff;
-            color: #3730a3;
-        }
-    </style>
+    </script>
 </head>
 <body class="bg-gray-50">
-    <?php include_once 'views/admin/partials/sidebar.php'; ?>
-
-    <!-- Main Content -->
-    <div class="ml-64 min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <nav class="flex" aria-label="Breadcrumb">
-                            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                                <li class="inline-flex items-center">
-                                    <a href="admin.php?action=manage_orders" class="text-gray-500 hover:text-gray-700">
-                                        <i class="fas fa-shopping-cart mr-2"></i>
-                                        Kelola Orders
-                                    </a>
-                                </li>
-                                <li>
-                                    <div class="flex items-center">
-                                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                                        <span class="text-gray-700 font-medium">Detail Order</span>
-                                    </div>
-                                </li>
-                            </ol>
-                        </nav>
-                        <h1 class="text-2xl font-bold text-gray-900 mt-2">Order #<?php echo str_pad($order['id'], 8, '0', STR_PAD_LEFT); ?></h1>
-                        <p class="text-gray-600">Detail pemesanan dari <?php echo htmlspecialchars($order['user_name']); ?></p>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <button onclick="printOrder()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
-                            <i class="fas fa-print mr-2"></i>
-                            Print
-                        </button>
-                        <a href="admin.php?action=manage_orders" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
-                            <i class="fas fa-arrow-left mr-2"></i>
-                            Kembali
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </header>
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
         <!-- Main Content -->
-        <main class="p-6">
-            <!-- Alerts -->
-            <?php if (isset($_SESSION['success'])): ?>
-                <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-                    <i class="fas fa-check-circle mr-3"></i>
-                    <span><?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></span>
+        <main class="flex-1 lg:ml-64 overflow-y-auto">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-gray-200 p-4 lg:p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4 ml-12 lg:ml-0">
+                        <a 
+                            href="admin.php?action=manage_orders" 
+                            class="text-gray-500 hover:text-primary transition-colors duration-200"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </a>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Detail Order #<?= $order['id'] ?? '' ?></h1>
+                            <p class="text-gray-600 mt-1">Informasi lengkap pesanan</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Badge -->
+                    <div>
+                        <?php 
+                        $statusClasses = [
+                            'pending' => 'bg-yellow-100 text-yellow-800',
+                            'completed' => 'bg-green-100 text-green-800',
+                            'failed' => 'bg-red-100 text-red-800',
+                            'cancelled' => 'bg-gray-100 text-gray-800'
+                        ];
+                        $statusClass = $statusClasses[$order['payment_status'] ?? 'pending'] ?? 'bg-gray-100 text-gray-800';
+                        ?>
+                        <span class="inline-flex px-3 py-1 text-sm font-medium rounded-full <?= $statusClass ?>">
+                            <?= ucfirst($order['payment_status'] ?? 'pending') ?>
+                        </span>
+                    </div>
                 </div>
-            <?php endif; ?>
+            </header>
 
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-                    <i class="fas fa-exclamation-triangle mr-3"></i>
-                    <span><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></span>
-                </div>
-            <?php endif; ?>
+            <!-- Content -->
+            <div class="p-4 lg:p-6 max-w-6xl mx-auto space-y-6">
+                <!-- Alert Messages -->
+                <?php if (isset($_SESSION['success'])): ?>
+                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg" role="alert">
+                        <span class="block sm:inline"><?= htmlspecialchars($_SESSION['success']) ?></span>
+                    </div>
+                    <?php unset($_SESSION['success']); ?>
+                <?php endif; ?>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Order Details -->
-                <div class="lg:col-span-2 space-y-6">
-                    <!-- Order Information -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <h3 class="text-lg font-semibold text-gray-900">Informasi Order</h3>
-                                <span class="status-badge status-<?php echo $order['payment_status']; ?>">
-                                    <i class="fas fa-circle text-xs mr-2"></i>
-                                    <?php echo ucfirst($order['payment_status']); ?>
-                                </span>
-                            </div>
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert">
+                        <span class="block sm:inline"><?= htmlspecialchars($_SESSION['error']) ?></span>
+                    </div>
+                    <?php unset($_SESSION['error']); ?>
+                <?php endif; ?>
+
+                <!-- Order Overview -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Order Info -->
+                    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-800">Informasi Order</h3>
                         </div>
                         
                         <div class="p-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-900 mb-3">Detail Pemesanan</h4>
-                                    <dl class="space-y-2">
-                                        <div class="flex justify-between">
-                                            <dt class="text-sm text-gray-600">Order ID:</dt>
-                                            <dd class="text-sm font-medium text-gray-900">#<?php echo str_pad($order['id'], 8, '0', STR_PAD_LEFT); ?></dd>
+                                <!-- Order Details -->
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-500">Order ID</label>
+                                        <p class="text-lg font-semibold text-gray-800">#<?= $order['id'] ?></p>
+                                    </div>
+                                    
+                                    <?php if (!empty($order['transaction_id'])): ?>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-500">Transaction ID</label>
+                                            <p class="text-sm text-gray-800 font-mono"><?= htmlspecialchars($order['transaction_id']) ?></p>
                                         </div>
-                                        <div class="flex justify-between">
-                                            <dt class="text-sm text-gray-600">Transaction ID:</dt>
-                                            <dd class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($order['transaction_id'] ?? 'N/A'); ?></dd>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <dt class="text-sm text-gray-600">Tanggal Order:</dt>
-                                            <dd class="text-sm font-medium text-gray-900"><?php echo date('d M Y H:i', strtotime($order['created_at'])); ?></dd>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <dt class="text-sm text-gray-600">Metode Pembayaran:</dt>
-                                            <dd class="text-sm font-medium text-gray-900"><?php echo ucfirst(str_replace('_', ' ', $order['payment_method'] ?? 'N/A')); ?></dd>
-                                        </div>
-                                    </dl>
+                                    <?php endif; ?>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-500">Tanggal Order</label>
+                                        <p class="text-sm text-gray-800"><?= date('d F Y, H:i', strtotime($order['created_at'] ?? 'now')) ?></p>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-500">Metode Pembayaran</label>
+                                        <p class="text-sm text-gray-800"><?= htmlspecialchars($order['payment_method'] ?? 'Unknown') ?></p>
+                                    </div>
                                 </div>
                                 
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-900 mb-3">Informasi Pembayaran</h4>
-                                    <dl class="space-y-2">
-                                        <div class="flex justify-between">
-                                            <dt class="text-sm text-gray-600">Subtotal:</dt>
-                                            <dd class="text-sm font-medium text-gray-900">Rp <?php echo number_format($order['subtotal'] ?? 0); ?></dd>
+                                <!-- Payment Details -->
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-500">Total Amount</label>
+                                        <p class="text-2xl font-bold text-primary">Rp <?= number_format($order['total_amount'] ?? 0, 0, ',', '.') ?></p>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-500">Payment Status</label>
+                                        <span class="inline-flex px-2 py-1 text-sm font-medium rounded-full <?= $statusClass ?>">
+                                            <?= ucfirst($order['payment_status'] ?? 'pending') ?>
+                                        </span>
+                                    </div>
+                                    
+                                    <?php if (!empty($order['updated_at']) && $order['updated_at'] !== $order['created_at']): ?>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-500">Last Update</label>
+                                            <p class="text-sm text-gray-800"><?= date('d F Y, H:i', strtotime($order['updated_at'])) ?></p>
                                         </div>
-                                        <div class="flex justify-between">
-                                            <dt class="text-sm text-gray-600">Diskon:</dt>
-                                            <dd class="text-sm font-medium text-gray-900">Rp <?php echo number_format($order['discount_amount'] ?? 0); ?></dd>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <dt class="text-sm text-gray-600">Pajak:</dt>
-                                            <dd class="text-sm font-medium text-gray-900">Rp <?php echo number_format($order['tax_amount'] ?? 0); ?></dd>
-                                        </div>
-                                        <div class="flex justify-between border-t pt-2">
-                                            <dt class="text-base font-medium text-gray-900">Total:</dt>
-                                            <dd class="text-base font-bold text-gray-900">Rp <?php echo number_format($order['total_amount']); ?></dd>
-                                        </div>
-                                    </dl>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Order Items -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Item yang Dipesan</h3>
-                        </div>
-                        
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bootcamp</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diskon</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <?php if (!empty($orderItems)): ?>
-                                        <?php foreach ($orderItems as $item): ?>
-                                            <tr>
-                                                <td class="px-6 py-4">
-                                                    <div class="flex items-center">
-                                                        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                            <?php if (!empty($item['bootcamp_image'])): ?>
-                                                                <img src="assets/images/bootcamps/<?php echo htmlspecialchars($item['bootcamp_image']); ?>" 
-                                                                     alt="<?php echo htmlspecialchars($item['bootcamp_title']); ?>"
-                                                                     class="w-12 h-12 object-cover rounded-lg">
-                                                            <?php else: ?>
-                                                                <i class="fas fa-laptop-code text-gray-600"></i>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                        <div class="ml-4">
-                                                            <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($item['bootcamp_title']); ?></div>
-                                                            <div class="text-sm text-gray-500">ID: <?php echo $item['bootcamp_id']; ?></div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    Rp <?php echo number_format($item['price']); ?>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    Rp <?php echo number_format($item['discount_amount'] ?? 0); ?>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    Rp <?php echo number_format($item['final_price']); ?>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <tr>
-                                            <td colspan="4" class="px-6 py-4 text-center text-gray-500">Tidak ada item</td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sidebar -->
-                <div class="lg:col-span-1 space-y-6">
-                    <!-- Customer Information -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Informasi Customer</h3>
+                    <!-- Customer Info -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-800">Informasi Customer</h3>
                         </div>
                         
                         <div class="p-6">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-user text-gray-600"></i>
+                            <div class="flex items-center space-x-4 mb-4">
+                                <div class="h-12 w-12 rounded-full bg-primary flex items-center justify-center">
+                                    <span class="text-lg font-semibold text-white">
+                                        <?= strtoupper(substr($order['user_name'] ?? 'U', 0, 2)) ?>
+                                    </span>
                                 </div>
-                                <div class="ml-4">
-                                    <h4 class="text-base font-medium text-gray-900"><?php echo htmlspecialchars($order['user_name']); ?></h4>
-                                    <p class="text-sm text-gray-500">Customer ID: #<?php echo $order['user_id']; ?></p>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800"><?= htmlspecialchars($order['user_name'] ?? 'Unknown') ?></h4>
+                                    <p class="text-sm text-gray-600">Customer</p>
                                 </div>
                             </div>
                             
-                            <dl class="space-y-3">
+                            <div class="space-y-3">
                                 <div>
-                                    <dt class="text-sm font-medium text-gray-900">Email:</dt>
-                                    <dd class="text-sm text-gray-600"><?php echo htmlspecialchars($order['user_email']); ?></dd>
+                                    <label class="block text-sm font-medium text-gray-500">Email</label>
+                                    <p class="text-sm text-gray-800"><?= htmlspecialchars($order['user_email'] ?? 'N/A') ?></p>
                                 </div>
+                                
                                 <?php if (!empty($order['user_phone'])): ?>
                                     <div>
-                                        <dt class="text-sm font-medium text-gray-900">Telepon:</dt>
-                                        <dd class="text-sm text-gray-600"><?php echo htmlspecialchars($order['user_phone']); ?></dd>
+                                        <label class="block text-sm font-medium text-gray-500">Telepon</label>
+                                        <p class="text-sm text-gray-800"><?= htmlspecialchars($order['user_phone']) ?></p>
                                     </div>
                                 <?php endif; ?>
-                            </dl>
-                            
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <a href="admin.php?action=edit_user&id=<?php echo $order['user_id']; ?>" 
-                                   class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                    <i class="fas fa-external-link-alt mr-1"></i>
-                                    Lihat Profile Customer
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Order Actions -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Aksi Order</h3>
-                        </div>
-                        
-                        <div class="p-6 space-y-4">
-                            <?php if ($order['payment_status'] === 'pending'): ?>
-                                <button onclick="updateOrderStatus('completed')" 
-                                        class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-colors">
-                                    <i class="fas fa-check mr-2"></i>
-                                    Mark as Completed
-                                </button>
-                                <button onclick="updateOrderStatus('failed')" 
-                                        class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-colors">
-                                    <i class="fas fa-times mr-2"></i>
-                                    Mark as Failed
-                                </button>
-                            <?php elseif ($order['payment_status'] === 'completed'): ?>
-                                <button onclick="updateOrderStatus('refunded')" 
-                                        class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-colors">
-                                    <i class="fas fa-undo mr-2"></i>
-                                    Process Refund
-                                </button>
-                            <?php endif; ?>
-                            
-                            <button onclick="sendOrderEmail()" 
-                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-colors">
-                                <i class="fas fa-envelope mr-2"></i>
-                                Send Email Update
-                            </button>
-                            
-                            <button onclick="addOrderNote()" 
-                                    class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-colors">
-                                <i class="fas fa-sticky-note mr-2"></i>
-                                Add Note
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Order Timeline -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Timeline Order</h3>
-                        </div>
-                        
-                        <div class="p-6">
-                            <div class="flow-root">
-                                <ul class="-mb-8">
-                                    <li>
-                                        <div class="relative pb-8">
-                                            <div class="relative flex space-x-3">
-                                                <div>
-                                                    <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                                                        <i class="fas fa-shopping-cart text-white text-xs"></i>
-                                                    </span>
-                                                </div>
-                                                <div class="min-w-0 flex-1 pt-1.5">
-                                                    <div>
-                                                        <p class="text-sm text-gray-500">Order dibuat</p>
-                                                        <p class="text-xs text-gray-400"><?php echo date('d M Y H:i', strtotime($order['created_at'])); ?></p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    
-                                    <?php if ($order['payment_status'] !== 'pending'): ?>
-                                        <li>
-                                            <div class="relative pb-8">
-                                                <div class="relative flex space-x-3">
-                                                    <div>
-                                                        <span class="h-8 w-8 rounded-full <?php echo $order['payment_status'] === 'completed' ? 'bg-green-500' : 'bg-red-500'; ?> flex items-center justify-center ring-8 ring-white">
-                                                            <i class="fas fa-<?php echo $order['payment_status'] === 'completed' ? 'check' : 'times'; ?> text-white text-xs"></i>
-                                                        </span>
-                                                    </div>
-                                                    <div class="min-w-0 flex-1 pt-1.5">
-                                                        <div>
-                                                            <p class="text-sm text-gray-500">Payment <?php echo $order['payment_status']; ?></p>
-                                                            <p class="text-xs text-gray-400"><?php echo date('d M Y H:i', strtotime($order['updated_at'])); ?></p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    <?php endif; ?>
-                                </ul>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Order Items -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800">Item yang Dibeli</h3>
+                    </div>
+                    
+                    <div class="p-6">
+                        <?php if (empty($orderItems)): ?>
+                            <div class="text-center py-8">
+                                <div class="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                    </svg>
+                                </div>
+                                <p class="text-gray-500">Tidak ada item dalam order ini</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="space-y-4">
+                                <?php foreach ($orderItems as $item): ?>
+                                    <div class="flex items-center p-4 border border-gray-200 rounded-lg">
+                                        <!-- Bootcamp Image -->
+                                        <div class="h-16 w-24 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                                            <?php if (!empty($item['bootcamp_image'])): ?>
+                                                <img 
+                                                    src="assets/images/bootcamps/<?= htmlspecialchars($item['bootcamp_image']) ?>" 
+                                                    alt="<?= htmlspecialchars($item['bootcamp_title']) ?>"
+                                                    class="w-full h-full object-cover"
+                                                >
+                                            <?php else: ?>
+                                                <div class="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                                                    <svg class="w-6 h-6 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                                    </svg>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <!-- Item Details -->
+                                        <div class="flex-1 ml-4">
+                                            <h4 class="font-semibold text-gray-800 mb-1">
+                                                <?= htmlspecialchars($item['bootcamp_title'] ?? 'Unknown Bootcamp') ?>
+                                            </h4>
+                                            <div class="flex items-center justify-between">
+                                                <div class="text-sm text-gray-600">
+                                                    Quantity: <?= number_format($item['quantity'] ?? 1) ?>
+                                                </div>
+                                                <div class="text-right">
+                                                    <div class="text-lg font-semibold text-gray-800">
+                                                        Rp <?= number_format($item['price'] ?? 0, 0, ',', '.') ?>
+                                                    </div>
+                                                    <?php if (($item['price'] ?? 0) != ($item['original_price'] ?? 0)): ?>
+                                                        <div class="text-sm text-gray-500 line-through">
+                                                            Rp <?= number_format($item['original_price'] ?? 0, 0, ',', '.') ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+
+                                <!-- Order Summary -->
+                                <div class="border-t border-gray-200 pt-4 mt-6">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-lg font-semibold text-gray-800">Total</span>
+                                        <span class="text-2xl font-bold text-primary">
+                                            Rp <?= number_format($order['total_amount'] ?? 0, 0, ',', '.') ?>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <?php if ($order['payment_status'] === 'pending'): ?>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-800">Aksi</h3>
+                        </div>
+                        
+                        <div class="p-6">
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                <button 
+                                    onclick="updateOrderStatus(<?= $order['id'] ?>, 'completed')" 
+                                    class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200"
+                                >
+                                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Tandai Completed
+                                </button>
+                                
+                                <button 
+                                    onclick="updateOrderStatus(<?= $order['id'] ?>, 'failed')" 
+                                    class="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-200"
+                                >
+                                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    Tandai Failed
+                                </button>
+                                
+                                <button 
+                                    onclick="updateOrderStatus(<?= $order['id'] ?>, 'cancelled')" 
+                                    class="px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors duration-200"
+                                >
+                                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                                    </svg>
+                                    Batalkan Order
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
         </main>
     </div>
 
+    <!-- Update Status Modal -->
+    <div id="statusModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Update Status Order</h3>
+            </div>
+            
+            <form id="statusForm" method="POST" action="admin.php?action=update_order_status" class="p-6">
+                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                <input type="hidden" id="status_order_id" name="id" value="">
+                <input type="hidden" id="status_new_status" name="status" value="">
+                
+                <p class="text-gray-600 mb-6" id="statusMessage">
+                    Yakin ingin mengubah status order ini?
+                </p>
+
+                <div class="flex gap-3">
+                    <button 
+                        type="submit" 
+                        class="flex-1 px-4 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-secondary transition-colors duration-200"
+                    >
+                        Ya, Update
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="closeStatusModal()" 
+                        class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors duration-200"
+                    >
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        function updateOrderStatus(status) {
-            const messages = {
-                'completed': 'Menandai order sebagai selesai akan mengaktifkan akses bootcamp untuk user.',
-                'failed': 'Menandai order sebagai gagal akan membatalkan pemesanan.',
-                'refunded': 'Refund order akan mengembalikan uang dan menonaktifkan akses bootcamp.'
+        function updateOrderStatus(orderId, newStatus) {
+            const statusMessages = {
+                'completed': 'Tandai order ini sebagai completed? Customer akan mendapatkan akses ke bootcamp.',
+                'failed': 'Tandai order ini sebagai failed? Pembayaran akan dianggap gagal.',
+                'cancelled': 'Batalkan order ini? Order akan dibatalkan secara permanen.'
             };
             
-            if (confirm(messages[status] + '\n\nLanjutkan?')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = 'admin.php?action=update_order_status';
-                
-                const idInput = document.createElement('input');
-                idInput.type = 'hidden';
-                idInput.name = 'id';
-                idInput.value = '<?php echo $order['id']; ?>';
-                
-                const statusInput = document.createElement('input');
-                statusInput.type = 'hidden';
-                statusInput.name = 'status';
-                statusInput.value = status;
-                
-                form.appendChild(idInput);
-                form.appendChild(statusInput);
-                document.body.appendChild(form);
-                form.submit();
-            }
+            document.getElementById('status_order_id').value = orderId;
+            document.getElementById('status_new_status').value = newStatus;
+            document.getElementById('statusMessage').textContent = statusMessages[newStatus] || 'Update status order ini?';
+            
+            document.getElementById('statusModal').classList.remove('hidden');
         }
 
-        function sendOrderEmail() {
-            if (confirm('Kirim email update status order ke customer?')) {
-                // Implement email sending
-                alert('Email berhasil dikirim ke customer');
-            }
+        function closeStatusModal() {
+            document.getElementById('statusModal').classList.add('hidden');
         }
 
-        function addOrderNote() {
-            const note = prompt('Tambahkan catatan untuk order ini:');
-            if (note && note.trim()) {
-                // Implement note adding
-                alert('Catatan berhasil ditambahkan');
+        // Close modal when clicking outside
+        document.getElementById('statusModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeStatusModal();
             }
-        }
+        });
 
-        function printOrder() {
-            window.print();
-        }
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeStatusModal();
+            }
+        });
+
+        // Auto dismiss alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('[role="alert"]');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s ease-out';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
     </script>
 </body>
 </html>

@@ -1,21 +1,23 @@
 <?php
-// admin.php - Enhanced Admin Panel Router
+// admin.php - Router utama untuk Admin Panel
 session_start();
 
-// Include required files dengan error handling
-$required_files = [
-    'config/database.php',
-    'controllers/AdminController.php', 
-    'helper/SecurityHelper.php',
-    'middleware/AdminMiddleware.php'
-];
+// Error reporting untuk development
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-foreach ($required_files as $file) {
-    if (file_exists($file)) {
-        require_once $file;
-    } else {
-        die("Required file missing: $file");
-    }
+// Include required files
+require_once 'config/database.php';
+require_once 'controllers/AdminController.php';
+require_once 'middleware/AdminMiddleware.php';
+require_once 'helper/SecurityHelper.php';
+
+// Configure secure session
+SecurityHelper::configureSecureSession();
+
+// Generate CSRF token if not exists
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = SecurityHelper::generateCSRFToken();
 }
 
 // Initialize database connection
@@ -26,31 +28,26 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// Initialize admin controller
+// Initialize AdminController
 $adminController = new AdminController($db);
 
-// Get action
-$action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
+// Get action from URL
+$action = $_GET['action'] ?? 'login';
 
-// Routes that don't require authentication
-$publicRoutes = ['login', 'process_login'];
+// Define public actions that don't require authentication
+$publicActions = ['login', 'process_login'];
 
-// Check if user is admin (except for login pages)
-if (!in_array($action, $publicRoutes)) {
+// Check admin access for protected routes
+if (!in_array($action, $publicActions)) {
     AdminMiddleware::checkAdminAccess();
 }
 
-// Router dengan error handling yang lebih baik
+// Route handling
 try {
     switch ($action) {
         // ==================== AUTHENTICATION ====================
         case 'login':
-        case '':
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $adminController->processLogin();
-            } else {
-                $adminController->showLogin();
-            }
+            $adminController->showLogin();
             break;
             
         case 'process_login':
@@ -60,16 +57,17 @@ try {
         case 'logout':
             $adminController->logout();
             break;
-        
-        // ==================== DASHBOARD ====================    
+
+        // ==================== DASHBOARD ====================
         case 'dashboard':
+        case '':
             $adminController->dashboard();
             break;
             
         case 'stats':
             $adminController->detailedStats();
             break;
-        
+
         // ==================== USER MANAGEMENT ====================
         case 'manage_users':
             $adminController->manageUsers();
@@ -87,14 +85,14 @@ try {
             $adminController->deleteUser();
             break;
             
-        case 'delete_users_bulk':
-            $adminController->deleteUsersBulk();
-            break;
-            
         case 'reset_user_password':
             $adminController->resetUserPassword();
             break;
-        
+            
+        case 'delete_users_bulk':
+            $adminController->deleteUsersBulk();
+            break;
+
         // ==================== BOOTCAMP MANAGEMENT ====================
         case 'manage_bootcamps':
             $adminController->manageBootcamps();
@@ -119,7 +117,7 @@ try {
         case 'toggle_featured_bootcamp':
             $adminController->toggleFeaturedBootcamp();
             break;
-        
+
         // ==================== CATEGORY MANAGEMENT ====================
         case 'manage_categories':
             $adminController->manageCategories();
@@ -136,7 +134,7 @@ try {
         case 'delete_category':
             $adminController->deleteCategory();
             break;
-        
+
         // ==================== ORDER MANAGEMENT ====================
         case 'manage_orders':
             $adminController->manageOrders();
@@ -149,7 +147,7 @@ try {
         case 'update_order_status':
             $adminController->updateOrderStatus();
             break;
-        
+
         // ==================== REVIEW MANAGEMENT ====================
         case 'manage_reviews':
             $adminController->manageReviews();
@@ -170,7 +168,7 @@ try {
         case 'bulk_approve_reviews':
             $adminController->bulkApproveReviews();
             break;
-        
+
         // ==================== FORUM MANAGEMENT ====================
         case 'manage_forum':
             $adminController->manageForum();
@@ -183,8 +181,8 @@ try {
         case 'delete_forum_post':
             $adminController->deleteForumPost();
             break;
-        
-        // ==================== SETTINGS ====================
+
+        // ==================== SETTINGS MANAGEMENT ====================
         case 'manage_settings':
             $adminController->manageSettings();
             break;
@@ -192,7 +190,7 @@ try {
         case 'update_settings':
             $adminController->updateSettings();
             break;
-        
+
         // ==================== SYSTEM TOOLS ====================
         case 'backup_database':
             $adminController->backupDatabase();
@@ -210,10 +208,10 @@ try {
             $adminController->optimizeDatabase();
             break;
             
-        case 'check_system':
+        case 'check_system_health':
             $adminController->checkSystemHealth();
             break;
-        
+
         // ==================== ADMIN PROFILE ====================
         case 'profile':
             $adminController->showProfile();
@@ -226,45 +224,48 @@ try {
         case 'change_password':
             $adminController->changePassword();
             break;
-        
+
         // ==================== ACTIVITY LOG ====================
         case 'activity_log':
             $adminController->activityLog();
             break;
-        
+
         // ==================== AJAX ENDPOINTS ====================
         case 'ajax_get_user':
-            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-                $adminController->ajaxGetUser();
-            }
+            $adminController->ajaxGetUser();
             break;
             
         case 'ajax_get_bootcamp':
-            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-                $adminController->ajaxGetBootcamp();
-            }
+            $adminController->ajaxGetBootcamp();
             break;
             
         case 'ajax_dashboard_stats':
-            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-                $adminController->ajaxDashboardStats();
-            }
+            $adminController->ajaxDashboardStats();
             break;
-            
+
+        // ==================== DEFAULT ====================
         default:
             // Log invalid access attempt
-            if (isset($_SESSION['admin_id'])) {
-                $adminController->logInvalidAccess($action);
-            }
+            $adminController->logInvalidAccess($action);
+            
             $_SESSION['error'] = 'Halaman tidak ditemukan';
             header('Location: admin.php?action=dashboard');
             exit;
     }
+    
 } catch (Exception $e) {
-    // Log error dan redirect ke dashboard
-    error_log("Admin Router Error: " . $e->getMessage());
+    // Log the error
+    error_log("Admin panel error: " . $e->getMessage());
+    
+    // Show user-friendly error message
     $_SESSION['error'] = 'Terjadi kesalahan sistem. Silakan coba lagi.';
-    header('Location: admin.php?action=dashboard');
+    
+    // Redirect based on authentication status
+    if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
+        header('Location: admin.php?action=dashboard');
+    } else {
+        header('Location: admin.php?action=login');
+    }
     exit;
 }
 ?>

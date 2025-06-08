@@ -190,7 +190,7 @@ $base_url = '../../../';
                 <!-- Desktop Menu -->
                 <nav class="hidden md:flex space-x-8">
                     <a href="<?php echo $base_url; ?>index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Home</a>
-                    <a href="<?php echo $base_url; ?>views/bootcamp/index.php" class="text-white hover:text-blue-200 transition-colors duration-300">Bootcamps</a>
+                    <a href="<?php echo $base_url; ?>index.php?action=bootcamps" class="text-white hover:text-blue-200 transition-colors duration-300">Bootcamps</a>
                 </nav>
 
                 <!-- User Account -->
@@ -262,7 +262,7 @@ $base_url = '../../../';
                         <span>Home</span>
                     </a>
 
-                    <a href="<?php echo $base_url; ?>views/bootcamp/index.php" 
+                    <a href="<?php echo $base_url; ?>index.php?action=bootcamps/index.php" 
                        class="flex items-center px-4 py-3 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 transform hover:translate-x-1">
                         <svg class="w-5 h-5 mr-3 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>

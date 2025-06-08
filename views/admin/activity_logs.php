@@ -1,671 +1,371 @@
-<?php
-// views/admin/activity_log.php - Activity Log Page
-$pageTitle = 'Log Aktivitas';
-
-// Get filters
-$currentPage = $page ?? 1;
-$searchTerm = $_GET['search'] ?? '';
-$activityType = $_GET['activity_type'] ?? '';
-$adminId = $_GET['admin_id'] ?? '';
-$dateFrom = $_GET['date_from'] ?? '';
-$dateTo = $_GET['date_to'] ?? '';
-
-// Security function
-function sanitizeOutput($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-function timeAgo($datetime) {
-    $time = time() - strtotime($datetime);
-    
-    if ($time < 60) return 'baru saja';
-    if ($time < 3600) return floor($time/60) . ' menit lalu';
-    if ($time < 86400) return floor($time/3600) . ' jam lalu';
-    if ($time < 2592000) return floor($time/86400) . ' hari lalu';
-    if ($time < 31104000) return floor($time/2592000) . ' bulan lalu';
-    return floor($time/31104000) . ' tahun lalu';
-}
-?>
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $pageTitle ?> - Admin Panel</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/admin.css">
-    <style>
-        .activity-filters {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .filters-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 100px;
-            gap: 15px;
-            align-items: end;
-        }
-
-        .activity-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 20px;
-            color: white;
-        }
-
-        .stat-icon.login { background: #28a745; }
-        .stat-icon.create { background: #17a2b8; }
-        .stat-icon.update { background: #ffc107; color: #495057; }
-        .stat-icon.delete { background: #dc3545; }
-        .stat-icon.total { background: #667eea; }
-
-        .stat-number {
-            font-size: 24px;
-            font-weight: 700;
-            color: #495057;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #6c757d;
-            font-weight: 500;
-        }
-
-        .activity-timeline {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .timeline-header {
-            background: #f8f9fa;
-            padding: 20px 25px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .timeline-item {
-            display: flex;
-            padding: 20px 25px;
-            border-bottom: 1px solid #f1f3f4;
-            transition: background-color 0.3s ease;
-        }
-
-        .timeline-item:hover {
-            background: #f8f9fa;
-        }
-
-        .timeline-item:last-child {
-            border-bottom: none;
-        }
-
-        .activity-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            font-size: 16px;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .activity-icon.login { background: #28a745; }
-        .activity-icon.logout { background: #6c757d; }
-        .activity-icon.create { background: #17a2b8; }
-        .activity-icon.update { background: #ffc107; color: #495057; }
-        .activity-icon.delete { background: #dc3545; }
-        .activity-icon.approve { background: #28a745; }
-        .activity-icon.reject { background: #dc3545; }
-        .activity-icon.export { background: #6f42c1; }
-        .activity-icon.backup { background: #fd7e14; }
-        .activity-icon.security { background: #e83e8c; }
-
-        .activity-content {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .activity-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-
-        .activity-title {
-            font-weight: 600;
-            color: #495057;
-            margin: 0;
-            font-size: 14px;
-        }
-
-        .activity-time {
-            font-size: 12px;
-            color: #6c757d;
-            white-space: nowrap;
-            margin-left: 15px;
-        }
-
-        .activity-description {
-            color: #6c757d;
-            font-size: 13px;
-            line-height: 1.4;
-            margin-bottom: 8px;
-        }
-
-        .activity-meta {
-            display: flex;
-            gap: 15px;
-            font-size: 11px;
-            color: #adb5bd;
-        }
-
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .activity-type-badge {
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 10px;
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        .badge-login { background: #d4edda; color: #155724; }
-        .badge-create { background: #d1ecf1; color: #0c5460; }
-        .badge-update { background: #fff3cd; color: #856404; }
-        .badge-delete { background: #f8d7da; color: #721c24; }
-        .badge-security { background: #f3e2f3; color: #6f42c1; }
-
-        .admin-filter {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #495057;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .admin-filter:hover {
-            background: #e9ecef;
-            text-decoration: none;
-            color: #495057;
-        }
-
-        .admin-filter.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .admin-avatar {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .export-options {
-            display: flex;
-            gap: 10px;
-        }
-
-        .date-range {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
-        }
-
-        .empty-state i {
-            font-size: 48px;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-
-        .loading-indicator {
-            text-align: center;
-            padding: 40px 20px;
-            color: #6c757d;
-        }
-
-        .real-time-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
-            color: #28a745;
-            margin-left: 10px;
-        }
-
-        .pulse {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #28a745;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.3; }
-            100% { opacity: 1; }
-        }
-
-        @media (max-width: 768px) {
-            .filters-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
-            .activity-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .timeline-item {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .activity-icon {
-                align-self: flex-start;
-            }
-
-            .activity-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
-            }
-
-            .activity-meta {
-                flex-direction: column;
-                gap: 5px;
+    <title>Log Aktivitas - Code Camp Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#1e40af',
+                    }
+                }
             }
         }
-    </style>
+    </script>
 </head>
-<body>
-    <div class="admin-layout">
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
         <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
-        <main class="main-content">
-            <div class="page-header">
-                <div>
-                    <h1><?= $pageTitle ?></h1>
-                    <div class="breadcrumb">
-                        <i class="fas fa-home"></i> Admin / 
-                        <i class="fas fa-history"></i> Log Aktivitas
-                        <span class="real-time-indicator">
-                            <span class="pulse"></span>
-                            Real-time
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64 overflow-y-auto">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-gray-200 p-4 lg:p-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                    <div class="ml-12 lg:ml-0">
+                        <h1 class="text-2xl font-bold text-gray-800">Log Aktivitas</h1>
+                        <p class="text-gray-600 mt-1">Riwayat aktivitas admin di sistem</p>
+                    </div>
+                    <div class="flex items-center space-x-4 mt-4 lg:mt-0">
+                        <span class="bg-primary text-white px-3 py-1 rounded-full text-sm">
+                            Total: <?= number_format($totalActivities) ?> aktivitas
                         </span>
                     </div>
                 </div>
-                <div class="page-actions">
-                    <div class="export-options">
-                        <a href="admin.php?action=export_activity_log&format=csv" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-download"></i>
-                            Export CSV
-                        </a>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="refreshLogs()">
-                            <i class="fas fa-sync-alt"></i>
-                            Refresh
-                        </button>
-                    </div>
-                </div>
-            </div>
+            </header>
 
-            <div class="content-wrapper">
-                <!-- Alert Messages -->
-                <?php if (isset($_SESSION['success'])): ?>
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <?= sanitizeOutput($_SESSION['success']) ?>
-                    </div>
-                    <?php unset($_SESSION['success']); ?>
-                <?php endif; ?>
-
-                <?php if (isset($_SESSION['error'])): ?>
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <?= sanitizeOutput($_SESSION['error']) ?>
-                    </div>
-                    <?php unset($_SESSION['error']); ?>
-                <?php endif; ?>
-
-                <!-- Activity Stats -->
-                <div class="activity-stats">
-                    <div class="stat-card">
-                        <div class="stat-icon total">
-                            <i class="fas fa-list"></i>
-                        </div>
-                        <div class="stat-number"><?= number_format($totalActivities ?? 0) ?></div>
-                        <div class="stat-label">Total Aktivitas</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon login">
-                            <i class="fas fa-sign-in-alt"></i>
-                        </div>
-                        <div class="stat-number">
-                            <?php
-                            $loginCount = 0;
-                            if (isset($activities)) {
-                                foreach ($activities as $activity) {
-                                    if ($activity['activity_type'] === 'login') $loginCount++;
-                                }
-                            }
-                            echo number_format($loginCount);
-                            ?>
-                        </div>
-                        <div class="stat-label">Login Hari Ini</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon create">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                        <div class="stat-number">
-                            <?php
-                            $createCount = 0;
-                            if (isset($activities)) {
-                                foreach ($activities as $activity) {
-                                    if (in_array($activity['activity_type'], ['create', 'create_bootcamp', 'create_category'])) $createCount++;
-                                }
-                            }
-                            echo number_format($createCount);
-                            ?>
-                        </div>
-                        <div class="stat-label">Item Dibuat</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon update">
-                            <i class="fas fa-edit"></i>
-                        </div>
-                        <div class="stat-number">
-                            <?php
-                            $updateCount = 0;
-                            if (isset($activities)) {
-                                foreach ($activities as $activity) {
-                                    if (in_array($activity['activity_type'], ['update', 'update_user', 'update_bootcamp'])) $updateCount++;
-                                }
-                            }
-                            echo number_format($updateCount);
-                            ?>
-                        </div>
-                        <div class="stat-label">Item Diupdate</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon delete">
-                            <i class="fas fa-trash"></i>
-                        </div>
-                        <div class="stat-number">
-                            <?php
-                            $deleteCount = 0;
-                            if (isset($activities)) {
-                                foreach ($activities as $activity) {
-                                    if (in_array($activity['activity_type'], ['delete', 'delete_user', 'delete_bootcamp'])) $deleteCount++;
-                                }
-                            }
-                            echo number_format($deleteCount);
-                            ?>
-                        </div>
-                        <div class="stat-label">Item Dihapus</div>
-                    </div>
-                </div>
-
-                <!-- Activity Filters -->
-                <div class="activity-filters">
-                    <form method="GET" action="admin.php" class="filters-grid">
+            <!-- Content -->
+            <div class="p-4 lg:p-6 space-y-6">
+                <!-- Filters -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <form method="GET" action="admin.php" class="space-y-4">
                         <input type="hidden" name="action" value="activity_log">
                         
-                        <div class="form-group">
-                            <label for="search" class="form-label">Cari Aktivitas</label>
-                            <input type="text" 
-                                   id="search" 
-                                   name="search" 
-                                   class="form-control" 
-                                   placeholder="Cari deskripsi aktivitas..."
-                                   value="<?= sanitizeOutput($searchTerm) ?>">
+                        <!-- Filter Row 1 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <!-- Search -->
+                            <div>
+                                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Cari Aktivitas</label>
+                                <input 
+                                    type="text" 
+                                    id="search"
+                                    name="search" 
+                                    placeholder="Cari deskripsi atau admin..." 
+                                    value="<?= htmlspecialchars($search ?? '') ?>"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm"
+                                >
+                            </div>
+
+                            <!-- Activity Type -->
+                            <div>
+                                <label for="activity_type" class="block text-sm font-medium text-gray-700 mb-1">Jenis Aktivitas</label>
+                                <select 
+                                    id="activity_type"
+                                    name="activity_type" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm"
+                                >
+                                    <option value="">Semua Jenis</option>
+                                    <option value="login" <?= ($activity_type ?? '') == 'login' ? 'selected' : '' ?>>Login</option>
+                                    <option value="logout" <?= ($activity_type ?? '') == 'logout' ? 'selected' : '' ?>>Logout</option>
+                                    <option value="create_bootcamp" <?= ($activity_type ?? '') == 'create_bootcamp' ? 'selected' : '' ?>>Buat Bootcamp</option>
+                                    <option value="update_bootcamp" <?= ($activity_type ?? '') == 'update_bootcamp' ? 'selected' : '' ?>>Update Bootcamp</option>
+                                    <option value="delete_bootcamp" <?= ($activity_type ?? '') == 'delete_bootcamp' ? 'selected' : '' ?>>Hapus Bootcamp</option>
+                                    <option value="create_user" <?= ($activity_type ?? '') == 'create_user' ? 'selected' : '' ?>>Buat User</option>
+                                    <option value="update_user" <?= ($activity_type ?? '') == 'update_user' ? 'selected' : '' ?>>Update User</option>
+                                    <option value="delete_user" <?= ($activity_type ?? '') == 'delete_user' ? 'selected' : '' ?>>Hapus User</option>
+                                    <option value="update_settings" <?= ($activity_type ?? '') == 'update_settings' ? 'selected' : '' ?>>Update Settings</option>
+                                    <option value="backup_database" <?= ($activity_type ?? '') == 'backup_database' ? 'selected' : '' ?>>Backup Database</option>
+                                </select>
+                            </div>
+
+                            <!-- Admin Filter -->
+                            <div>
+                                <label for="admin_id" class="block text-sm font-medium text-gray-700 mb-1">Admin</label>
+                                <select 
+                                    id="admin_id"
+                                    name="admin_id" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm"
+                                >
+                                    <option value="">Semua Admin</option>
+                                    <!-- Add admin options here based on your admin list -->
+                                    <option value="<?= $_SESSION['admin_id'] ?>" <?= ($admin_id ?? 0) == $_SESSION['admin_id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($_SESSION['admin_name']) ?> (Saya)
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Search Button -->
+                            <div class="flex items-end">
+                                <button 
+                                    type="submit" 
+                                    class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors duration-200 text-sm"
+                                >
+                                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                    Cari
+                                </button>
+                            </div>
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="activity_type" class="form-label">Jenis Aktivitas</label>
-                            <select id="activity_type" name="activity_type" class="form-control">
-                                <option value="">Semua Jenis</option>
-                                <option value="login" <?= $activityType === 'login' ? 'selected' : '' ?>>Login</option>
-                                <option value="logout" <?= $activityType === 'logout' ? 'selected' : '' ?>>Logout</option>
-                                <option value="create" <?= $activityType === 'create' ? 'selected' : '' ?>>Create</option>
-                                <option value="update" <?= $activityType === 'update' ? 'selected' : '' ?>>Update</option>
-                                <option value="delete" <?= $activityType === 'delete' ? 'selected' : '' ?>>Delete</option>
-                                <option value="approve" <?= $activityType === 'approve' ? 'selected' : '' ?>>Approve</option>
-                                <option value="reject" <?= $activityType === 'reject' ? 'selected' : '' ?>>Reject</option>
-                                <option value="export" <?= $activityType === 'export' ? 'selected' : '' ?>>Export</option>
-                                <option value="backup" <?= $activityType === 'backup' ? 'selected' : '' ?>>Backup</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="date_from" class="form-label">Dari Tanggal</label>
-                            <input type="date" 
-                                   id="date_from" 
-                                   name="date_from" 
-                                   class="form-control"
-                                   value="<?= sanitizeOutput($dateFrom) ?>">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="date_to" class="form-label">Sampai Tanggal</label>
-                            <input type="date" 
-                                   id="date_to" 
-                                   name="date_to" 
-                                   class="form-control"
-                                   value="<?= sanitizeOutput($dateTo) ?>">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="admin_id" class="form-label">Admin</label>
-                            <select id="admin_id" name="admin_id" class="form-control">
-                                <option value="">Semua Admin</option>
-                                <!-- Admin options would be populated from database -->
-                            </select>
-                        </div>
-                        
-                        <div class="d-flex flex-column gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search"></i>
-                            </button>
-                            <a href="admin.php?action=activity_log" class="btn btn-outline-secondary">
-                                <i class="fas fa-undo"></i>
-                            </a>
+
+                        <!-- Filter Row 2 - Date Range -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                            <!-- Date From -->
+                            <div>
+                                <label for="date_from" class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
+                                <input 
+                                    type="date" 
+                                    id="date_from"
+                                    name="date_from" 
+                                    value="<?= htmlspecialchars($date_from ?? '') ?>"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm"
+                                >
+                            </div>
+
+                            <!-- Date To -->
+                            <div>
+                                <label for="date_to" class="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
+                                <input 
+                                    type="date" 
+                                    id="date_to"
+                                    name="date_to" 
+                                    value="<?= htmlspecialchars($date_to ?? '') ?>"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm"
+                                >
+                            </div>
+
+                            <!-- Reset Button -->
+                            <div class="flex items-end">
+                                <a 
+                                    href="admin.php?action=activity_log" 
+                                    class="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-center text-sm"
+                                >
+                                    Reset Filter
+                                </a>
+                            </div>
                         </div>
                     </form>
                 </div>
 
                 <!-- Activity Timeline -->
-                <div class="activity-timeline" id="activityTimeline">
-                    <div class="timeline-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-clock"></i>
-                            Timeline Aktivitas
-                        </h5>
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="text-muted" style="font-size: 12px;">
-                                Menampilkan <?= count($activities ?? []) ?> dari <?= number_format($totalActivities ?? 0) ?> aktivitas
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800">Timeline Aktivitas</h3>
+                            <span class="text-sm text-gray-500">
+                                Halaman <?= $page ?> dari <?= $totalPages ?>
                             </span>
                         </div>
                     </div>
 
-                    <?php if (!empty($activities)): ?>
-                        <div class="timeline-content">
-                            <?php foreach ($activities as $activity): ?>
-                                <div class="timeline-item" data-activity-id="<?= $activity['id'] ?>">
-                                    <div class="activity-icon <?= sanitizeOutput($activity['activity_type']) ?>">
-                                        <?php
-                                        $icons = [
-                                            'login' => 'fa-sign-in-alt',
-                                            'logout' => 'fa-sign-out-alt',
-                                            'create' => 'fa-plus',
-                                            'update' => 'fa-edit',
-                                            'delete' => 'fa-trash',
-                                            'approve' => 'fa-check',
-                                            'reject' => 'fa-times',
-                                            'export' => 'fa-download',
-                                            'backup' => 'fa-database',
-                                            'security' => 'fa-shield-alt'
-                                        ];
-                                        $icon = $icons[$activity['activity_type']] ?? 'fa-circle';
-                                        ?>
-                                        <i class="fas <?= $icon ?>"></i>
-                                    </div>
+                    <div class="p-6">
+                        <?php if (empty($activities)): ?>
+                            <div class="text-center py-12">
+                                <div class="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <p class="text-gray-500">Tidak ada aktivitas ditemukan</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="space-y-6">
+                                <?php 
+                                $currentDate = '';
+                                foreach ($activities as $activity): 
+                                    $activityDate = date('Y-m-d', strtotime($activity['created_at']));
                                     
-                                    <div class="activity-content">
-                                        <div class="activity-header">
-                                            <h6 class="activity-title">
-                                                <?= sanitizeOutput($activity['admin_name'] ?? 'System') ?>
-                                                <span class="activity-type-badge badge-<?= sanitizeOutput($activity['activity_type']) ?>">
-                                                    <?= strtoupper(sanitizeOutput($activity['activity_type'])) ?>
-                                                </span>
-                                            </h6>
-                                            <div class="activity-time" title="<?= date('d M Y H:i:s', strtotime($activity['created_at'])) ?>">
-                                                <i class="fas fa-clock"></i>
-                                                <?= timeAgo($activity['created_at']) ?>
-                                            </div>
+                                    // Show date separator
+                                    if ($currentDate !== $activityDate):
+                                        $currentDate = $activityDate;
+                                ?>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500 font-medium">
+                                        <div class="flex-1 border-t border-gray-200"></div>
+                                        <div class="bg-gray-100 px-3 py-1 rounded-full">
+                                            <?= date('d F Y', strtotime($activity['created_at'])) ?>
                                         </div>
+                                        <div class="flex-1 border-t border-gray-200"></div>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="flex items-start space-x-4">
+                                    <!-- Timeline Dot -->
+                                    <div class="flex-shrink-0 mt-1">
+                                        <?php 
+                                        $iconClass = 'w-8 h-8 rounded-full flex items-center justify-center';
+                                        $iconBg = 'bg-gray-100';
+                                        $iconColor = 'text-gray-600';
                                         
-                                        <div class="activity-description">
-                                            <?= sanitizeOutput($activity['description']) ?>
-                                        </div>
-                                        
-                                        <div class="activity-meta">
-                                            <?php if (!empty($activity['ip_address'])): ?>
-                                                <div class="meta-item">
-                                                    <i class="fas fa-map-marker-alt"></i>
-                                                    <span><?= sanitizeOutput($activity['ip_address']) ?></span>
-                                                </div>
+                                        switch($activity['activity_type']) {
+                                            case 'login':
+                                                $iconBg = 'bg-green-100';
+                                                $iconColor = 'text-green-600';
+                                                break;
+                                            case 'logout':
+                                                $iconBg = 'bg-red-100';
+                                                $iconColor = 'text-red-600';
+                                                break;
+                                            case 'create_bootcamp':
+                                            case 'create_user':
+                                            case 'create_category':
+                                                $iconBg = 'bg-blue-100';
+                                                $iconColor = 'text-blue-600';
+                                                break;
+                                            case 'update_bootcamp':
+                                            case 'update_user':
+                                            case 'update_settings':
+                                                $iconBg = 'bg-yellow-100';
+                                                $iconColor = 'text-yellow-600';
+                                                break;
+                                            case 'delete_bootcamp':
+                                            case 'delete_user':
+                                                $iconBg = 'bg-red-100';
+                                                $iconColor = 'text-red-600';
+                                                break;
+                                            case 'backup_database':
+                                            case 'system_health_check':
+                                                $iconBg = 'bg-purple-100';
+                                                $iconColor = 'text-purple-600';
+                                                break;
+                                        }
+                                        ?>
+                                        <div class="<?= $iconClass ?> <?= $iconBg ?>">
+                                            <?php if (in_array($activity['activity_type'], ['login', 'logout'])): ?>
+                                                <svg class="w-4 h-4 <?= $iconColor ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                                                </svg>
+                                            <?php elseif (strpos($activity['activity_type'], 'create') !== false): ?>
+                                                <svg class="w-4 h-4 <?= $iconColor ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                </svg>
+                                            <?php elseif (strpos($activity['activity_type'], 'update') !== false): ?>
+                                                <svg class="w-4 h-4 <?= $iconColor ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            <?php elseif (strpos($activity['activity_type'], 'delete') !== false): ?>
+                                                <svg class="w-4 h-4 <?= $iconColor ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            <?php else: ?>
+                                                <svg class="w-4 h-4 <?= $iconColor ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                                </svg>
                                             <?php endif; ?>
-                                            
-                                            <?php if (!empty($activity['user_agent'])): ?>
-                                                <div class="meta-item">
-                                                    <i class="fas fa-desktop"></i>
-                                                    <span title="<?= sanitizeOutput($activity['user_agent']) ?>">
-                                                        <?php
-                                                        // Extract browser info from user agent
-                                                        $userAgent = $activity['user_agent'];
-                                                        if (strpos($userAgent, 'Chrome') !== false) echo 'Chrome';
-                                                        elseif (strpos($userAgent, 'Firefox') !== false) echo 'Firefox';
-                                                        elseif (strpos($userAgent, 'Safari') !== false) echo 'Safari';
-                                                        elseif (strpos($userAgent, 'Edge') !== false) echo 'Edge';
-                                                        else echo 'Unknown';
-                                                        ?>
+                                        </div>
+                                    </div>
+
+                                    <!-- Activity Content -->
+                                    <div class="flex-1 min-w-0">
+                                        <div class="bg-gray-50 rounded-lg p-4">
+                                            <!-- Activity Header -->
+                                            <div class="flex items-start justify-between mb-2">
+                                                <div class="flex items-center space-x-2">
+                                                    <!-- Admin Avatar -->
+                                                    <div class="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                                                        <span class="text-xs font-medium text-white">
+                                                            <?= strtoupper(substr($activity['admin_name'] ?? 'A', 0, 1)) ?>
+                                                        </span>
+                                                    </div>
+                                                    <span class="font-medium text-gray-800">
+                                                        <?= htmlspecialchars($activity['admin_name'] ?? 'Unknown Admin') ?>
+                                                    </span>
+                                                    <span class="text-sm text-gray-500">
+                                                        <?= date('H:i:s', strtotime($activity['created_at'])) ?>
                                                     </span>
                                                 </div>
-                                            <?php endif; ?>
-                                            
-                                            <div class="meta-item">
-                                                <i class="fas fa-fingerprint"></i>
-                                                <span>ID: <?= $activity['id'] ?></span>
+                                                
+                                                <!-- Activity Type Badge -->
+                                                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full <?= $iconBg ?> <?= $iconColor ?>">
+                                                    <?= ucwords(str_replace('_', ' ', $activity['activity_type'])) ?>
+                                                </span>
+                                            </div>
+
+                                            <!-- Activity Description -->
+                                            <div class="text-gray-700 mb-3">
+                                                <?= htmlspecialchars($activity['description']) ?>
+                                            </div>
+
+                                            <!-- Activity Meta -->
+                                            <div class="flex items-center space-x-4 text-xs text-gray-500">
+                                                <?php if (!empty($activity['ip_address'])): ?>
+                                                    <div class="flex items-center space-x-1">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"></path>
+                                                        </svg>
+                                                        <span>IP: <?= htmlspecialchars($activity['ip_address']) ?></span>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($activity['user_agent'])): ?>
+                                                    <div class="flex items-center space-x-1">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                                        </svg>
+                                                        <span class="truncate max-w-xs" title="<?= htmlspecialchars($activity['user_agent']) ?>">
+                                                            <?= htmlspecialchars(substr($activity['user_agent'], 0, 50)) ?>...
+                                                        </span>
+                                                    </div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
-
-                        <!-- Pagination -->
-                        <?php if ($totalPages > 1): ?>
-                            <div class="card-footer">
-                                <nav class="d-flex justify-content-center">
-                                    <ul class="pagination mb-0">
-                                        <?php
-                                        $baseUrl = "admin.php?action=activity_log";
-                                        if ($searchTerm) $baseUrl .= "&search=" . urlencode($searchTerm);
-                                        if ($activityType) $baseUrl .= "&activity_type=" . urlencode($activityType);
-                                        if ($adminId) $baseUrl .= "&admin_id=" . urlencode($adminId);
-                                        if ($dateFrom) $baseUrl .= "&date_from=" . urlencode($dateFrom);
-                                        if ($dateTo) $baseUrl .= "&date_to=" . urlencode($dateTo);
-
-                                        // Previous page
-                                        if ($currentPage > 1): ?>
-                                            <li class="page-item">
-                                                <a class="page-link" href="<?= $baseUrl ?>&page=<?= $currentPage - 1 ?>">‹</a>
-                                            </li>
-                                        <?php endif;
-
-                                        // Page numbers
-                                        $startPage = max(1, $currentPage - 2);
-                                        $endPage = min($totalPages, $currentPage + 2);
-
-                                        for ($i = $startPage; $i <= $endPage; $i++): ?>
-                                            <li class="page-item <?= $i == $currentPage ? 'active' : '' ?>">
-                                                <a class="page-link" href="<?= $baseUrl ?>&page=<?= $i ?>"><?= $i ?></a>
-                                            </li>
-                                        <?php endfor;
-
-                                        // Next page
-                                        if ($currentPage < $totalPages): ?>
-                                            <li class="page-item">
-                                                <a class="page-link" href="<?= $baseUrl ?>&page=<?= $currentPage + 1 ?>">›</a>
-                                            </li>
-                                        <?php endif; ?>
-                                    </ul>
-                                </nav>
+                                <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
+                    </div>
 
-                    <?php else: ?>
-                        <div class="empty-state">
-                            <i class="fas fa-history"></i>
-                            <h3>Tidak ada aktivitas ditemukan</h3>
-                            <p>Belum ada aktivitas yang sesuai dengan filter yang dipilih.</p>
+                    <!-- Pagination -->
+                    <?php if ($totalPages > 1): ?>
+                        <div class="px-6 py-4 border-t border-gray-200">
+                            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                <div class="text-sm text-gray-700">
+                                    Menampilkan <?= (($page - 1) * 50) + 1 ?> sampai <?= min($page * 50, $totalActivities) ?> dari <?= $totalActivities ?> aktivitas
+                                </div>
+                                
+                                <div class="flex items-center space-x-1">
+                                    <!-- Previous Page -->
+                                    <?php if ($page > 1): ?>
+                                        <a 
+                                            href="admin.php?action=activity_log&page=<?= $page - 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?><?= $activity_type ? '&activity_type=' . urlencode($activity_type) : '' ?><?= $admin_id ? '&admin_id=' . $admin_id : '' ?><?= $date_from ? '&date_from=' . urlencode($date_from) : '' ?><?= $date_to ? '&date_to=' . urlencode($date_to) : '' ?>" 
+                                            class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                        >
+                                            Sebelumnya
+                                        </a>
+                                    <?php endif; ?>
+
+                                    <!-- Page Numbers -->
+                                    <?php
+                                    $startPage = max(1, $page - 2);
+                                    $endPage = min($totalPages, $page + 2);
+                                    ?>
+                                    
+                                    <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                        <a 
+                                            href="admin.php?action=activity_log&page=<?= $i ?><?= $search ? '&search=' . urlencode($search) : '' ?><?= $activity_type ? '&activity_type=' . urlencode($activity_type) : '' ?><?= $admin_id ? '&admin_id=' . $admin_id : '' ?><?= $date_from ? '&date_from=' . urlencode($date_from) : '' ?><?= $date_to ? '&date_to=' . urlencode($date_to) : '' ?>" 
+                                            class="px-3 py-2 text-sm border rounded-md <?= $i == $page ? 'bg-primary text-white border-primary' : 'bg-white border-gray-300 hover:bg-gray-50' ?>"
+                                        >
+                                            <?= $i ?>
+                                        </a>
+                                    <?php endfor; ?>
+
+                                    <!-- Next Page -->
+                                    <?php if ($page < $totalPages): ?>
+                                        <a 
+                                            href="admin.php?action=activity_log&page=<?= $page + 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?><?= $activity_type ? '&activity_type=' . urlencode($activity_type) : '' ?><?= $admin_id ? '&admin_id=' . $admin_id : '' ?><?= $date_from ? '&date_from=' . urlencode($date_from) : '' ?><?= $date_to ? '&date_to=' . urlencode($date_to) : '' ?>" 
+                                            class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                        >
+                                            Selanjutnya
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -674,141 +374,50 @@ function timeAgo($datetime) {
     </div>
 
     <script>
+        // Set max date to today for date inputs
         document.addEventListener('DOMContentLoaded', function() {
-            // Auto-refresh every 30 seconds
-            setInterval(refreshLogs, 30000);
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date_from').max = today;
+            document.getElementById('date_to').max = today;
             
-            // Real-time updates using polling
-            let lastActivityId = <?= $activities[0]['id'] ?? 0 ?>;
+            // Validate date range
+            const dateFrom = document.getElementById('date_from');
+            const dateTo = document.getElementById('date_to');
             
-            function checkForNewActivities() {
-                fetch(`admin.php?action=check_new_activities&last_id=${lastActivityId}`, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.hasNew) {
-                        showNewActivityNotification(data.count);
-                        lastActivityId = data.lastId;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking for new activities:', error);
-                });
-            }
-            
-            // Check for new activities every 10 seconds
-            setInterval(checkForNewActivities, 10000);
-            
-            function showNewActivityNotification(count) {
-                const notification = document.createElement('div');
-                notification.className = 'alert alert-info';
-                notification.style.position = 'fixed';
-                notification.style.top = '20px';
-                notification.style.right = '20px';
-                notification.style.zIndex = '9999';
-                notification.innerHTML = `
-                    <i class="fas fa-info-circle"></i>
-                    ${count} aktivitas baru tersedia. 
-                    <a href="javascript:refreshLogs()" style="color: #0c5460; text-decoration: underline;">Refresh untuk melihat</a>
-                `;
-                
-                document.body.appendChild(notification);
-                
-                // Auto-remove after 5 seconds
-                setTimeout(() => {
-                    notification.remove();
-                }, 5000);
-            }
-            
-            // Filter form enhancements
-            const searchInput = document.getElementById('search');
-            let searchTimeout;
-            
-            searchInput?.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    if (this.value.length >= 3 || this.value.length === 0) {
-                        this.closest('form').submit();
-                    }
-                }, 500);
+            dateFrom.addEventListener('change', function() {
+                dateTo.min = this.value;
             });
             
-            // Quick date filters
-            addQuickDateFilters();
-            
-            function addQuickDateFilters() {
-                const dateFromInput = document.getElementById('date_from');
-                const dateToInput = document.getElementById('date_to');
-                
-                // Add quick filter buttons
-                const quickFilters = document.createElement('div');
-                quickFilters.className = 'd-flex gap-2 mt-2 flex-wrap';
-                quickFilters.innerHTML = `
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDateRange('today')">Hari Ini</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDateRange('yesterday')">Kemarin</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDateRange('week')">7 Hari</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDateRange('month')">30 Hari</button>
-                `;
-                
-                dateToInput.parentNode.appendChild(quickFilters);
-            }
-            
-            // Export functionality
-            const exportBtn = document.querySelector('a[href*="export_activity_log"]');
-            exportBtn?.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Build export URL with current filters
-                const params = new URLSearchParams(window.location.search);
-                params.set('action', 'export_activity_log');
-                params.set('format', 'csv');
-                
-                const exportUrl = 'admin.php?' + params.toString();
-                window.open(exportUrl, '_blank');
+            dateTo.addEventListener('change', function() {
+                dateFrom.max = this.value;
             });
         });
-        
-        function refreshLogs() {
-            window.location.reload();
-        }
-        
-        function setDateRange(range) {
-            const dateFromInput = document.getElementById('date_from');
-            const dateToInput = document.getElementById('date_to');
-            const today = new Date();
+
+        // Auto-refresh every 30 seconds for new activities
+        let autoRefresh = setInterval(function() {
+            // Only refresh if on first page and no filters
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page') || '1';
+            const hasFilters = urlParams.get('search') || urlParams.get('activity_type') || 
+                             urlParams.get('admin_id') || urlParams.get('date_from') || urlParams.get('date_to');
             
-            switch (range) {
-                case 'today':
-                    dateFromInput.value = today.toISOString().split('T')[0];
-                    dateToInput.value = today.toISOString().split('T')[0];
-                    break;
-                case 'yesterday':
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    dateFromInput.value = yesterday.toISOString().split('T')[0];
-                    dateToInput.value = yesterday.toISOString().split('T')[0];
-                    break;
-                case 'week':
-                    const weekAgo = new Date(today);
-                    weekAgo.setDate(weekAgo.getDate() - 7);
-                    dateFromInput.value = weekAgo.toISOString().split('T')[0];
-                    dateToInput.value = today.toISOString().split('T')[0];
-                    break;
-                case 'month':
-                    const monthAgo = new Date(today);
-                    monthAgo.setDate(monthAgo.getDate() - 30);
-                    dateFromInput.value = monthAgo.toISOString().split('T')[0];
-                    dateToInput.value = today.toISOString().split('T')[0];
-                    break;
+            if (page === '1' && !hasFilters) {
+                // Add a subtle indicator that refresh is happening
+                const indicator = document.createElement('div');
+                indicator.className = 'fixed top-4 right-4 bg-primary text-white px-3 py-1 rounded-full text-sm z-50';
+                indicator.textContent = 'Memperbarui...';
+                document.body.appendChild(indicator);
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             }
-            
-            // Auto-submit form
-            dateFromInput.closest('form').submit();
-        }
+        }, 30000); // 30 seconds
+
+        // Stop auto-refresh when user interacts with filters
+        document.querySelector('form').addEventListener('input', function() {
+            clearInterval(autoRefresh);
+        });
     </script>
 </body>
 </html>
