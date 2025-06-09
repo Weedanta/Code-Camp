@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,6 +19,7 @@
         }
     </script>
 </head>
+
 <body class="bg-gray-50">
     <div class="flex h-screen">
         <!-- Sidebar -->
@@ -33,10 +35,9 @@
                         <p class="text-gray-600 mt-1">Manajemen program bootcamp Code Camp</p>
                     </div>
                     <div class="flex items-center space-x-4 mt-4 lg:mt-0">
-                        <a 
-                            href="admin.php?action=create_bootcamp" 
-                            class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center"
-                        >
+                        <a
+                            href="admin.php?action=create_bootcamp"
+                            class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
@@ -70,24 +71,22 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <form method="GET" action="admin.php" class="flex flex-col lg:flex-row gap-4">
                         <input type="hidden" name="action" value="manage_bootcamps">
-                        
+
                         <!-- Search -->
                         <div class="flex-1">
-                            <input 
-                                type="text" 
-                                name="search" 
-                                placeholder="Cari judul, instruktur, atau deskripsi..." 
+                            <input
+                                type="text"
+                                name="search"
+                                placeholder="Cari judul, instruktur, atau deskripsi..."
                                 value="<?= htmlspecialchars($search ?? '') ?>"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-                            >
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
                         </div>
 
                         <!-- Category Filter -->
                         <div class="w-full lg:w-48">
-                            <select 
-                                name="category" 
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-                            >
+                            <select
+                                name="category"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
                                 <option value="">Semua Kategori</option>
                                 <?php foreach ($categories as $cat): ?>
                                     <option value="<?= $cat['id'] ?>" <?= ($category ?? 0) == $cat['id'] ? 'selected' : '' ?>>
@@ -99,10 +98,9 @@
 
                         <!-- Status Filter -->
                         <div class="w-full lg:w-48">
-                            <select 
-                                name="status" 
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-                            >
+                            <select
+                                name="status"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
                                 <option value="">Semua Status</option>
                                 <option value="active" <?= ($status ?? '') == 'active' ? 'selected' : '' ?>>Aktif</option>
                                 <option value="draft" <?= ($status ?? '') == 'draft' ? 'selected' : '' ?>>Draft</option>
@@ -111,10 +109,9 @@
                         </div>
 
                         <!-- Search Button -->
-                        <button 
-                            type="submit" 
-                            class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors duration-200"
-                        >
+                        <button
+                            type="submit"
+                            class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors duration-200">
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
@@ -134,10 +131,9 @@
                                     </svg>
                                 </div>
                                 <p class="text-gray-500 mb-4">Tidak ada bootcamp ditemukan</p>
-                                <a 
-                                    href="admin.php?action=create_bootcamp" 
-                                    class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors duration-200"
-                                >
+                                <a
+                                    href="admin.php?action=create_bootcamp"
+                                    class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors duration-200">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                     </svg>
@@ -151,11 +147,9 @@
                                 <!-- Bootcamp Image -->
                                 <div class="relative h-48 bg-gray-200">
                                     <?php if (!empty($bootcamp['image'])): ?>
-                                        <img 
-                                            src="assets/images/bootcamps/<?= htmlspecialchars($bootcamp['image']) ?>" 
-                                            alt="<?= htmlspecialchars($bootcamp['title']) ?>"
-                                            class="w-full h-full object-cover"
-                                        >
+                                        <img src="assets/images/ngoding.jpg"
+                                            alt="<?php echo htmlspecialchars($bootcamp['title']); ?>"
+                                            class="w-full h-48 object-cover">
                                     <?php else: ?>
                                         <div class="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                                             <svg class="w-16 h-16 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +157,7 @@
                                             </svg>
                                         </div>
                                     <?php endif; ?>
-                                    
+
                                     <!-- Featured Badge -->
                                     <?php if ($bootcamp['featured']): ?>
                                         <div class="absolute top-2 left-2">
@@ -175,8 +169,8 @@
 
                                     <!-- Status Badge -->
                                     <div class="absolute top-2 right-2">
-                                        <?php 
-                                        $statusClass = match($bootcamp['status'] ?? 'draft') {
+                                        <?php
+                                        $statusClass = match ($bootcamp['status'] ?? 'draft') {
                                             'active' => 'bg-green-100 text-green-800',
                                             'draft' => 'bg-gray-100 text-gray-800',
                                             'archived' => 'bg-red-100 text-red-800',
@@ -200,13 +194,12 @@
                                                 <?= htmlspecialchars($bootcamp['category_name'] ?? 'Tidak berkategori') ?>
                                             </p>
                                         </div>
-                                        
+
                                         <!-- Featured Toggle -->
-                                        <button 
+                                        <button
                                             onclick="toggleFeatured(<?= $bootcamp['id'] ?>, <?= $bootcamp['featured'] ? 'false' : 'true' ?>)"
                                             class="ml-2 p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                                            title="<?= $bootcamp['featured'] ? 'Hapus dari featured' : 'Jadikan featured' ?>"
-                                        >
+                                            title="<?= $bootcamp['featured'] ? 'Hapus dari featured' : 'Jadikan featured' ?>">
                                             <svg class="w-5 h-5 <?= $bootcamp['featured'] ? 'text-yellow-500' : 'text-gray-400' ?>" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                                             </svg>
@@ -257,27 +250,25 @@
                                     <!-- Actions -->
                                     <div class="flex justify-between items-center pt-4 border-t border-gray-100">
                                         <div class="flex space-x-2">
-                                            <a 
-                                                href="admin.php?action=edit_bootcamp&id=<?= $bootcamp['id'] ?>" 
+                                            <a
+                                                href="admin.php?action=edit_bootcamp&id=<?= $bootcamp['id'] ?>"
                                                 class="text-primary hover:text-secondary"
-                                                title="Edit bootcamp"
-                                            >
+                                                title="Edit bootcamp">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                 </svg>
                                             </a>
-                                            <a 
-                                                href="admin.php?action=delete_bootcamp&id=<?= $bootcamp['id'] ?>" 
+                                            <a
+                                                href="admin.php?action=delete_bootcamp&id=<?= $bootcamp['id'] ?>"
                                                 class="text-red-600 hover:text-red-700"
                                                 onclick="return confirm('Yakin ingin menghapus bootcamp ini?')"
-                                                title="Hapus bootcamp"
-                                            >
+                                                title="Hapus bootcamp">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                 </svg>
                                             </a>
                                         </div>
-                                        
+
                                         <div class="text-xs text-gray-500">
                                             <?= date('d M Y', strtotime($bootcamp['created_at'] ?? 'now')) ?>
                                         </div>
@@ -295,14 +286,13 @@
                             <div class="text-sm text-gray-700">
                                 Menampilkan <?= (($page - 1) * 20) + 1 ?> sampai <?= min($page * 20, $totalBootcamps) ?> dari <?= $totalBootcamps ?> bootcamp
                             </div>
-                            
+
                             <div class="flex items-center space-x-1">
                                 <!-- Previous Page -->
                                 <?php if ($page > 1): ?>
-                                    <a 
-                                        href="admin.php?action=manage_bootcamps&page=<?= $page - 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?><?= $category ? '&category=' . $category : '' ?><?= $status ? '&status=' . urlencode($status) : '' ?>" 
-                                        class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                                    >
+                                    <a
+                                        href="admin.php?action=manage_bootcamps&page=<?= $page - 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?><?= $category ? '&category=' . $category : '' ?><?= $status ? '&status=' . urlencode($status) : '' ?>"
+                                        class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
                                         Sebelumnya
                                     </a>
                                 <?php endif; ?>
@@ -312,22 +302,20 @@
                                 $startPage = max(1, $page - 2);
                                 $endPage = min($totalPages, $page + 2);
                                 ?>
-                                
+
                                 <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
-                                    <a 
-                                        href="admin.php?action=manage_bootcamps&page=<?= $i ?><?= $search ? '&search=' . urlencode($search) : '' ?><?= $category ? '&category=' . $category : '' ?><?= $status ? '&status=' . urlencode($status) : '' ?>" 
-                                        class="px-3 py-2 text-sm border rounded-md <?= $i == $page ? 'bg-primary text-white border-primary' : 'bg-white border-gray-300 hover:bg-gray-50' ?>"
-                                    >
+                                    <a
+                                        href="admin.php?action=manage_bootcamps&page=<?= $i ?><?= $search ? '&search=' . urlencode($search) : '' ?><?= $category ? '&category=' . $category : '' ?><?= $status ? '&status=' . urlencode($status) : '' ?>"
+                                        class="px-3 py-2 text-sm border rounded-md <?= $i == $page ? 'bg-primary text-white border-primary' : 'bg-white border-gray-300 hover:bg-gray-50' ?>">
                                         <?= $i ?>
                                     </a>
                                 <?php endfor; ?>
 
                                 <!-- Next Page -->
                                 <?php if ($page < $totalPages): ?>
-                                    <a 
-                                        href="admin.php?action=manage_bootcamps&page=<?= $page + 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?><?= $category ? '&category=' . $category : '' ?><?= $status ? '&status=' . urlencode($status) : '' ?>" 
-                                        class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                                    >
+                                    <a
+                                        href="admin.php?action=manage_bootcamps&page=<?= $page + 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?><?= $category ? '&category=' . $category : '' ?><?= $status ? '&status=' . urlencode($status) : '' ?>"
+                                        class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
                                         Selanjutnya
                                     </a>
                                 <?php endif; ?>
@@ -342,23 +330,23 @@
     <script>
         function toggleFeatured(bootcampId, featured) {
             fetch(`admin.php?action=toggle_featured_bootcamp&id=${bootcampId}&featured=${featured}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan saat mengupdate featured status');
-            });
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan saat mengupdate featured status');
+                });
         }
 
         // Auto dismiss alerts after 5 seconds
@@ -372,4 +360,5 @@
         }, 5000);
     </script>
 </body>
+
 </html>
