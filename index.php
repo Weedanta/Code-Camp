@@ -8,6 +8,7 @@ require_once 'controllers/ReviewController.php';
 require_once 'controllers/CVController.php';
 require_once 'controllers/TodoListController.php';
 require_once 'controllers/ForumController.php';
+require_once 'controllers/ChatController.php';
 
 // Inisialisasi controllers
 $auth = new AuthController();
@@ -18,6 +19,7 @@ $review = new ReviewController();
 $cv = new CVController();
 $todolist = new TodoListController();
 $forum = new ForumController();
+$chat = new ChatController();
 
 // Router sederhana
 $action = isset($_GET['action']) ? $_GET['action'] : 'home';
@@ -267,6 +269,7 @@ switch ($action) {
         header('Location: views/about/index.php');
         break;
 
+    // Forum Routes
     case 'forum':
         $forum->index();
         break;
@@ -313,6 +316,33 @@ switch ($action) {
         
     case 'forum_my_posts':
         $forum->myPosts();
+        break;
+
+    // ==================== CHAT ROUTES ====================
+    
+    // User Chat Routes
+    case 'chat':
+        $chat->index();
+        break;
+        
+    case 'chat_send':
+        $chat->sendMessage();
+        break;
+        
+    case 'chat_get_messages':
+        $chat->getMessages();
+        break;
+        
+    case 'chat_typing':
+        $chat->setTyping();
+        break;
+        
+    case 'chat_stop_typing':
+        $chat->stopTyping();
+        break;
+        
+    case 'chat_unread_count':
+        $chat->getUnreadCount();
         break;
         
     default:

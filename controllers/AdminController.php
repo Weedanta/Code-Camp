@@ -1568,4 +1568,452 @@ class AdminController
             error_log("Log invalid access error: " . $e->getMessage());
         }
     }
+    // ==================== CHAT MANAGEMENT ====================
+
+    /**
+     * Show chat management interface
+     */
+    public function manageChat()
+    {
+        AdminMiddleware::checkPermission('manage_chat');
+
+        try {
+            require_once 'models/Chat.php';
+            $chat = new Chat();
+
+            // Get all active chat rooms
+            $rooms = $chat->getAllActiveRooms();
+
+            // Log activity
+            $this->admin->logActivity(
+                $_SESSION['admin_id'],
+                'view_chat',
+                'Admin melihat halaman chat management',
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null
+            );
+
+            // Include the chat view
+            include 'views/admin/chat.php';
+        } catch (Exception $e) {
+            error_log("Manage chat error: " . $e->getMessage());
+            $_SESSION['error'] = 'Gagal memuat halaman chat';
+            header('Location: admin.php?action=dashboard');
+            exit;
+        }
+    }
+
+    /**
+     * Get chat statistics for dashboard
+     */
+    public function getChatStats()
+    {
+        try {
+            require_once 'models/Chat.php';
+            $chat = new Chat();
+
+            return $chat->getChatStats();
+        } catch (Exception $e) {
+            error_log("Get chat stats error: " . $e->getMessage());
+            return [
+                'active_rooms' => 0,
+                'messages_today' => 0,
+                'unread_messages' => 0
+            ];
+        }
+    }
+
+    /**
+     * Handle AJAX request for chat room details
+     */
+    public function ajaxGetChatRoom()
+    {
+        header('Content-Type: application/json');
+
+        if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        $roomId = intval($_GET['room_id'] ?? 0);
+
+        if (!$roomId) {
+            echo json_encode(['success' => false, 'message' => 'Room ID required']);
+            exit;
+        }
+
+        try {
+            require_once 'models/Chat.php';
+            $chat = new Chat();
+
+            $room = $chat->getRoomById($roomId);
+            $messages = $chat->getRoomMessages($roomId, 50);
+
+            if ($room) {
+                echo json_encode([
+                    'success' => true,
+                    'room' => $room,
+                    'messages' => $messages
+                ]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Room not found']);
+            }
+        } catch (Exception $e) {
+            error_log("AJAX get chat room error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Internal error']);
+        }
+    }
+
+    /**
+     * Handle AJAX request for chat statistics
+     */
+    public function ajaxChatStats()
+    {
+        header('Content-Type: application/json');
+
+        if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        try {
+            $stats = $this->getChatStats();
+            echo json_encode(['success' => true, 'stats' => $stats]);
+        } catch (Exception $e) {
+            error_log("AJAX chat stats error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Internal error']);
+        }
+    }
+
+    /**
+     * Export chat data
+     */
+    public function exportChatData()
+    {
+        AdminMiddleware::checkPermission('export_data');
+
+        try {
+            require_once 'models/Chat.php';
+            $chat = new Chat();
+
+            // Get all rooms with messages
+            $rooms = $chat->getAllActiveRooms();
+            $exportData = [];
+
+            foreach ($rooms as $room) {
+                $messages = $chat->getRoomMessages($room['id'], 1000); // Last 1000 messages
+
+                $exportData[] = [
+                    'room_id' => $room['id'],
+                    'user_name' => $room['user_name'],
+                    'user_email' => $room['user_email'],
+                    'admin_name' => $room['admin_name'],
+                    'created_at' => $room['created_at'],
+                    'status' => $room['status'],
+                    'messages' => $messages
+                ];
+            }
+
+            // Set headers for download
+            header('Content-Type: application/json');
+            header('Content-Disposition: attachment; filename="chat_export_' . date('Y-m-d_H-i-s') . '.json"');
+
+            echo json_encode($exportData, JSON_PRETTY_PRINT);
+
+            // Log activity
+            $this->admin->logActivity(
+                $_SESSION['admin_id'],
+                'export_data',
+                'Admin mengexport data chat',
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null
+            );
+        } catch (Exception $e) {
+            error_log("Export chat data error: " . $e->getMessage());
+            $_SESSION['error'] = 'Gagal mengexport data chat';
+            header('Location: admin.php?action=manage_chat');
+        }
+    }
+
+    /**
+     * Bulk close chat rooms
+     */
+    public function bulkCloseChatRooms()
+    {
+        AdminMiddleware::checkPermission('manage_chat');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_chat');
+            exit;
+        }
+
+        $roomIds = $_POST['room_ids'] ?? [];
+
+        if (empty($roomIds)) {
+            $_SESSION['error'] = 'Tidak ada room yang dipilih';
+            header('Location: admin.php?action=manage_chat');
+            exit;
+        }
+
+        try {
+            require_once 'models/Chat.php';
+            $chat = new Chat();
+
+            $closed = 0;
+            foreach ($roomIds as $roomId) {
+                if ($chat->closeRoom(intval($roomId))) {
+                    $closed++;
+                }
+            }
+
+            $_SESSION['success'] = "$closed room chat berhasil ditutup";
+
+            // Log activity
+            $this->admin->logActivity(
+                $_SESSION['admin_id'],
+                'bulk_close_chat',
+                "Admin menutup $closed room chat secara bulk",
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null
+            );
+        } catch (Exception $e) {
+            error_log("Bulk close chat rooms error: " . $e->getMessage());
+            $_SESSION['error'] = 'Gagal menutup room chat';
+        }
+
+        header('Location: admin.php?action=manage_chat');
+    }
+
+    /**
+     * Clean old chat messages
+     */
+    public function cleanOldChatMessages()
+    {
+        AdminMiddleware::checkPermission('manage_chat');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_chat');
+            exit;
+        }
+
+        $days = intval($_POST['days'] ?? 30);
+
+        try {
+            $database = new Database();
+            $conn = $database->getConnection();
+
+            // Delete messages older than specified days
+            $stmt = $conn->prepare("
+            DELETE FROM chat_messages 
+            WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)
+        ");
+            $stmt->execute([$days]);
+
+            $deletedMessages = $stmt->rowCount();
+
+            // Delete empty rooms
+            $stmt = $conn->prepare("
+            DELETE r FROM chat_rooms r 
+            LEFT JOIN chat_messages m ON r.id = m.room_id 
+            WHERE m.id IS NULL AND r.status = 'closed'
+        ");
+            $stmt->execute();
+
+            $deletedRooms = $stmt->rowCount();
+
+            $_SESSION['success'] = "Berhasil menghapus $deletedMessages pesan lama dan $deletedRooms room kosong";
+
+            // Log activity
+            $this->admin->logActivity(
+                $_SESSION['admin_id'],
+                'clean_chat',
+                "Admin membersihkan $deletedMessages pesan chat lama (>$days hari)",
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null
+            );
+        } catch (Exception $e) {
+            error_log("Clean old chat messages error: " . $e->getMessage());
+            $_SESSION['error'] = 'Gagal membersihkan pesan lama';
+        }
+
+        header('Location: admin.php?action=manage_chat');
+    }
+
+    /**
+     * View chat room details
+     */
+    public function viewChatRoom()
+    {
+        AdminMiddleware::checkPermission('manage_chat');
+
+        $roomId = intval($_GET['id'] ?? 0);
+
+        if (!$roomId) {
+            $_SESSION['error'] = 'Room ID tidak valid';
+            header('Location: admin.php?action=manage_chat');
+            exit;
+        }
+
+        try {
+            require_once 'models/Chat.php';
+            $chat = new Chat();
+
+            $room = $chat->getRoomById($roomId);
+            if (!$room) {
+                $_SESSION['error'] = 'Room tidak ditemukan';
+                header('Location: admin.php?action=manage_chat');
+                exit;
+            }
+
+            $messages = $chat->getRoomMessages($roomId, 100);
+
+            // Mark messages as read
+            $chat->markMessagesAsRead($roomId, 'admin', $_SESSION['admin_id']);
+
+            // Log activity
+            $this->admin->logActivity(
+                $_SESSION['admin_id'],
+                'view_chat_room',
+                'Admin melihat detail room chat ID: ' . $roomId,
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null
+            );
+
+            include 'views/admin/chat_detail.php';
+        } catch (Exception $e) {
+            error_log("View chat room error: " . $e->getMessage());
+            $_SESSION['error'] = 'Gagal memuat detail room chat';
+            header('Location: admin.php?action=manage_chat');
+        }
+    }
+
+    /**
+     * Search chat messages
+     */
+    public function searchChatMessages()
+    {
+        AdminMiddleware::checkPermission('manage_chat');
+
+        $query = SecurityHelper::sanitizeInput($_GET['q'] ?? '');
+        $roomId = intval($_GET['room_id'] ?? 0);
+
+        if (empty($query)) {
+            header('Location: admin.php?action=manage_chat');
+            exit;
+        }
+
+        try {
+            $database = new Database();
+            $conn = $database->getConnection();
+
+            $sql = "
+            SELECT m.*, r.user_id, u.name as user_name, u.alamat_email,
+                   CASE 
+                       WHEN m.sender_type = 'user' THEN u.name 
+                       WHEN m.sender_type = 'admin' THEN a.name 
+                   END as sender_name
+            FROM chat_messages m
+            JOIN chat_rooms r ON m.room_id = r.id
+            LEFT JOIN users u ON r.user_id = u.id
+            LEFT JOIN admins a ON m.sender_type = 'admin' AND m.sender_id = a.id
+            WHERE m.message LIKE ?
+        ";
+
+            $params = ["%$query%"];
+
+            if ($roomId) {
+                $sql .= " AND m.room_id = ?";
+                $params[] = $roomId;
+            }
+
+            $sql .= " ORDER BY m.created_at DESC LIMIT 100";
+
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Log activity
+            $this->admin->logActivity(
+                $_SESSION['admin_id'],
+                'search_chat',
+                'Admin mencari pesan chat: ' . $query,
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null
+            );
+
+            include 'views/admin/chat_search.php';
+        } catch (Exception $e) {
+            error_log("Search chat messages error: " . $e->getMessage());
+            $_SESSION['error'] = 'Gagal mencari pesan';
+            header('Location: admin.php?action=manage_chat');
+        }
+    }
+
+    /**
+     * Get chat metrics for analytics
+     */
+    public function getChatMetrics()
+    {
+        try {
+            $database = new Database();
+            $conn = $database->getConnection();
+
+            // Messages per day (last 7 days)
+            $stmt = $conn->prepare("
+            SELECT DATE(created_at) as date, COUNT(*) as count
+            FROM chat_messages 
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
+        ");
+            $stmt->execute();
+            $messagesPerDay = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Response times (average time between user message and admin response)
+            $stmt = $conn->prepare("
+            SELECT AVG(
+                TIMESTAMPDIFF(MINUTE, 
+                    (SELECT created_at FROM chat_messages m2 
+                     WHERE m2.room_id = m1.room_id 
+                     AND m2.sender_type = 'user' 
+                     AND m2.created_at < m1.created_at 
+                     ORDER BY m2.created_at DESC LIMIT 1),
+                    m1.created_at
+                )
+            ) as avg_response_time_minutes
+            FROM chat_messages m1 
+            WHERE m1.sender_type = 'admin' 
+            AND m1.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        ");
+            $stmt->execute();
+            $avgResponseTime = $stmt->fetchColumn() ?? 0;
+
+            // Most active users
+            $stmt = $conn->prepare("
+            SELECT u.name, u.alamat_email, COUNT(m.id) as message_count
+            FROM users u
+            JOIN chat_rooms r ON u.id = r.user_id
+            JOIN chat_messages m ON r.id = m.room_id AND m.sender_type = 'user'
+            WHERE m.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            GROUP BY u.id
+            ORDER BY message_count DESC
+            LIMIT 10
+        ");
+            $stmt->execute();
+            $activeUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return [
+                'messages_per_day' => $messagesPerDay,
+                'avg_response_time' => round($avgResponseTime, 2),
+                'active_users' => $activeUsers
+            ];
+        } catch (Exception $e) {
+            error_log("Get chat metrics error: " . $e->getMessage());
+            return [
+                'messages_per_day' => [],
+                'avg_response_time' => 0,
+                'active_users' => []
+            ];
+        }
+    }
 }

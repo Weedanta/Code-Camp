@@ -43,63 +43,374 @@ class AdminModel
 
     // ==================== DASHBOARD STATS ====================
 
-    public function getDashboardStats()
-    {
-        try {
-            $stats = [];
+    public function getDashboardStats() {
+    try {
+        $stats = [];
+        
+        // Total users
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM users");
+        $stats['total_users'] = $stmt->fetchColumn();
+        
+        // New users this month
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM users WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+        $stats['new_users_month'] = $stmt->fetchColumn();
+        
+        // Total bootcamps
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM bootcamps");
+        $stats['total_bootcamps'] = $stmt->fetchColumn();
+        
+        // Active bootcamps
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM bootcamps WHERE status = 'active'");
+        $stats['active_bootcamps'] = $stmt->fetchColumn();
+        
+        // Total orders
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM orders");
+        $stats['total_orders'] = $stmt->fetchColumn();
+        
+        // Orders this month
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM orders WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+        $stats['orders_month'] = $stmt->fetchColumn();
+        
+        // Total revenue
+        $stmt = $this->conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'completed'");
+        $stats['total_revenue'] = $stmt->fetchColumn();
+        
+        // Revenue this month
+        $stmt = $this->conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'completed' AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+        $stats['revenue_month'] = $stmt->fetchColumn();
+        
+        // Pending reviews
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM reviews WHERE status = 'pending'");
+        $stats['pending_reviews'] = $stmt->fetchColumn();
+        
+        // ==================== CHAT STATISTICS ====================
+        
+        // Active chat rooms
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_rooms WHERE status = 'active'");
+        $stats['active_chat_rooms'] = $stmt->fetchColumn();
+        
+        // Unread chat messages
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE sender_type = 'user' AND is_read = FALSE");
+        $stats['unread_chat_messages'] = $stmt->fetchColumn();
+        
+        // Chat messages today
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE DATE(created_at) = CURDATE()");
+        $stats['chat_messages_today'] = $stmt->fetchColumn();
+        
+        // Chat messages this month
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+        $stats['chat_messages_month'] = $stmt->fetchColumn();
+        
+        return $stats;
+    } catch (PDOException $e) {
+        error_log("Get dashboard stats error: " . $e->getMessage());
+        return [
+            'total_users' => 0,
+            'new_users_month' => 0,
+            'total_bootcamps' => 0,
+            'active_bootcamps' => 0,
+            'total_orders' => 0,
+            'orders_month' => 0,
+            'total_revenue' => 0,
+            'revenue_month' => 0,
+            'pending_reviews' => 0,
+            'active_chat_rooms' => 0,
+            'unread_chat_messages' => 0,
+            'chat_messages_today' => 0,
+            'chat_messages_month' => 0
+        ];
+    }
+}
 
-            // Total users
-            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM users");
-            $stats['total_users'] = $stmt->fetchColumn();
+// ==================== CHAT MANAGEMENT METHODS ====================
 
-            // New users this month
-            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM users WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
-            $stats['new_users_month'] = $stmt->fetchColumn();
+/**
+ * Get chat dashboard statistics
+ */
+public function getChatDashboardStats() {
+    try {
+        $stats = [];
+        
+        // Active chat rooms
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_rooms WHERE status = 'active'");
+        $stats['active_rooms'] = $stmt->fetchColumn();
+        
+        // Total chat messages
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages");
+        $stats['total_messages'] = $stmt->fetchColumn();
+        
+        // Messages today
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE DATE(created_at) = CURDATE()");
+        $stats['messages_today'] = $stmt->fetchColumn();
+        
+        // Unread messages
+        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE sender_type = 'user' AND is_read = FALSE");
+        $stats['unread_messages'] = $stmt->fetchColumn();
+        
+        // Average response time (in minutes)
+        $stmt = $this->conn->query("
+            SELECT AVG(
+                TIMESTAMPDIFF(MINUTE, 
+                    (SELECT created_at FROM chat_messages m2 
+                     WHERE m2.room_id = m1.room_id 
+                     AND m2.sender_type = 'user' 
+                     AND m2.created_at < m1.created_at 
+                     ORDER BY m2.created_at DESC LIMIT 1),
+                    m1.created_at
+                )
+            ) as avg_response_time
+            FROM chat_messages m1 
+            WHERE m1.sender_type = 'admin' 
+            AND m1.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        ");
+        $stats['avg_response_time'] = round($stmt->fetchColumn() ?? 0, 2);
+        
+        // Messages per day (last 7 days)
+        $stmt = $this->conn->query("
+            SELECT DATE(created_at) as date, COUNT(*) as count
+            FROM chat_messages 
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
+        ");
+        $stats['messages_per_day'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Top users by message count
+        $stmt = $this->conn->query("
+            SELECT u.name, u.alamat_email, COUNT(m.id) as message_count
+            FROM users u
+            JOIN chat_rooms r ON u.id = r.user_id
+            JOIN chat_messages m ON r.id = m.room_id AND m.sender_type = 'user'
+            WHERE m.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            GROUP BY u.id
+            ORDER BY message_count DESC
+            LIMIT 5
+        ");
+        $stats['top_users'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return $stats;
+    } catch (PDOException $e) {
+        error_log("Get chat dashboard stats error: " . $e->getMessage());
+        return [
+            'active_rooms' => 0,
+            'total_messages' => 0,
+            'messages_today' => 0,
+            'unread_messages' => 0,
+            'avg_response_time' => 0,
+            'messages_per_day' => [],
+            'top_users' => []
+        ];
+    }
+}
 
-            // Total bootcamps
-            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM bootcamps");
-            $stats['total_bootcamps'] = $stmt->fetchColumn();
+/**
+ * Get all chat rooms with pagination
+ */
+public function getChatRooms($page = 1, $limit = 20, $search = '', $status = '') {
+    try {
+        $offset = ($page - 1) * $limit;
+        $where = "WHERE 1=1";
+        $params = [];
+        
+        if ($search) {
+            $where .= " AND (u.name LIKE ? OR u.alamat_email LIKE ? OR a.name LIKE ?)";
+            $searchTerm = "%$search%";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+        }
+        
+        if ($status) {
+            $where .= " AND r.status = ?";
+            $params[] = $status;
+        }
+        
+        $sql = "SELECT r.*, u.name as user_name, u.alamat_email as user_email,
+                       a.name as admin_name,
+                       (SELECT COUNT(*) FROM chat_messages m 
+                        WHERE m.room_id = r.id AND m.sender_type = 'user' AND m.is_read = FALSE) as unread_count,
+                       (SELECT m.message FROM chat_messages m 
+                        WHERE m.room_id = r.id ORDER BY m.created_at DESC LIMIT 1) as last_message,
+                       (SELECT m.created_at FROM chat_messages m 
+                        WHERE m.room_id = r.id ORDER BY m.created_at DESC LIMIT 1) as last_message_time,
+                       (SELECT COUNT(*) FROM chat_messages m 
+                        WHERE m.room_id = r.id) as total_messages
+                FROM chat_rooms r
+                LEFT JOIN users u ON r.user_id = u.id
+                LEFT JOIN admin a ON r.admin_id = a.id
+                $where 
+                ORDER BY r.updated_at DESC 
+                LIMIT $limit OFFSET $offset";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Get chat rooms error: " . $e->getMessage());
+        return [];
+    }
+}
 
-            // Active bootcamps
-            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM bootcamps WHERE status = 'active'");
-            $stats['active_bootcamps'] = $stmt->fetchColumn();
+/**
+ * Count chat rooms
+ */
+public function countChatRooms($search = '', $status = '') {
+    try {
+        $where = "WHERE 1=1";
+        $params = [];
+        
+        if ($search) {
+            $where .= " AND (u.name LIKE ? OR u.alamat_email LIKE ? OR a.name LIKE ?)";
+            $searchTerm = "%$search%";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+        }
+        
+        if ($status) {
+            $where .= " AND r.status = ?";
+            $params[] = $status;
+        }
+        
+        $stmt = $this->conn->prepare("
+            SELECT COUNT(*) FROM chat_rooms r
+            LEFT JOIN users u ON r.user_id = u.id
+            LEFT JOIN admin a ON r.admin_id = a.id
+            $where
+        ");
+        $stmt->execute($params);
+        
+        return $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        error_log("Count chat rooms error: " . $e->getMessage());
+        return 0;
+    }
+}
 
-            // Total orders
-            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM orders");
-            $stats['total_orders'] = $stmt->fetchColumn();
+/**
+ * Get chat messages for a room
+ */
+public function getChatMessages($roomId, $page = 1, $limit = 50) {
+    try {
+        $offset = ($page - 1) * $limit;
+        
+        $stmt = $this->conn->prepare("
+            SELECT m.*, 
+                   CASE 
+                       WHEN m.sender_type = 'user' THEN u.name 
+                       WHEN m.sender_type = 'admin' THEN a.name 
+                   END as sender_name,
+                   CASE 
+                       WHEN m.sender_type = 'user' THEN u.alamat_email 
+                       WHEN m.sender_type = 'admin' THEN a.email 
+                   END as sender_email
+            FROM chat_messages m
+            LEFT JOIN users u ON m.sender_type = 'user' AND m.sender_id = u.id
+            LEFT JOIN admin a ON m.sender_type = 'admin' AND m.sender_id = a.id
+            WHERE m.room_id = ?
+            ORDER BY m.created_at ASC
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->execute([$roomId, $limit, $offset]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Get chat messages error: " . $e->getMessage());
+        return [];
+    }
+}
 
-            // Orders this month
-            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM orders WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
-            $stats['orders_month'] = $stmt->fetchColumn();
+/**
+ * Delete chat room and all messages
+ */
+public function deleteChatRoom($roomId) {
+    try {
+        $this->conn->beginTransaction();
+        
+        // Delete all messages first
+        $stmt = $this->conn->prepare("DELETE FROM chat_messages WHERE room_id = ?");
+        $stmt->execute([$roomId]);
+        
+        // Delete typing indicators
+        $stmt = $this->conn->prepare("DELETE FROM chat_typing WHERE room_id = ?");
+        $stmt->execute([$roomId]);
+        
+        // Delete room
+        $stmt = $this->conn->prepare("DELETE FROM chat_rooms WHERE id = ?");
+        $success = $stmt->execute([$roomId]);
+        
+        if ($success) {
+            $this->conn->commit();
+            return ['success' => true, 'message' => 'Chat room berhasil dihapus'];
+        } else {
+            $this->conn->rollback();
+            return ['success' => false, 'message' => 'Gagal menghapus chat room'];
+        }
+    } catch (PDOException $e) {
+        $this->conn->rollback();
+        error_log("Delete chat room error: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
+    }
+}
 
-            // Total revenue
-            $stmt = $this->conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'completed'");
-            $stats['total_revenue'] = $stmt->fetchColumn();
-
-            // Revenue this month
-            $stmt = $this->conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'completed' AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
-            $stats['revenue_month'] = $stmt->fetchColumn();
-
-            // Pending reviews
-            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM reviews WHERE status = 'pending'");
-            $stats['pending_reviews'] = $stmt->fetchColumn();
-
-            return $stats;
-        } catch (PDOException $e) {
-            error_log("Get dashboard stats error: " . $e->getMessage());
-            return [
-                'total_users' => 0,
-                'new_users_month' => 0,
-                'total_bootcamps' => 0,
-                'active_bootcamps' => 0,
-                'total_orders' => 0,
-                'orders_month' => 0,
-                'total_revenue' => 0,
-                'revenue_month' => 0,
-                'pending_reviews' => 0
+/**
+ * Update system alerts to include chat alerts
+ */
+public function getSystemAlerts() {
+    $alerts = [];
+    
+    try {
+        // Check for pending reviews
+        $stmt = $this->conn->query("SELECT COUNT(*) as count FROM reviews WHERE status = 'pending'");
+        $pendingReviews = $stmt->fetchColumn();
+        
+        if ($pendingReviews > 0) {
+            $alerts[] = [
+                'type' => 'warning',
+                'message' => "Ada $pendingReviews review yang menunggu moderasi"
             ];
         }
+        
+        // Check for failed orders
+        $stmt = $this->conn->query("SELECT COUNT(*) as count FROM orders WHERE payment_status = 'failed' AND DATE(created_at) = CURDATE()");
+        $failedOrders = $stmt->fetchColumn();
+        
+        if ($failedOrders > 5) {
+            $alerts[] = [
+                'type' => 'warning',
+                'message' => "Banyak order gagal hari ini: $failedOrders orders"
+            ];
+        }
+        
+        // Check for unread chat messages
+        $stmt = $this->conn->query("SELECT COUNT(*) as count FROM chat_messages WHERE sender_type = 'user' AND is_read = FALSE");
+        $unreadChats = $stmt->fetchColumn();
+        
+        if ($unreadChats > 10) {
+            $alerts[] = [
+                'type' => 'info',
+                'message' => "Ada $unreadChats pesan chat yang belum dibaca"
+            ];
+        }
+        
+        // Check for unassigned chat rooms
+        $stmt = $this->conn->query("SELECT COUNT(*) as count FROM chat_rooms WHERE admin_id IS NULL AND status = 'active'");
+        $unassignedChats = $stmt->fetchColumn();
+        
+        if ($unassignedChats > 0) {
+            $alerts[] = [
+                'type' => 'warning',
+                'message' => "Ada $unassignedChats chat room yang belum ditangani admin"
+            ];
+        }
+        
+    } catch (PDOException $e) {
+        error_log("Get system alerts error: " . $e->getMessage());
     }
+    
+    return $alerts;
+}
 
     public function getDetailedStats()
     {
@@ -132,38 +443,7 @@ class AdminModel
         }
     }
 
-    public function getSystemAlerts()
-    {
-        $alerts = [];
-
-        try {
-            // Check for pending reviews
-            $stmt = $this->conn->query("SELECT COUNT(*) as count FROM reviews WHERE status = 'pending'");
-            $pendingReviews = $stmt->fetchColumn();
-
-            if ($pendingReviews > 0) {
-                $alerts[] = [
-                    'type' => 'warning',
-                    'message' => "Ada $pendingReviews review yang menunggu moderasi"
-                ];
-            }
-
-            // Check for failed orders
-            $stmt = $this->conn->query("SELECT COUNT(*) as count FROM orders WHERE payment_status = 'failed' AND DATE(created_at) = CURDATE()");
-            $failedOrders = $stmt->fetchColumn();
-
-            if ($failedOrders > 5) {
-                $alerts[] = [
-                    'type' => 'warning',
-                    'message' => "Banyak order gagal hari ini: $failedOrders orders"
-                ];
-            }
-        } catch (PDOException $e) {
-            error_log("Get system alerts error: " . $e->getMessage());
-        }
-
-        return $alerts;
-    }
+    
 
     // ==================== USER MANAGEMENT ====================
 

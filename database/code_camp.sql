@@ -855,3 +855,49 @@ ALTER TABLE forum_posts ADD FULLTEXT(title, content);
    - CHECK constraints untuk data validation
    - Full-text search capabilities
 */
+
+
+
+-- Tambahkan ke database/code_camp.sql
+
+-- Tabel untuk room chat
+CREATE TABLE chat_rooms (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    admin_id INT NULL,
+    status ENUM('active', 'closed') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (admin_id) REFERENCES admin(id) ON DELETE SET NULL,
+    INDEX idx_user_id (user_id),
+    INDEX idx_admin_id (admin_id),
+    INDEX idx_status (status)
+);
+
+-- Tabel untuk pesan chat
+CREATE TABLE chat_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    room_id INT NOT NULL,
+    sender_type ENUM('user', 'admin') NOT NULL,
+    sender_id INT NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE,
+    INDEX idx_room_id (room_id),
+    INDEX idx_sender (sender_type, sender_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_is_read (is_read)
+);
+
+-- Tabel untuk typing indicator (optional)
+CREATE TABLE chat_typing (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    room_id INT NOT NULL,
+    sender_type ENUM('user', 'admin') NOT NULL,
+    sender_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_typing (room_id, sender_type, sender_id)
+);

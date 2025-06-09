@@ -1,3 +1,17 @@
+<?php
+// Get unread chat count
+try {
+    require_once __DIR__ . '/../../../models/Chat.php';
+    $chat = new Chat();
+    $unread_chat_count = $chat->getTotalUnreadForAdmin();
+} catch (Exception $e) {
+    $unread_chat_count = 0;
+}
+
+// Current action untuk highlight menu aktif
+$current_action = $_GET['action'] ?? 'dashboard';
+?>
+
 <!-- Mobile menu button -->
 <div class="lg:hidden fixed top-4 left-4 z-50">
     <button 
@@ -109,6 +123,95 @@
                 </a>
             </div>
 
+            <!-- Chat Management -->
+            <div class="space-y-1">
+                <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer Support</h3>
+                
+                <!-- Main Chat Management Menu -->
+                <div class="relative">
+                    <button 
+                        onclick="toggleChatSubmenu()" 
+                        class="w-full flex items-center justify-between space-x-3 p-3 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-colors duration-200 <?= in_array($current_action, ['manage_chat', 'view_chat_room', 'chat_search', 'chat_stats']) ? 'bg-primary text-white' : '' ?>"
+                    >
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z"></path>
+                            </svg>
+                            <span>Chat Management</span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <?php if ($unread_chat_count > 0): ?>
+                                <span id="chatBadgeMain" class="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-5 h-5 flex items-center justify-center animate-pulse">
+                                    <?php echo $unread_chat_count; ?>
+                                </span>
+                            <?php endif; ?>
+                            <svg id="chatChevron" class="w-4 h-4 transition-transform duration-200 <?= in_array($current_action, ['manage_chat', 'view_chat_room', 'chat_search', 'chat_stats']) ? 'rotate-90' : '' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+                    </button>
+                    
+                    <!-- Chat Submenu -->
+                    <div id="chatSubmenu" class="ml-8 mt-1 space-y-1 <?= in_array($current_action, ['manage_chat', 'view_chat_room', 'chat_search', 'chat_stats']) ? '' : 'hidden' ?>">
+                        <a href="admin.php?action=manage_chat" class="flex items-center justify-between space-x-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors duration-200 text-sm <?= $current_action == 'manage_chat' ? 'bg-gray-100 text-gray-800 font-medium' : '' ?>">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                                <span>Semua Chat</span>
+                            </div>
+                            <?php if ($unread_chat_count > 0): ?>
+                                <span id="chatBadgeAll" class="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-4 h-4 flex items-center justify-center">
+                                    <?php echo $unread_chat_count; ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                        
+                        <a href="admin.php?action=manage_chat&status=active" class="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors duration-200 text-sm">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span>Chat Aktif</span>
+                        </a>
+                        
+                        <a href="admin.php?action=manage_chat&status=closed" class="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors duration-200 text-sm">
+                            <div class="w-2 h-2 bg-gray-500 rounded-full"></div>
+                            <span>Chat Ditutup</span>
+                        </a>
+                        
+                        <div class="border-t border-gray-200 my-1"></div>
+                        
+                        <a href="admin.php?action=chat_search" class="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors duration-200 text-sm <?= $current_action == 'chat_search' ? 'bg-gray-100 text-gray-800 font-medium' : '' ?>">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <span>Cari Pesan</span>
+                        </a>
+                        
+                        <a href="admin.php?action=chat_stats" class="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors duration-200 text-sm <?= $current_action == 'chat_stats' ? 'bg-gray-100 text-gray-800 font-medium' : '' ?>">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <span>Analitik Chat</span>
+                        </a>
+                        
+                        <div class="border-t border-gray-200 my-1"></div>
+                        
+                        <button onclick="bulkCloseChatRooms()" class="w-full flex items-center space-x-2 p-2 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-200 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Tutup Semua</span>
+                        </button>
+                        
+                        <button onclick="cleanOldChatMessages()" class="w-full flex items-center space-x-2 p-2 rounded-lg text-orange-600 hover:bg-orange-50 hover:text-orange-700 transition-colors duration-200 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            <span>Bersihkan Lama</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- System -->
             <div class="space-y-1">
                 <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sistem</h3>
@@ -125,6 +228,61 @@
                     </svg>
                     <span>Log Aktivitas</span>
                 </a>
+                
+                <!-- System Tools Submenu -->
+                <div class="relative">
+                    <button 
+                        onclick="toggleSystemSubmenu()" 
+                        class="w-full flex items-center justify-between space-x-3 p-3 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-colors duration-200"
+                    >
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-.42-.643l-.142-.242.142-.242a6 6 0 00.42-.643l2.387-.477a2 2 0 001.022-.547M19.428 15.428a2 2 0 010 .544l-2.387.477a6 6 0 01-.42.643l-.142.242.142.242a6 6 0 01.42.643l2.387.477a2 2 0 001.022.547M19.428 15.428L17 13l2.428-2.428m0 0L17 8.142m2.428 2.428a2 2 0 000-.544l-2.387-.477a6 6 0 01-.42-.643L16.479 9l.142-.242a6 6 0 01.42-.643l2.387-.477a2 2 0 001.022-.547"></path>
+                            </svg>
+                            <span>Tools</span>
+                        </div>
+                        <svg id="systemChevron" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                    
+                    <div id="systemSubmenu" class="ml-8 mt-1 space-y-1 hidden">
+                        <a href="admin.php?action=backup_database" class="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors duration-200 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                            </svg>
+                            <span>Backup Database</span>
+                        </a>
+                        
+                        <a href="admin.php?action=optimize_database" class="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors duration-200 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <span>Optimasi Database</span>
+                        </a>
+                        
+                        <a href="admin.php?action=clean_logs" class="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors duration-200 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            <span>Bersihkan Log</span>
+                        </a>
+                        
+                        <a href="admin.php?action=export_data" class="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors duration-200 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Export Data</span>
+                        </a>
+                        
+                        <a href="admin.php?action=check_system_health" class="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors duration-200 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Cek Sistem</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </nav>
 
@@ -160,6 +318,34 @@
     </div>
 </aside>
 
+<style>
+/* Custom styles for chat notifications */
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .5;
+    }
+}
+
+/* Smooth transitions for submenus */
+.submenu-enter {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.submenu-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 200ms ease-in-out, transform 200ms ease-in-out;
+}
+</style>
+
 <script>
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -190,6 +376,124 @@ window.addEventListener('resize', function() {
         
         sidebar.classList.remove('-translate-x-full');
         overlay.classList.add('hidden');
+    }
+});
+
+// Toggle Chat Submenu
+function toggleChatSubmenu() {
+    const submenu = document.getElementById('chatSubmenu');
+    const chevron = document.getElementById('chatChevron');
+    
+    if (submenu.classList.contains('hidden')) {
+        submenu.classList.remove('hidden');
+        chevron.classList.add('rotate-90');
+    } else {
+        submenu.classList.add('hidden');
+        chevron.classList.remove('rotate-90');
+    }
+}
+
+// Toggle System Submenu
+function toggleSystemSubmenu() {
+    const submenu = document.getElementById('systemSubmenu');
+    const chevron = document.getElementById('systemChevron');
+    
+    if (submenu.classList.contains('hidden')) {
+        submenu.classList.remove('hidden');
+        chevron.classList.add('rotate-90');
+    } else {
+        submenu.classList.add('hidden');
+        chevron.classList.remove('rotate-90');
+    }
+}
+
+// Chat Management Functions
+function bulkCloseChatRooms() {
+    if (confirm('Apakah Anda yakin ingin menutup semua chat room yang aktif? Aksi ini tidak dapat dibatalkan.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'admin.php?action=bulk_close_chat_rooms';
+        
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
+        form.appendChild(csrfInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function cleanOldChatMessages() {
+    const days = prompt('Masukkan jumlah hari (pesan yang lebih lama dari ini akan dihapus):', '30');
+    if (days && !isNaN(days) && parseInt(days) > 0) {
+        if (confirm(`Apakah Anda yakin ingin menghapus semua pesan chat yang lebih lama dari ${days} hari? Aksi ini tidak dapat dibatalkan.`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'admin.php?action=clean_old_chat_messages';
+            
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
+            form.appendChild(csrfInput);
+            
+            // Add days input
+            const daysInput = document.createElement('input');
+            daysInput.type = 'hidden';
+            daysInput.name = 'days';
+            daysInput.value = days;
+            form.appendChild(daysInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+}
+
+// Update unread chat count periodically
+function updateChatUnreadCount() {
+    fetch('admin.php?action=ajax_chat_unread_count')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const badges = ['chatBadgeMain', 'chatBadgeAll'];
+                
+                badges.forEach(badgeId => {
+                    const badge = document.getElementById(badgeId);
+                    if (badge) {
+                        if (data.count > 0) {
+                            badge.textContent = data.count;
+                            badge.style.display = 'flex';
+                            badge.classList.add('animate-pulse');
+                        } else {
+                            badge.style.display = 'none';
+                            badge.classList.remove('animate-pulse');
+                        }
+                    }
+                });
+            }
+        })
+        .catch(error => console.error('Error updating chat unread count:', error));
+}
+
+// Update chat count every 30 seconds
+setInterval(updateChatUnreadCount, 30000);
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-open chat submenu if on chat page
+    const currentAction = '<?php echo $current_action; ?>';
+    if (['manage_chat', 'view_chat_room', 'chat_search', 'chat_stats'].includes(currentAction)) {
+        const submenu = document.getElementById('chatSubmenu');
+        const chevron = document.getElementById('chatChevron');
+        if (submenu && submenu.classList.contains('hidden')) {
+            submenu.classList.remove('hidden');
+            chevron.classList.add('rotate-90');
+        }
     }
 });
 </script>

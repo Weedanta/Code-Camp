@@ -43,64 +43,7 @@ class SecurityHelper
         return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
     }
 
-    /**
-     * Record failed login attempt
-     */
-    public static function recordFailedAttempt($identifier)
-    {
-        $cacheKey = 'bf_' . md5($identifier);
-
-        // Get current attempts
-        $attempts = $_SESSION[$cacheKey] ?? [
-            'count' => 0,
-            'first_attempt' => time()
-        ];
-
-        // Reset if time window passed (15 minutes)
-        if (time() - $attempts['first_attempt'] > 900) {
-            $attempts = [
-                'count' => 1,
-                'first_attempt' => time()
-            ];
-        } else {
-            $attempts['count']++;
-        }
-
-        $_SESSION[$cacheKey] = $attempts;
-    }
-
-    /**
-     * Clear failed attempts (alias for resetBruteForce for compatibility)
-     */
-    public static function clearFailedAttempts($identifier)
-    {
-        self::resetBruteForce($identifier);
-    }
-
-    /**
-     * Configure secure session settings
-     */
-    public static function configureSecureSession()
-    {
-        // Configure session security
-        ini_set('session.cookie_httponly', 1);
-        ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) ? 1 : 0);
-        ini_set('session.use_strict_mode', 1);
-        ini_set('session.cookie_samesite', 'Strict');
-
-        // Set session name
-        session_name('CODECAMP_ADMIN_SESSION');
-
-        // Set session cookie parameters
-        session_set_cookie_params([
-            'lifetime' => 0,
-            'path' => '/',
-            'domain' => '',
-            'secure' => isset($_SERVER['HTTPS']),
-            'httponly' => true,
-            'samesite' => 'Strict'
-        ]);
-    }
+    
 
 
 
@@ -517,5 +460,451 @@ class SecurityHelper
         $_SESSION[$cacheKey] = $requests;
 
         return $requests['count'] <= $maxRequests;
+    }
+
+    /**
+     * Configure secure session for chat
+     */
+    public static function configureSecureSession()
+    {
+        // Only configure if session hasn't started
+        if (session_status() === PHP_SESSION_NONE) {
+            // Set secure session parameters
+            ini_set('session.cookie_httponly', 1);
+            ini_set('session.cookie_secure', isset($_SERVER['HTTPS']));
+            ini_set('session.use_strict_mode', 1);
+            ini_set('session.cookie_samesite', 'Lax');
+
+            // Set session name
+            session_name('CODECAMP_SESSION');
+
+            // Start session
+            session_start();
+
+            // Regenerate session ID periodically for security
+            if (!isset($_SESSION['session_regenerated'])) {
+                session_regenerate_id(true);
+                $_SESSION['session_regenerated'] = time();
+            } elseif (time() - $_SESSION['session_regenerated'] > 300) { // 5 minutes
+                session_regenerate_id(true);
+                $_SESSION['session_regenerated'] = time();
+            }
+        }
+    }
+
+    /**
+     * Record failed login attempt for brute force protection
+     */
+    public static function recordFailedAttempt($identifier)
+    {
+        $cacheKey = 'failed_' . md5($identifier);
+
+        $attempts = $_SESSION[$cacheKey] ?? [
+            'count' => 0,
+            'first_attempt' => time(),
+            'last_attempt' => time()
+        ];
+
+        $attempts['count']++;
+        $attempts['last_attempt'] = time();
+
+        $_SESSION[$cacheKey] = $attempts;
+
+        // Log to security file
+        self::logSecurityEvent(
+            'failed_login_attempt',
+            "Failed login attempt #" . $attempts['count'] . " for: " . $identifier,
+            'medium'
+        );
+    }
+
+    /**
+     * Clear failed login attempts
+     */
+    public static function clearFailedAttempts($identifier)
+    {
+        $cacheKey = 'failed_' . md5($identifier);
+        unset($_SESSION[$cacheKey]);
+    }
+
+    /**
+     * Get failed attempt count
+     */
+    public static function getFailedAttempts($identifier)
+    {
+        $cacheKey = 'failed_' . md5($identifier);
+        $attempts = $_SESSION[$cacheKey] ?? ['count' => 0];
+        return $attempts['count'];
+    }
+
+    /**
+     * Check if identifier is temporarily blocked
+     */
+    public static function isBlocked($identifier, $maxAttempts = 5, $blockDuration = 900)
+    {
+        $cacheKey = 'failed_' . md5($identifier);
+        $attempts = $_SESSION[$cacheKey] ?? ['count' => 0, 'last_attempt' => 0];
+
+        if ($attempts['count'] >= $maxAttempts) {
+            $timeSinceLastAttempt = time() - $attempts['last_attempt'];
+            if ($timeSinceLastAttempt < $blockDuration) {
+                return true;
+            } else {
+                // Block period expired, clear attempts
+                unset($_SESSION[$cacheKey]);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Validate chat message content
+     */
+    public static function validateChatMessage($message)
+    {
+        $errors = [];
+
+        // Check if message is empty
+        if (empty(trim($message))) {
+            $errors[] = 'Message cannot be empty';
+        }
+
+        // Check message length
+        if (strlen($message) > 1000) {
+            $errors[] = 'Message is too long (maximum 1000 characters)';
+        }
+
+        // Check for excessive repetition
+        if (preg_match('/(.)\1{10,}/', $message)) {
+            $errors[] = 'Message contains excessive character repetition';
+        }
+
+        // Check for suspicious patterns
+        $suspiciousPatterns = [
+            '/(<script[^>]*>.*?<\/script>)/is',
+            '/(<iframe[^>]*>.*?<\/iframe>)/is',
+            '/(javascript:)/i',
+            '/(vbscript:)/i',
+            '/(on\w+\s*=)/i'
+        ];
+
+        foreach ($suspiciousPatterns as $pattern) {
+            if (preg_match($pattern, $message)) {
+                $errors[] = 'Message contains potentially harmful content';
+                break;
+            }
+        }
+
+        return [
+            'valid' => empty($errors),
+            'errors' => $errors
+        ];
+    }
+
+    /**
+     * Sanitize chat message
+     */
+    public static function sanitizeChatMessage($message)
+    {
+        // Remove HTML tags except basic formatting
+        $allowedTags = '<b><i><u><br>';
+        $message = strip_tags($message, $allowedTags);
+
+        // Convert newlines to <br> tags
+        $message = nl2br($message);
+
+        // Escape HTML entities
+        $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+
+        // Restore allowed tags
+        $message = str_replace(
+            ['&lt;br&gt;', '&lt;b&gt;', '&lt;/b&gt;', '&lt;i&gt;', '&lt;/i&gt;', '&lt;u&gt;', '&lt;/u&gt;'],
+            ['<br>', '<b>', '</b>', '<i>', '</i>', '<u>', '</u>'],
+            $message
+        );
+
+        return trim($message);
+    }
+
+    /**
+     * Generate unique chat room identifier
+     */
+    public static function generateChatRoomId($userId, $adminId = null)
+    {
+        $components = [$userId, $adminId ?? 'unassigned', time()];
+        return hash('sha256', implode('|', $components));
+    }
+
+    /**
+     * Validate WebSocket connection for real-time chat
+     */
+    public static function validateWebSocketConnection($token)
+    {
+        // Decode and validate the WebSocket token
+        try {
+            $data = json_decode(base64_decode($token), true);
+
+            if (!$data || !isset($data['user_id'], $data['timestamp'], $data['hash'])) {
+                return false;
+            }
+
+            // Check if token is not too old (15 minutes)
+            if (time() - $data['timestamp'] > 900) {
+                return false;
+            }
+
+            // Verify hash
+            $expectedHash = hash_hmac(
+                'sha256',
+                $data['user_id'] . '|' . $data['timestamp'],
+                $_ENV['WEBSOCKET_SECRET'] ?? 'default_secret'
+            );
+
+            return hash_equals($expectedHash, $data['hash']);
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Generate WebSocket token for authenticated users
+     */
+    public static function generateWebSocketToken($userId, $userType = 'user')
+    {
+        $timestamp = time();
+        $hash = hash_hmac(
+            'sha256',
+            $userId . '|' . $timestamp . '|' . $userType,
+            $_ENV['WEBSOCKET_SECRET'] ?? 'default_secret'
+        );
+
+        $data = [
+            'user_id' => $userId,
+            'user_type' => $userType,
+            'timestamp' => $timestamp,
+            'hash' => $hash
+        ];
+
+        return base64_encode(json_encode($data));
+    }
+
+    /**
+     * Check for spam in chat messages
+     */
+    public static function isSpamMessage($message, $userId, $timeWindow = 60, $maxMessages = 10)
+    {
+        $cacheKey = 'chat_spam_' . $userId;
+
+        $messageLog = $_SESSION[$cacheKey] ?? [];
+        $currentTime = time();
+
+        // Remove old messages outside time window
+        $messageLog = array_filter($messageLog, function ($timestamp) use ($currentTime, $timeWindow) {
+            return ($currentTime - $timestamp) <= $timeWindow;
+        });
+
+        // Check if user has exceeded message limit
+        if (count($messageLog) >= $maxMessages) {
+            return true;
+        }
+
+        // Add current message timestamp
+        $messageLog[] = $currentTime;
+        $_SESSION[$cacheKey] = $messageLog;
+
+        return false;
+    }
+
+    /**
+     * Clean old security logs
+     */
+    public static function cleanOldSecurityLogs($daysToKeep = 30)
+    {
+        $logDir = __DIR__ . '/../logs/';
+
+        if (!is_dir($logDir)) {
+            return false;
+        }
+
+        $files = glob($logDir . 'security_*.log');
+        $cutoffTime = time() - ($daysToKeep * 24 * 60 * 60);
+        $deletedFiles = 0;
+
+        foreach ($files as $file) {
+            if (filemtime($file) < $cutoffTime) {
+                if (unlink($file)) {
+                    $deletedFiles++;
+                }
+            }
+        }
+
+        return $deletedFiles;
+    }
+
+    /**
+     * Get security log statistics
+     */
+    public static function getSecurityLogStats($days = 7)
+    {
+        $logDir = __DIR__ . '/../logs/';
+        $stats = [
+            'total_events' => 0,
+            'high_severity' => 0,
+            'medium_severity' => 0,
+            'low_severity' => 0,
+            'event_types' => []
+        ];
+
+        if (!is_dir($logDir)) {
+            return $stats;
+        }
+
+        $files = glob($logDir . 'security_*.log');
+        $cutoffTime = time() - ($days * 24 * 60 * 60);
+
+        foreach ($files as $file) {
+            if (filemtime($file) >= $cutoffTime) {
+                $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+                foreach ($lines as $line) {
+                    $data = json_decode($line, true);
+                    if ($data) {
+                        $stats['total_events']++;
+
+                        $severity = $data['severity'] ?? 'low';
+                        $stats[$severity . '_severity']++;
+
+                        $eventType = $data['type'] ?? 'unknown';
+                        $stats['event_types'][$eventType] = ($stats['event_types'][$eventType] ?? 0) + 1;
+                    }
+                }
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Detect suspicious activity patterns
+     */
+    public static function detectSuspiciousActivity($userId, $activityType, $threshold = 50)
+    {
+        $cacheKey = 'activity_' . $userId . '_' . $activityType;
+        $timeWindow = 3600; // 1 hour
+
+        $activities = $_SESSION[$cacheKey] ?? [];
+        $currentTime = time();
+
+        // Remove old activities
+        $activities = array_filter($activities, function ($timestamp) use ($currentTime, $timeWindow) {
+            return ($currentTime - $timestamp) <= $timeWindow;
+        });
+
+        // Add current activity
+        $activities[] = $currentTime;
+        $_SESSION[$cacheKey] = $activities;
+
+        // Check if threshold exceeded
+        if (count($activities) > $threshold) {
+            self::logSecurityEvent(
+                'suspicious_activity',
+                "Suspicious activity detected for user $userId: $activityType (" . count($activities) . " in 1 hour)",
+                'high'
+            );
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Validate file upload for chat attachments
+     */
+    public static function validateChatAttachment($file)
+    {
+        $allowedTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'application/pdf',
+            'text/plain',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+
+        $maxSize = 5 * 1024 * 1024; // 5MB
+
+        $result = self::validateFileUpload($file, $allowedTypes, $maxSize);
+
+        // Additional checks for chat attachments
+        if ($result['valid']) {
+            // Check file name for suspicious content
+            $filename = $file['name'];
+            if (preg_match('/\.(exe|bat|cmd|scr|pif|com)$/i', $filename)) {
+                $result['valid'] = false;
+                $result['errors'][] = 'Executable files are not allowed';
+            }
+
+            // Check for double extensions
+            if (substr_count($filename, '.') > 1) {
+                $result['valid'] = false;
+                $result['errors'][] = 'Files with multiple extensions are not allowed';
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Generate secure download token for chat attachments
+     */
+    public static function generateDownloadToken($fileId, $userId)
+    {
+        $data = [
+            'file_id' => $fileId,
+            'user_id' => $userId,
+            'timestamp' => time(),
+            'expires' => time() + 3600 // 1 hour
+        ];
+
+        $hash = hash_hmac('sha256', serialize($data), $_ENV['DOWNLOAD_SECRET'] ?? 'default_secret');
+        $data['hash'] = $hash;
+
+        return base64_encode(serialize($data));
+    }
+
+    /**
+     * Validate download token for chat attachments
+     */
+    public static function validateDownloadToken($token, $fileId, $userId)
+    {
+        try {
+            $data = unserialize(base64_decode($token));
+
+            if (!$data || !isset($data['hash'])) {
+                return false;
+            }
+
+            // Check expiration
+            if (time() > $data['expires']) {
+                return false;
+            }
+
+            // Verify hash
+            $hash = $data['hash'];
+            unset($data['hash']);
+            $expectedHash = hash_hmac('sha256', serialize($data), $_ENV['DOWNLOAD_SECRET'] ?? 'default_secret');
+
+            if (!hash_equals($expectedHash, $hash)) {
+                return false;
+            }
+
+            // Check file and user match
+            return ($data['file_id'] == $fileId && $data['user_id'] == $userId);
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }
