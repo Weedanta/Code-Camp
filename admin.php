@@ -1,11 +1,12 @@
 <?php
-// admin.php - Enhanced Admin Panel Router
+// admin.php - Enhanced Admin Panel Router with Chat Support
 session_start();
 
 // Include required files dengan error handling
 $required_files = [
     'config/database.php',
     'controllers/AdminController.php', 
+    'controllers/ChatController.php',
     'helper/SecurityHelper.php',
     'middleware/AdminMiddleware.php'
 ];
@@ -26,8 +27,9 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// Initialize admin controller
+// Initialize controllers
 $adminController = new AdminController($db);
+$chatController = new ChatController();
 
 // Get action
 $action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
@@ -183,6 +185,47 @@ try {
         case 'delete_forum_post':
             $adminController->deleteForumPost();
             break;
+
+        // ==================== CHAT MANAGEMENT ====================
+        case 'manage_chat':
+            $adminController->manageChat();
+            break;
+            
+        case 'chat_send_message':
+            $chatController->adminSendMessage();
+            break;
+            
+        case 'chat_get_messages':
+            $chatController->adminGetMessages();
+            break;
+            
+        case 'chat_set_typing':
+            $chatController->adminSetTyping();
+            break;
+            
+        case 'chat_stop_typing':
+            $chatController->adminStopTyping();
+            break;
+            
+        case 'chat_close_room':
+            $chatController->closeRoom();
+            break;
+            
+        case 'chat_stats':
+            $chatController->getAdminStats();
+            break;
+
+        case 'bulk_close_chat_rooms':
+            $adminController->bulkCloseChatRooms();
+            break;
+
+        case 'clean_old_chat_messages':
+            $adminController->cleanOldChatMessages();
+            break;
+
+        case 'ajax_chat_unread_count':
+            $adminController->ajaxChatUnreadCount();
+            break;
         
         // ==================== SETTINGS ====================
         case 'manage_settings':
@@ -210,7 +253,7 @@ try {
             $adminController->optimizeDatabase();
             break;
             
-        case 'check_system':
+        case 'check_system_health':
             $adminController->checkSystemHealth();
             break;
         

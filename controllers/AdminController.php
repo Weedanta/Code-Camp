@@ -1552,76 +1552,7 @@ class AdminController
         exit;
     }
 
-    // ==================== UTILITY METHODS ====================
-
-    public function logInvalidAccess($action)
-    {
-        try {
-            $this->admin->logActivity(
-                $_SESSION['admin_id'] ?? 0,
-                'invalid_access',
-                "Attempted to access invalid action: $action",
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null
-            );
-        } catch (Exception $e) {
-            error_log("Log invalid access error: " . $e->getMessage());
-        }
-    }
-    // ==================== CHAT MANAGEMENT ====================
-
-    /**
-     * Show chat management interface
-     */
-    public function manageChat()
-    {
-        AdminMiddleware::checkPermission('manage_chat');
-
-        try {
-            require_once 'models/Chat.php';
-            $chat = new Chat();
-
-            // Get all active chat rooms
-            $rooms = $chat->getAllActiveRooms();
-
-            // Log activity
-            $this->admin->logActivity(
-                $_SESSION['admin_id'],
-                'view_chat',
-                'Admin melihat halaman chat management',
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null
-            );
-
-            // Include the chat view
-            include 'views/admin/chat.php';
-        } catch (Exception $e) {
-            error_log("Manage chat error: " . $e->getMessage());
-            $_SESSION['error'] = 'Gagal memuat halaman chat';
-            header('Location: admin.php?action=dashboard');
-            exit;
-        }
-    }
-
-    /**
-     * Get chat statistics for dashboard
-     */
-    public function getChatStats()
-    {
-        try {
-            require_once 'models/Chat.php';
-            $chat = new Chat();
-
-            return $chat->getChatStats();
-        } catch (Exception $e) {
-            error_log("Get chat stats error: " . $e->getMessage());
-            return [
-                'active_rooms' => 0,
-                'messages_today' => 0,
-                'unread_messages' => 0
-            ];
-        }
-    }
+    
 
     /**
      * Handle AJAX request for chat room details
@@ -1735,109 +1666,11 @@ class AdminController
         }
     }
 
-    /**
-     * Bulk close chat rooms
-     */
-    public function bulkCloseChatRooms()
-    {
-        AdminMiddleware::checkPermission('manage_chat');
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: admin.php?action=manage_chat');
-            exit;
-        }
-
-        $roomIds = $_POST['room_ids'] ?? [];
-
-        if (empty($roomIds)) {
-            $_SESSION['error'] = 'Tidak ada room yang dipilih';
-            header('Location: admin.php?action=manage_chat');
-            exit;
-        }
-
-        try {
-            require_once 'models/Chat.php';
-            $chat = new Chat();
-
-            $closed = 0;
-            foreach ($roomIds as $roomId) {
-                if ($chat->closeRoom(intval($roomId))) {
-                    $closed++;
-                }
-            }
-
-            $_SESSION['success'] = "$closed room chat berhasil ditutup";
-
-            // Log activity
-            $this->admin->logActivity(
-                $_SESSION['admin_id'],
-                'bulk_close_chat',
-                "Admin menutup $closed room chat secara bulk",
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null
-            );
-        } catch (Exception $e) {
-            error_log("Bulk close chat rooms error: " . $e->getMessage());
-            $_SESSION['error'] = 'Gagal menutup room chat';
-        }
-
-        header('Location: admin.php?action=manage_chat');
-    }
-
+    
     /**
      * Clean old chat messages
      */
-    public function cleanOldChatMessages()
-    {
-        AdminMiddleware::checkPermission('manage_chat');
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: admin.php?action=manage_chat');
-            exit;
-        }
-
-        $days = intval($_POST['days'] ?? 30);
-
-        try {
-            $database = new Database();
-            $conn = $database->getConnection();
-
-            // Delete messages older than specified days
-            $stmt = $conn->prepare("
-            DELETE FROM chat_messages 
-            WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)
-        ");
-            $stmt->execute([$days]);
-
-            $deletedMessages = $stmt->rowCount();
-
-            // Delete empty rooms
-            $stmt = $conn->prepare("
-            DELETE r FROM chat_rooms r 
-            LEFT JOIN chat_messages m ON r.id = m.room_id 
-            WHERE m.id IS NULL AND r.status = 'closed'
-        ");
-            $stmt->execute();
-
-            $deletedRooms = $stmt->rowCount();
-
-            $_SESSION['success'] = "Berhasil menghapus $deletedMessages pesan lama dan $deletedRooms room kosong";
-
-            // Log activity
-            $this->admin->logActivity(
-                $_SESSION['admin_id'],
-                'clean_chat',
-                "Admin membersihkan $deletedMessages pesan chat lama (>$days hari)",
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null
-            );
-        } catch (Exception $e) {
-            error_log("Clean old chat messages error: " . $e->getMessage());
-            $_SESSION['error'] = 'Gagal membersihkan pesan lama';
-        }
-
-        header('Location: admin.php?action=manage_chat');
-    }
+    
 
     /**
      * View chat room details
@@ -2016,4 +1849,202 @@ class AdminController
             ];
         }
     }
+    // ==================== CHAT MANAGEMENT METHODS ====================
+
+/**
+ * Show chat management interface
+ */
+public function manageChat() {
+    try {
+        require_once 'models/Chat.php';
+        $chat = new Chat();
+        
+        // Get all active chat rooms
+        $rooms = $chat->getAllActiveRooms();
+        
+        // Log activity
+        if (method_exists($this->admin, 'logActivity')) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'],
+                'view_chat',
+                'Admin melihat halaman chat management',
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null
+            );
+        }
+        
+        // Include the chat view
+        include 'views/admin/chat.php';
+        
+    } catch (Exception $e) {
+        error_log("Manage chat error: " . $e->getMessage());
+        $_SESSION['error'] = 'Gagal memuat halaman chat';
+        header('Location: admin.php?action=dashboard');
+        exit;
+    }
+}
+
+/**
+ * Get chat statistics for dashboard
+ */
+public function getChatStats() {
+    try {
+        require_once 'models/Chat.php';
+        $chat = new Chat();
+        
+        return $chat->getChatStats();
+        
+    } catch (Exception $e) {
+        error_log("Get chat stats error: " . $e->getMessage());
+        return [
+            'active_rooms' => 0,
+            'messages_today' => 0,
+            'unread_messages' => 0
+        ];
+    }
+}
+
+/**
+ * Bulk close chat rooms
+ */
+public function bulkCloseChatRooms() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: admin.php?action=manage_chat');
+        exit;
+    }
+    
+    try {
+        require_once 'models/Chat.php';
+        $chat = new Chat();
+        
+        // Close all active rooms
+        $database = new Database();
+        $conn = $database->getConnection();
+        
+        $stmt = $conn->prepare("UPDATE chat_rooms SET status = 'closed', updated_at = NOW() WHERE status = 'active'");
+        $success = $stmt->execute();
+        $count = $stmt->rowCount();
+        
+        if ($success) {
+            $_SESSION['success'] = "$count room chat berhasil ditutup";
+            
+            // Log activity
+            if (method_exists($this->admin, 'logActivity')) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'],
+                    'bulk_close_chat',
+                    "Admin menutup $count room chat secara bulk",
+                    $_SERVER['REMOTE_ADDR'] ?? null,
+                    $_SERVER['HTTP_USER_AGENT'] ?? null
+                );
+            }
+        } else {
+            $_SESSION['error'] = 'Gagal menutup room chat';
+        }
+        
+    } catch (Exception $e) {
+        error_log("Bulk close chat rooms error: " . $e->getMessage());
+        $_SESSION['error'] = 'Gagal menutup room chat';
+    }
+    
+    header('Location: admin.php?action=manage_chat');
+}
+
+/**
+ * Clean old chat messages
+ */
+public function cleanOldChatMessages() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: admin.php?action=manage_chat');
+        exit;
+    }
+    
+    $days = intval($_POST['days'] ?? 30);
+    
+    try {
+        $database = new Database();
+        $conn = $database->getConnection();
+        
+        // Delete messages older than specified days
+        $stmt = $conn->prepare("
+            DELETE FROM chat_messages 
+            WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)
+        ");
+        $stmt->execute([$days]);
+        
+        $deletedMessages = $stmt->rowCount();
+        
+        // Delete empty rooms
+        $stmt = $conn->prepare("
+            DELETE r FROM chat_rooms r 
+            LEFT JOIN chat_messages m ON r.id = m.room_id 
+            WHERE m.id IS NULL AND r.status = 'closed'
+        ");
+        $stmt->execute();
+        
+        $deletedRooms = $stmt->rowCount();
+        
+        $_SESSION['success'] = "Berhasil menghapus $deletedMessages pesan lama dan $deletedRooms room kosong";
+        
+        // Log activity
+        if (method_exists($this->admin, 'logActivity')) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'],
+                'clean_chat',
+                "Admin membersihkan $deletedMessages pesan chat lama (>$days hari)",
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null
+            );
+        }
+        
+    } catch (Exception $e) {
+        error_log("Clean old chat messages error: " . $e->getMessage());
+        $_SESSION['error'] = 'Gagal membersihkan pesan lama';
+    }
+    
+    header('Location: admin.php?action=manage_chat');
+}
+
+/**
+ * AJAX - Get chat unread count
+ */
+public function ajaxChatUnreadCount() {
+    header('Content-Type: application/json');
+    
+    if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+        exit;
+    }
+    
+    try {
+        require_once 'models/Chat.php';
+        $chat = new Chat();
+        
+        $count = $chat->getTotalUnreadForAdmin();
+        echo json_encode(['success' => true, 'count' => $count]);
+        
+    } catch (Exception $e) {
+        error_log("AJAX chat unread count error: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Internal error']);
+    }
+}
+
+/**
+ * Handle invalid access attempts
+ */
+public function logInvalidAccess($action) {
+    try {
+        if (method_exists($this->admin, 'logActivity')) {
+            $this->admin->logActivity(
+                $_SESSION['admin_id'] ?? 0,
+                'invalid_access',
+                "Attempt to access invalid action: $action",
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                $_SERVER['HTTP_USER_AGENT'] ?? null
+            );
+        }
+    } catch (Exception $e) {
+        error_log("Log invalid access error: " . $e->getMessage());
+    }
+}
 }

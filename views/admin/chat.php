@@ -1,8 +1,9 @@
+
 <?php
 // views/admin/chat.php - Admin chat interface
 
 $page_title = 'Chat Management - Code Camp Admin';
-include_once 'partials/sidebar.php';
+
 
 // Get rooms data from controller
 if (!isset($rooms)) {

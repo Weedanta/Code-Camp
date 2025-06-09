@@ -5,12 +5,15 @@
 $current_dashboard_page = 'chat';
 $page_title = 'Chat dengan Admin - Code Camp';
 
-// Include header
+// Base URL untuk assets dan links
+$base_url = '';
+
+// Include header yang benar
 include_once 'views/includes/header.php';
 
 // Get room data from controller
 if (!isset($room) || !isset($messages)) {
-    header('Location: ../../../index.php');
+    echo '<script>alert("Error: Data chat tidak ditemukan"); window.location.href = "index.php";</script>';
     exit;
 }
 
@@ -20,6 +23,16 @@ $admin_status = $room['admin_id'] ? 'Terhubung' : 'Menunggu admin';
 
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-4xl mx-auto px-4">
+        <!-- Back Button -->
+        <div class="mb-4">
+            <a href="index.php" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Kembali ke Beranda
+            </a>
+        </div>
+
         <!-- Chat Header -->
         <div class="bg-white rounded-t-lg shadow-md p-4 border-b">
             <div class="flex items-center justify-between">
@@ -198,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sendButton.disabled = true;
         sendButton.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
 
-        fetch('<?php echo $base_url; ?>index.php?action=chat_send', {
+        fetch('index.php?action=chat_send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -259,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isTyping) return;
         
         isTyping = true;
-        fetch('<?php echo $base_url; ?>index.php?action=chat_typing', {
+        fetch('index.php?action=chat_typing', {
             method: 'POST'
         });
     }
@@ -268,13 +281,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isTyping) return;
         
         isTyping = false;
-        fetch('<?php echo $base_url; ?>index.php?action=chat_stop_typing', {
+        fetch('index.php?action=chat_stop_typing', {
             method: 'POST'
         });
     }
 
     function pollMessages() {
-        fetch(`<?php echo $base_url; ?>index.php?action=chat_get_messages&last_id=${lastMessageId}`)
+        fetch(`index.php?action=chat_get_messages&last_id=${lastMessageId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -323,4 +336,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php include_once '../includes/footer.php'; ?>
+<?php include_once 'views/includes/footer.php'; ?>
