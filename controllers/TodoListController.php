@@ -14,7 +14,9 @@ class TodoListController {
     
     // Show todo list page
     public function index() {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+};
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -36,7 +38,9 @@ class TodoListController {
     
     // Create new todo
     public function create() {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+};
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -60,7 +64,9 @@ class TodoListController {
     
     // Update todo
     public function update() {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+};
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -85,7 +91,9 @@ class TodoListController {
     
     // Update status only (AJAX)
     public function updateStatus() {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+};
         if (!isset($_SESSION['user_id'])) {
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
             exit();
@@ -108,7 +116,9 @@ class TodoListController {
     
     // Delete todo
     public function delete() {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+};
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -128,7 +138,9 @@ class TodoListController {
     
     // Get single todo (AJAX)
     public function getTodo() {
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+};
         if (!isset($_SESSION['user_id'])) {
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
             exit();

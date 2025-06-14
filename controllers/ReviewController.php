@@ -3,26 +3,31 @@ require_once 'models/Review.php';
 require_once 'models/Bootcamp.php';
 require_once 'config/database.php';
 
-class ReviewController {
+class ReviewController
+{
     private $database;
     private $db;
     private $review;
     private $bootcamp;
 
-    public function __construct() {
+    public function __construct()
+    {
         // Initialize database connection
         $this->database = new Database();
         $this->db = $this->database->getConnection();
-        
+
         // Initialize models
         $this->review = new Review($this->db);
         $this->bootcamp = new Bootcamp($this->db);
     }
 
     // Add or update review
-    public function addReview() {
+    public function addReview()
+    {
         // Check if user is logged in
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
         if (!isset($_SESSION['user_id'])) {
             $response = [
                 'success' => false,
@@ -33,10 +38,12 @@ class ReviewController {
         }
 
         // Check if it's a POST request and validate data
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || 
-            !isset($_POST['bootcamp_id']) || 
-            !isset($_POST['rating']) || 
-            !isset($_POST['review_text'])) {
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            !isset($_POST['bootcamp_id']) ||
+            !isset($_POST['rating']) ||
+            !isset($_POST['review_text'])
+        ) {
             $response = [
                 'success' => false,
                 'message' => 'Invalid request'
@@ -94,10 +101,11 @@ class ReviewController {
     }
 
     // Get bootcamp reviews (AJAX)
-    public function getBootcampReviews() {
+    public function getBootcampReviews()
+    {
         // Get bootcamp ID
         $bootcamp_id = isset($_GET['bootcamp_id']) ? $_GET['bootcamp_id'] : die(json_encode(['error' => 'Missing bootcamp ID']));
-        
+
         // Set up pagination
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $limit = 5;
@@ -124,9 +132,12 @@ class ReviewController {
     }
 
     // Show user's reviews page
-    public function myReviews() {
+    public function myReviews()
+    {
         // Check if user is logged in
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -152,9 +163,12 @@ class ReviewController {
     }
 
     // Update review
-    public function updateReview() {
+    public function updateReview()
+    {
         // Check if user is logged in
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
         if (!isset($_SESSION['user_id'])) {
             $response = [
                 'success' => false,
@@ -165,10 +179,12 @@ class ReviewController {
         }
 
         // Check if it's a POST request and validate data
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || 
-            !isset($_POST['review_id']) || 
-            !isset($_POST['rating']) || 
-            !isset($_POST['review_text'])) {
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            !isset($_POST['review_id']) ||
+            !isset($_POST['rating']) ||
+            !isset($_POST['review_text'])
+        ) {
             $response = [
                 'success' => false,
                 'message' => 'Invalid request'
@@ -215,9 +231,12 @@ class ReviewController {
     }
 
     // Delete review
-    public function deleteReview() {
+    public function deleteReview()
+    {
         // Check if user is logged in
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
         if (!isset($_SESSION['user_id'])) {
             $response = [
                 'success' => false,
@@ -261,9 +280,12 @@ class ReviewController {
     }
 
     // Get single review for editing (AJAX)
-    public function getReview() {
+    public function getReview()
+    {
         // Check if user is logged in
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
         if (!isset($_SESSION['user_id'])) {
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
             exit();
@@ -297,4 +319,3 @@ class ReviewController {
         }
     }
 }
-?>

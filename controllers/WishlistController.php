@@ -2,24 +2,29 @@
 require_once 'models/Wishlist.php';
 require_once 'config/database.php';
 
-class WishlistController {
+class WishlistController
+{
     private $database;
     private $db;
     private $wishlist;
 
-    public function __construct() {
+    public function __construct()
+    {
         // Initialize database connection
         $this->database = new Database();
         $this->db = $this->database->getConnection();
-        
+
         // Initialize model
         $this->wishlist = new Wishlist($this->db);
     }
 
     // Show user's wishlist
-    public function index() {
+    public function index()
+    {
         // Check if user is logged in
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        };
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -46,12 +51,15 @@ class WishlistController {
     }
 
     // Add bootcamp to wishlist
-    public function add() {
+    public function add()
+    {
         // Set content type to JSON
         header('Content-Type: application/json');
-        
+
         // Check if user is logged in
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        };
         if (!isset($_SESSION['user_id'])) {
             $response = [
                 'success' => false,
@@ -105,12 +113,15 @@ class WishlistController {
     }
 
     // Remove bootcamp from wishlist
-    public function remove() {
+    public function remove()
+    {
         // Set content type to JSON
         header('Content-Type: application/json');
-        
+
         // Check if user is logged in
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        };
         if (!isset($_SESSION['user_id'])) {
             $response = [
                 'success' => false,
@@ -163,4 +174,3 @@ class WishlistController {
         exit();
     }
 }
-?>

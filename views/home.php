@@ -277,9 +277,9 @@ include_once 'views/includes/header.php';
                 </div>
                 <p class="italic mb-4">"Bootcamp UI/UX Design di Code Camp sangat membantu saya memulai karir sebagai UI/UX Designer. Materinya komprehensif dan instrukturnya sangat berpengalaman."</p>
                 <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3 text-white font-medium">A</div>
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3 text-white font-medium">R</div>
                     <div>
-                        <div class="font-medium">Ahmad Rizki</div>
+                        <div class="font-medium">Roman Sabrina</div>
                         <div class="text-sm text-blue-300">UI/UX Designer</div>
                     </div>
                 </div>
@@ -297,7 +297,7 @@ include_once 'views/includes/header.php';
                 <div class="flex items-center">
                     <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3 text-white font-medium">S</div>
                     <div>
-                        <div class="font-medium">Sari Indah</div>
+                        <div class="font-medium">Selvy</div>
                         <div class="text-sm text-blue-300">Data Analyst</div>
                     </div>
                 </div>
@@ -313,9 +313,9 @@ include_once 'views/includes/header.php';
                 </div>
                 <p class="italic mb-4">"Bootcamp Digital Marketing sangat praktis dan relevan dengan kebutuhan industri saat ini. Sekarang saya bisa menjalankan kampanye marketing yang lebih efektif."</p>
                 <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3 text-white font-medium">B</div>
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3 text-white font-medium">S</div>
                     <div>
-                        <div class="font-medium">Budi Santoso</div>
+                        <div class="font-medium">Stefy</div>
                         <div class="text-sm text-blue-300">Digital Marketer</div>
                     </div>
                 </div>

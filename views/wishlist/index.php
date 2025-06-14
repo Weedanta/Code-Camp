@@ -212,6 +212,125 @@ include_once 'views/includes/header.php';
     <?php endif; ?>
 </div>
 
+<!-- Toast Notification -->
+<div id="toast" class="fixed top-4 right-4 z-50 hidden">
+    <div class="bg-green-500 text-white px-6 py-3 rounded-md shadow-lg flex items-center">
+        <span id="toastMessage">Success!</span>
+        <button onclick="hideToast()" class="ml-4 text-white hover:text-gray-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<script>
+    // Remove from wishlist functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const removeButtons = document.querySelectorAll('.remove-wishlist-btn');
+
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const bootcampId = this.getAttribute('data-bootcamp-id');
+                const wishlistCard = this.closest('[data-wishlist-id]');
+
+                if (!bootcampId) {
+                    showToast('Invalid bootcamp ID', 'error');
+                    return;
+                }
+
+                // Disable button temporarily
+                this.disabled = true;
+                this.classList.add('loading');
+
+                const formData = new FormData();
+                formData.append('bootcamp_id', bootcampId);
+
+                fetch('index.php?action=remove_from_wishlist', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message, 'success');
+
+                            // Remove the card with animation
+                            if (wishlistCard) {
+                                wishlistCard.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                wishlistCard.style.opacity = '0';
+                                wishlistCard.style.transform = 'scale(0.95)';
+
+                                setTimeout(() => {
+                                    wishlistCard.remove();
+
+                                    // Check if wishlist is now empty
+                                    const remainingItems = document.querySelectorAll('[data-wishlist-id]');
+                                    if (remainingItems.length === 0) {
+                                        // Reload page to show empty state
+                                        setTimeout(() => {
+                                            window.location.reload();
+                                        }, 1000);
+                                    } else {
+                                        // Update count in header
+                                        const countElement = document.querySelector('h2');
+                                        if (countElement) {
+                                            const newCount = remainingItems.length;
+                                            countElement.textContent = `Saved Bootcamps (${newCount})`;
+                                        }
+                                    }
+                                }, 300);
+                            }
+                        } else {
+                            showToast(data.message, 'error');
+                            // Re-enable button on error
+                            this.disabled = false;
+                            this.classList.remove('loading');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Wishlist error:', error);
+                        showToast('Failed to remove from wishlist. Please try again.', 'error');
+                        // Re-enable button on error
+                        this.disabled = false;
+                        this.classList.remove('loading');
+                    });
+            });
+        });
+    });
+
+    // Toast notification functions
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastContainer = toast.querySelector('div');
+
+        toastMessage.textContent = message;
+
+        // Set color based on type
+        if (type === 'error') {
+            toastContainer.className = toastContainer.className.replace('bg-green-500', 'bg-red-500');
+        } else {
+            toastContainer.className = toastContainer.className.replace('bg-red-500', 'bg-green-500');
+        }
+
+        toast.classList.remove('hidden');
+
+        // Auto hide after 3 seconds
+        setTimeout(() => {
+            hideToast();
+        }, 3000);
+    }
+
+    function hideToast() {
+        const toast = document.getElementById('toast');
+        toast.classList.add('hidden');
+    }
+</script>
+
 <?php
 // Include footer
 include_once 'views/includes/footer.php';

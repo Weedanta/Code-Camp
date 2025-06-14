@@ -5,7 +5,8 @@ require_once 'models/Review.php';
 require_once 'models/Wishlist.php';
 require_once 'config/database.php';
 
-class BootcampController {
+class BootcampController
+{
     private $database;
     private $db;
     private $bootcamp;
@@ -13,11 +14,12 @@ class BootcampController {
     private $review;
     private $wishlist;
 
-    public function __construct() {
+    public function __construct()
+    {
         // Initialize database connection
         $this->database = new Database();
         $this->db = $this->database->getConnection();
-        
+
         // Initialize models
         $this->bootcamp = new Bootcamp($this->db);
         $this->category = new Category($this->db);
@@ -26,7 +28,8 @@ class BootcampController {
     }
 
     // Show all bootcamps
-    public function index() {
+    public function index()
+    {
         // Set up pagination
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $limit = 8;
@@ -49,10 +52,11 @@ class BootcampController {
     }
 
     // Show bootcamps by category
-    public function category() {
+    public function category()
+    {
         // Get category ID from URL
         $category_id = isset($_GET['id']) ? $_GET['id'] : die('ERROR: Missing ID.');
-        
+
         // Get category details
         $this->category->id = $category_id;
         $this->category->readOne();
@@ -85,10 +89,11 @@ class BootcampController {
     }
 
     // Show bootcamp details
-    public function detail() {
+    public function detail()
+    {
         // Get bootcamp ID from URL
         $bootcamp_id = isset($_GET['id']) ? $_GET['id'] : die('ERROR: Missing ID.');
-        
+
         // Get bootcamp details
         $this->bootcamp->id = $bootcamp_id;
         $this->bootcamp->readOne();
@@ -107,15 +112,15 @@ class BootcampController {
 
         if ($is_logged_in) {
             $user_id = $_SESSION['user_id'];
-            
+
             // Check if user is enrolled in this bootcamp
             $user_enrolled = $this->bootcamp->isUserEnrolled($user_id);
-            
+
             // Check if bootcamp is in user's wishlist
             $this->wishlist->user_id = $user_id;
             $this->wishlist->bootcamp_id = $bootcamp_id;
             $in_wishlist = $this->wishlist->checkExist();
-            
+
             // Get user's review if exists
             $this->review->bootcamp_id = $bootcamp_id;
             $this->review->user_id = $user_id;
@@ -144,10 +149,11 @@ class BootcampController {
     }
 
     // Search bootcamps
-    public function search() {
+    public function search()
+    {
         // Get search keyword
         $keyword = isset($_GET['keyword']) ? $_GET['keyword'] : '';
-        
+
         if (empty($keyword)) {
             header('Location: index.php?action=bootcamps');
             exit();
@@ -175,9 +181,12 @@ class BootcampController {
     }
 
     // Show user's enrolled bootcamps
-    public function myBootcamps() {
+    public function myBootcamps()
+    {
         // Check if user is logged in
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -202,4 +211,3 @@ class BootcampController {
         include_once 'views/bootcamp/my_bootcamps.php';
     }
 }
-?>
