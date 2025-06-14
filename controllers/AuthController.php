@@ -14,10 +14,17 @@ class AuthController {
         $this->user = new User($this->db);
     }
 
+    // Helper method untuk memulai session dengan aman
+    private function safeSessionStart() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+    }
+
     // Menampilkan halaman login
     public function showLoginPage() {
         // Cek apakah user sudah login
-        session_start();
+        $this->safeSessionStart();
         if (isset($_SESSION['user_id'])) {
             // Jika sudah login, redirect ke home
             header('Location: index.php');
@@ -30,7 +37,7 @@ class AuthController {
     // Menampilkan halaman signup
     public function showSignupPage() {
         // Cek apakah user sudah login
-        session_start();
+        $this->safeSessionStart();
         if (isset($_SESSION['user_id'])) {
             // Jika sudah login, redirect ke home
             header('Location: index.php');
@@ -56,7 +63,7 @@ class AuthController {
             // Verifikasi password
             if (password_verify($password, $this->user->password)) {
                 // Password valid, buat session
-                session_start();
+                $this->safeSessionStart();
                 $_SESSION['user_id'] = $this->user->id;
                 $_SESSION['name'] = $this->user->name;
                 $_SESSION['alamat_email'] = $this->user->alamat_email;
@@ -102,8 +109,8 @@ class AuthController {
 
     // Proses logout
     public function logout() {
-        // Mulai session
-        session_start();
+        // Mulai session dengan aman
+        $this->safeSessionStart();
         
         // Hapus semua data session
         $_SESSION = array();
@@ -129,7 +136,7 @@ class AuthController {
         }
 
         // Memastikan user sudah login
-        session_start();
+        $this->safeSessionStart();
         if (!isset($_SESSION['user_id'])) {
             return false;
         }
@@ -155,7 +162,7 @@ class AuthController {
     // Upload foto profil
     public function uploadProfilePhoto($file) {
         // Memastikan user sudah login
-        session_start();
+        $this->safeSessionStart();
         if (!isset($_SESSION['user_id'])) {
             return false;
         }
@@ -186,59 +193,12 @@ class AuthController {
         $filename = $_SESSION['user_id'] . '.jpg';
         $upload_path = $upload_dir . $filename;
 
-        // Resize dan compress gambar
-        $this->resizeAndSaveImage($file['tmp_name'], $upload_path, 300, 300);
-
-        return true;
-    }
-
-    // Fungsi untuk resize dan compress gambar
-    private function resizeAndSaveImage($source, $destination, $width, $height) {
-        // Get image info
-        list($orig_width, $orig_height, $image_type) = getimagesize($source);
-        
-        // Create image resource based on type
-        switch ($image_type) {
-            case IMAGETYPE_JPEG:
-                $image = imagecreatefromjpeg($source);
-                break;
-            case IMAGETYPE_PNG:
-                $image = imagecreatefrompng($source);
-                break;
-            default:
-                return false;
+        // Upload file
+        if (move_uploaded_file($file['tmp_name'], $upload_path)) {
+            return true;
         }
         
-        // Calculate dimensions while maintaining aspect ratio
-        $ratio_orig = $orig_width / $orig_height;
-        
-        if ($width / $height > $ratio_orig) {
-            $width = $height * $ratio_orig;
-        } else {
-            $height = $width / $ratio_orig;
-        }
-        
-        // Create a new image with the new dimensions
-        $new_image = imagecreatetruecolor($width, $height);
-        
-        // Handle transparency for PNG
-        if ($image_type == IMAGETYPE_PNG) {
-            imagecolortransparent($new_image, imagecolorallocate($new_image, 0, 0, 0));
-            imagealphablending($new_image, false);
-            imagesavealpha($new_image, true);
-        }
-        
-        // Resize the image
-        imagecopyresampled($new_image, $image, 0, 0, 0, 0, $width, $height, $orig_width, $orig_height);
-        
-        // Save the new image
-        imagejpeg($new_image, $destination, 80); // 80 is the quality (0-100)
-        
-        // Free up memory
-        imagedestroy($image);
-        imagedestroy($new_image);
-        
-        return true;
+        return false;
     }
 
     // Update password
@@ -249,13 +209,12 @@ class AuthController {
         }
 
         // Memastikan user sudah login
-        session_start();
+        $this->safeSessionStart();
         if (!isset($_SESSION['user_id'])) {
             return false;
         }
 
         // Mengambil data dari form
-        $this->user->id = $_SESSION['user_id'];
         $current_password = isset($_POST['current_password']) ? $_POST['current_password'] : '';
         $new_password = isset($_POST['new_password']) ? $_POST['new_password'] : '';
 
@@ -278,7 +237,7 @@ class AuthController {
     // Hapus akun
     public function deleteAccount() {
         // Memastikan user sudah login
-        session_start();
+        $this->safeSessionStart();
         if (!isset($_SESSION['user_id'])) {
             return false;
         }
@@ -304,13 +263,13 @@ class AuthController {
 
     // Fungsi helper untuk mengecek apakah user sudah login
     public function isLoggedIn() {
-        session_start();
+        $this->safeSessionStart();
         return isset($_SESSION['user_id']);
     }
 
     // Fungsi helper untuk mendapatkan data user yang sedang login
     public function getCurrentUser() {
-        session_start();
+        $this->safeSessionStart();
         if (isset($_SESSION['user_id'])) {
             return [
                 'id' => $_SESSION['user_id'],
