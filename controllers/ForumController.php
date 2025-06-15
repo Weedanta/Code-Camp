@@ -3,12 +3,14 @@ require_once 'config/database.php';
 require_once 'models/ForumPost.php';
 require_once 'models/ForumReply.php';
 
-class ForumController {
+class ForumController
+{
     private $db;
     private $forumPost;
     private $forumReply;
 
-    public function __construct() {
+    public function __construct()
+    {
         $database = new Database();
         $this->db = $database->getConnection();
         $this->forumPost = new ForumPost($this->db);
@@ -16,7 +18,8 @@ class ForumController {
     }
 
     // Menampilkan daftar semua post forum
-    public function index() {
+    public function index()
+    {
         // Cek apakah user sudah login
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -42,7 +45,8 @@ class ForumController {
     }
 
     // Menampilkan detail post dan replies
-    public function detail() {
+    public function detail()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -72,7 +76,8 @@ class ForumController {
     }
 
     // Menampilkan form untuk membuat post baru
-    public function create() {
+    public function create()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -89,7 +94,8 @@ class ForumController {
     }
 
     // Memproses pembuatan post baru
-    public function store() {
+    public function store()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -117,7 +123,8 @@ class ForumController {
     }
 
     // Menampilkan form edit post
-    public function edit() {
+    public function edit()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -143,7 +150,8 @@ class ForumController {
     }
 
     // Memproses update post
-    public function update() {
+    public function update()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -172,7 +180,8 @@ class ForumController {
     }
 
     // Menghapus post
-    public function deletePost() {
+    public function deletePost()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -194,7 +203,8 @@ class ForumController {
     }
 
     // Menambah reply
-    public function addReply() {
+    public function reply()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -223,7 +233,8 @@ class ForumController {
     }
 
     // Edit reply
-    public function editReply() {
+    public function editReply()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -251,7 +262,8 @@ class ForumController {
     }
 
     // Hapus reply
-    public function deleteReply() {
+    public function deleteReply()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -278,13 +290,14 @@ class ForumController {
     }
 
     // Pencarian post
-    public function search() {
+    public function search()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
 
         $keyword = isset($_GET['q']) ? trim($_GET['q']) : '';
-        
+
         if (empty($keyword)) {
             header('Location: index.php?action=forum');
             exit();
@@ -304,7 +317,8 @@ class ForumController {
     }
 
     // Post milik user
-    public function myPosts() {
+    public function myPosts()
+    {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -326,4 +340,4 @@ class ForumController {
 
         include_once 'views/forum/my_posts.php';
     }
-}                                                                                           
+}

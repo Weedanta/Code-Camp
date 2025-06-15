@@ -29,12 +29,12 @@ switch ($action) {
     case 'home':
         include_once 'views/home.php';
         break;
-        
+
     // Authentication Routes
     case 'login':
         $auth->showLoginPage();
         break;
-        
+
     case 'process_login':
         if ($auth->login()) {
             // Jika login berhasil, redirect ke halaman dashboard
@@ -44,11 +44,11 @@ switch ($action) {
             header('Location: index.php?action=login&error=invalid');
         }
         break;
-        
+
     case 'signup':
         $auth->showSignupPage();
         break;
-        
+
     case 'process_signup':
         // Validasi password match
         if ($_POST['password'] != $_POST['confirm_password']) {
@@ -69,11 +69,11 @@ switch ($action) {
             }
         }
         break;
-        
+
     case 'logout':
         $auth->logout();
         break;
-        
+
     case 'update_profile':
         if ($auth->updateProfile()) {
             header('Location: views/auth/dashboard/dashboard.php?success=profile_updated');
@@ -89,7 +89,7 @@ switch ($action) {
             header('Location: views/auth/dashboard/dashboard.php?error=photo_upload_failed');
         }
         break;
-        
+
     case 'update_password':
         if ($auth->updatePassword()) {
             header('Location: views/auth/dashboard/dashboard.php?success=password_updated');
@@ -97,7 +97,7 @@ switch ($action) {
             header('Location: views/auth/dashboard/dashboard.php?error=password_update_failed');
         }
         break;
-        
+
     case 'delete_account':
         if ($auth->deleteAccount()) {
             header('Location: index.php?action=login&success=account_deleted');
@@ -105,58 +105,58 @@ switch ($action) {
             header('Location: views/auth/dashboard/dashboard.php?error=delete_failed');
         }
         break;
-        
+
     // Bootcamp Routes
     case 'bootcamps':
         $bootcamp->index();
         break;
-        
+
     case 'bootcamp_category':
         $bootcamp->category();
         break;
-        
+
     case 'bootcamp_detail':
         $bootcamp->detail();
         break;
-        
+
     case 'bootcamp_search':
         $bootcamp->search();
         break;
-        
+
     case 'my_bootcamps':
         $bootcamp->myBootcamps();
         break;
-        
+
     // Wishlist Routes
     case 'wishlist':
         $wishlist->index();
         break;
-        
+
     case 'add_to_wishlist':
         $wishlist->add();
         break;
-        
+
     case 'remove_from_wishlist':
         $wishlist->remove();
         break;
-        
+
     // Order Routes
     case 'checkout':
         $order->checkout();
         break;
-        
+
     case 'process_order':
         $order->processOrder();
         break;
-        
+
     case 'order_success':
         $order->orderSuccess();
         break;
-        
+
     case 'my_orders':
         $order->myOrders();
         break;
-        
+
     case 'order_detail':
         $order->orderDetail();
         break;
@@ -170,7 +170,7 @@ switch ($action) {
             header('Location: index.php?action=my_orders');
         }
         break;
-        
+
     case 'retry_payment':
         if (isset($_GET['id'])) {
             // Redirect to checkout page with the order ID
@@ -179,12 +179,12 @@ switch ($action) {
             header('Location: index.php?action=my_orders');
         }
         break;
-        
+
     // Review Routes
     case 'add_review':
         $review->addReview();
         break;
-        
+
     case 'get_bootcamp_reviews':
         $review->getBootcampReviews();
         break;
@@ -204,32 +204,32 @@ switch ($action) {
     case 'get_review':
         $review->getReview();
         break;
-        
+
     // CV Builder Routes
     case 'cv_builder':
         $cv->index();
         break;
-        
+
     case 'cv_save':
         $cv->save();
         break;
-        
+
     case 'cv_delete':
         $cv->delete();
         break;
-        
+
     case 'cv_preview':
         $cv->preview();
         break;
-        
+
     case 'cv_pdf':
         $cv->generatePDF();
         break;
-        
+
     case 'cv_data':
         $cv->getData();
         break;
-        
+
     case 'cv_debug':
         $cv->debug();
         break;
@@ -237,32 +237,32 @@ switch ($action) {
     case 'cv_cleanup':
         $cv->cleanup();
         break;
-        
+
     // TodoList Routes
     case 'todolist':
         $todolist->index();
         break;
-        
+
     case 'todo_create':
         $todolist->create();
         break;
-        
+
     case 'todo_update':
         $todolist->update();
         break;
-        
+
     case 'todo_update_status':
         $todolist->updateStatus();
         break;
-        
+
     case 'todo_delete':
         $todolist->delete();
         break;
-        
+
     case 'todo_get':
         $todolist->getTodo();
         break;
-        
+
     // Contact/Support Route
     case 'contact_support':
         // Implement contact support page or redirect to about page
@@ -273,81 +273,80 @@ switch ($action) {
     case 'forum':
         $forum->index();
         break;
-        
+
     case 'forum_detail':
         $forum->detail();
         break;
-        
+
     case 'forum_create':
         $forum->create();
         break;
-        
+
     case 'forum_store':
         $forum->store();
         break;
-        
+
     case 'forum_edit':
         $forum->edit();
         break;
-        
+
     case 'forum_update':
         $forum->update();
         break;
-        
+
     case 'forum_delete':
         $forum->deletePost();
         break;
-        
-    case 'forum_add_reply':
-        $forum->addReply();
+
+    case 'forum_reply':
+        $forumController->reply();
         break;
-        
+
     case 'forum_edit_reply':
         $forum->editReply();
         break;
-        
+
     case 'forum_delete_reply':
         $forum->deleteReply();
         break;
-        
+
     case 'forum_search':
         $forum->search();
         break;
-        
+
     case 'forum_my_posts':
         $forum->myPosts();
         break;
 
     // ==================== CHAT ROUTES ====================
-    
+
     // User Chat Routes
     case 'chat':
         $chat->index();
         break;
-        
+
     case 'chat_send':
         $chat->sendMessage();
         break;
-        
+
     case 'chat_get_messages':
         $chat->getMessages();
         break;
-        
+
     case 'chat_typing':
         $chat->setTyping();
         break;
-        
+
     case 'chat_stop_typing':
         $chat->stopTyping();
         break;
-        
+
     case 'chat_unread_count':
         $chat->getUnreadCount();
         break;
-        
+
     default:
         // Default action adalah home
         include_once 'views/home.php';
         break;
 }
-?>
