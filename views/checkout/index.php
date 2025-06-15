@@ -81,7 +81,7 @@
                         <!-- Bootcamp Info -->
                         <div class="border rounded-lg p-4 mb-4">
                             <div class="flex space-x-4">
-                                <img src="<?php echo !empty($this->bootcamp->image) ? 'assets/images/bootcamps/' . $this->bootcamp->image : 'assets/images/bootcamps/default.jpg'; ?>" 
+                                <img src="assets/images/ngoding.jpg" 
                                      alt="<?php echo htmlspecialchars($this->bootcamp->title); ?>" 
                                      class="w-16 h-16 object-cover rounded">
                                 <div class="flex-1">

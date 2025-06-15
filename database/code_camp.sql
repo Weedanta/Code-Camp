@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS bootcamps (
 -- TABEL WISHLISTS
 -- ============================================
 CREATE TABLE IF NOT EXISTS wishlists (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT UNIQUE PRIMARY KEY,
     user_id INT NOT NULL,
     bootcamp_id INT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Default value
@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 -- TABEL REVIEWS
 -- ============================================
 CREATE TABLE IF NOT EXISTS reviews (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT UNIQUE PRIMARY KEY,
     bootcamp_id INT NOT NULL,
     user_id INT NOT NULL,
     rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS cv_data (
 -- TABEL TODO LISTS
 -- ============================================
 CREATE TABLE IF NOT EXISTS todo_lists (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT UNIQUE PRIMARY KEY,
     user_id INT NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT DEFAULT NULL, -- Default value
@@ -862,7 +862,7 @@ ALTER TABLE forum_posts ADD FULLTEXT(title, content);
 
 -- Tabel untuk room chat
 CREATE TABLE chat_rooms (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT UNIQUE PRIMARY KEY,
     user_id INT NOT NULL,
     admin_id INT NULL,
     status ENUM('active', 'closed') DEFAULT 'active',

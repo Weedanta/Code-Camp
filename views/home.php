@@ -43,11 +43,11 @@ include_once 'views/includes/header.php';
 
                 <div class="flex mt-8 space-x-8">
                     <div class="text-center">
-                        <div class="text-2xl font-bold">20+</div>
+                        <div class="text-2xl font-bold">30+</div>
                         <div class="text-sm text-blue-200">Bootcamp Tersedia</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl font-bold">4+</div>
+                        <div class="text-2xl font-bold">9+</div>
                         <div class="text-sm text-blue-200">Kategori</div>
                     </div>
                     <div class="text-center">
