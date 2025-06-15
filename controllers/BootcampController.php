@@ -177,7 +177,9 @@ class BootcampController {
     // Show user's enrolled bootcamps
     public function myBootcamps() {
         // Check if user is logged in
-        session_start();
+        if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
