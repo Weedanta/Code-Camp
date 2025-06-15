@@ -299,6 +299,8 @@ switch ($action) {
         break;
 
     case 'forum_reply':
+        require_once 'controllers/ForumController.php';
+        $forumController = new ForumController();
         $forumController->reply();
         break;
 
