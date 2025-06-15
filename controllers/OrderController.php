@@ -22,9 +22,7 @@ class OrderController {
     // Show checkout page
     public function checkout() {
         // Check if user is logged in
-        if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-};
+        session_start();
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -55,9 +53,7 @@ class OrderController {
     // Process order
     public function processOrder() {
         // Check if user is logged in
-        if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-};
+        session_start();
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -117,9 +113,7 @@ class OrderController {
     // Show order success page
     public function orderSuccess() {
         // Check if user is logged in
-        if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-};
+        session_start();
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -195,9 +189,7 @@ class OrderController {
     // Show orders history
     public function myOrders() {
         // Check if user is logged in
-        if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-};
+        session_start();
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();
@@ -226,9 +218,7 @@ class OrderController {
     // Show order details
     public function orderDetail() {
         // Check if user is logged in
-        if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-};
+        session_start();
         if (!isset($_SESSION['user_id'])) {
             header('Location: index.php?action=login');
             exit();

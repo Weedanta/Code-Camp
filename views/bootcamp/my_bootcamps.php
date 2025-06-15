@@ -7,6 +7,21 @@ $page_title = 'My Bootcamps - Code Camp';
 include_once 'views/includes/header.php';
 ?>
 
+<!-- Success Message -->
+<?php if (isset($_GET['success']) && $_GET['success'] == 'checkout_completed'): ?>
+    <div class="container mx-auto px-4 pt-4">
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-3"></i>
+                <div>
+                    <p class="font-bold">Checkout Berhasil!</p>
+                    <p class="text-sm">Bootcamp telah berhasil ditambahkan ke akun Anda dan siap untuk diakses.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
 <!-- Page Header -->
 <div class="bg-blue-900 text-white py-6">
     <div class="container mx-auto px-4">
