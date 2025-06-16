@@ -43,112 +43,114 @@ class AdminModel
 
     // ==================== DASHBOARD STATS ====================
 
-    public function getDashboardStats() {
-    try {
-        $stats = [];
-        
-        // Total users
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM users");
-        $stats['total_users'] = $stmt->fetchColumn();
-        
-        // New users this month
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM users WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
-        $stats['new_users_month'] = $stmt->fetchColumn();
-        
-        // Total bootcamps
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM bootcamps");
-        $stats['total_bootcamps'] = $stmt->fetchColumn();
-        
-        // Active bootcamps
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM bootcamps WHERE status = 'active'");
-        $stats['active_bootcamps'] = $stmt->fetchColumn();
-        
-        // Total orders
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM orders");
-        $stats['total_orders'] = $stmt->fetchColumn();
-        
-        // Orders this month
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM orders WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
-        $stats['orders_month'] = $stmt->fetchColumn();
-        
-        // Total revenue
-        $stmt = $this->conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'completed'");
-        $stats['total_revenue'] = $stmt->fetchColumn();
-        
-        // Revenue this month
-        $stmt = $this->conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'completed' AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
-        $stats['revenue_month'] = $stmt->fetchColumn();
-        
-        // Pending reviews
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM reviews WHERE status = 'pending'");
-        $stats['pending_reviews'] = $stmt->fetchColumn();
-        
-        // ==================== CHAT STATISTICS ====================
-        
-        // Active chat rooms
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_rooms WHERE status = 'active'");
-        $stats['active_chat_rooms'] = $stmt->fetchColumn();
-        
-        // Unread chat messages
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE sender_type = 'user' AND is_read = FALSE");
-        $stats['unread_chat_messages'] = $stmt->fetchColumn();
-        
-        // Chat messages today
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE DATE(created_at) = CURDATE()");
-        $stats['chat_messages_today'] = $stmt->fetchColumn();
-        
-        // Chat messages this month
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
-        $stats['chat_messages_month'] = $stmt->fetchColumn();
-        
-        return $stats;
-    } catch (PDOException $e) {
-        error_log("Get dashboard stats error: " . $e->getMessage());
-        return [
-            'total_users' => 0,
-            'new_users_month' => 0,
-            'total_bootcamps' => 0,
-            'active_bootcamps' => 0,
-            'total_orders' => 0,
-            'orders_month' => 0,
-            'total_revenue' => 0,
-            'revenue_month' => 0,
-            'pending_reviews' => 0,
-            'active_chat_rooms' => 0,
-            'unread_chat_messages' => 0,
-            'chat_messages_today' => 0,
-            'chat_messages_month' => 0
-        ];
+    public function getDashboardStats()
+    {
+        try {
+            $stats = [];
+
+            // Total users
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM users");
+            $stats['total_users'] = $stmt->fetchColumn();
+
+            // New users this month
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM users WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+            $stats['new_users_month'] = $stmt->fetchColumn();
+
+            // Total bootcamps
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM bootcamps");
+            $stats['total_bootcamps'] = $stmt->fetchColumn();
+
+            // Active bootcamps
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM bootcamps WHERE status = 'active'");
+            $stats['active_bootcamps'] = $stmt->fetchColumn();
+
+            // Total orders
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM orders");
+            $stats['total_orders'] = $stmt->fetchColumn();
+
+            // Orders this month
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM orders WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+            $stats['orders_month'] = $stmt->fetchColumn();
+
+            // Total revenue
+            $stmt = $this->conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'completed'");
+            $stats['total_revenue'] = $stmt->fetchColumn();
+
+            // Revenue this month
+            $stmt = $this->conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'completed' AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+            $stats['revenue_month'] = $stmt->fetchColumn();
+
+            // Pending reviews
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM reviews WHERE status = 'pending'");
+            $stats['pending_reviews'] = $stmt->fetchColumn();
+
+            // ==================== CHAT STATISTICS ====================
+
+            // Active chat rooms
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_rooms WHERE status = 'active'");
+            $stats['active_chat_rooms'] = $stmt->fetchColumn();
+
+            // Unread chat messages
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE sender_type = 'user' AND is_read = FALSE");
+            $stats['unread_chat_messages'] = $stmt->fetchColumn();
+
+            // Chat messages today
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE DATE(created_at) = CURDATE()");
+            $stats['chat_messages_today'] = $stmt->fetchColumn();
+
+            // Chat messages this month
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+            $stats['chat_messages_month'] = $stmt->fetchColumn();
+
+            return $stats;
+        } catch (PDOException $e) {
+            error_log("Get dashboard stats error: " . $e->getMessage());
+            return [
+                'total_users' => 0,
+                'new_users_month' => 0,
+                'total_bootcamps' => 0,
+                'active_bootcamps' => 0,
+                'total_orders' => 0,
+                'orders_month' => 0,
+                'total_revenue' => 0,
+                'revenue_month' => 0,
+                'pending_reviews' => 0,
+                'active_chat_rooms' => 0,
+                'unread_chat_messages' => 0,
+                'chat_messages_today' => 0,
+                'chat_messages_month' => 0
+            ];
+        }
     }
-}
 
-// ==================== CHAT MANAGEMENT METHODS ====================
+    // ==================== CHAT MANAGEMENT METHODS ====================
 
-/**
- * Get chat dashboard statistics
- */
-public function getChatDashboardStats() {
-    try {
-        $stats = [];
-        
-        // Active chat rooms
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_rooms WHERE status = 'active'");
-        $stats['active_rooms'] = $stmt->fetchColumn();
-        
-        // Total chat messages
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages");
-        $stats['total_messages'] = $stmt->fetchColumn();
-        
-        // Messages today
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE DATE(created_at) = CURDATE()");
-        $stats['messages_today'] = $stmt->fetchColumn();
-        
-        // Unread messages
-        $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE sender_type = 'user' AND is_read = FALSE");
-        $stats['unread_messages'] = $stmt->fetchColumn();
-        
-        // Average response time (in minutes)
-        $stmt = $this->conn->query("
+    /**
+     * Get chat dashboard statistics
+     */
+    public function getChatDashboardStats()
+    {
+        try {
+            $stats = [];
+
+            // Active chat rooms
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_rooms WHERE status = 'active'");
+            $stats['active_rooms'] = $stmt->fetchColumn();
+
+            // Total chat messages
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages");
+            $stats['total_messages'] = $stmt->fetchColumn();
+
+            // Messages today
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE DATE(created_at) = CURDATE()");
+            $stats['messages_today'] = $stmt->fetchColumn();
+
+            // Unread messages
+            $stmt = $this->conn->query("SELECT COUNT(*) as total FROM chat_messages WHERE sender_type = 'user' AND is_read = FALSE");
+            $stats['unread_messages'] = $stmt->fetchColumn();
+
+            // Average response time (in minutes)
+            $stmt = $this->conn->query("
             SELECT AVG(
                 TIMESTAMPDIFF(MINUTE, 
                     (SELECT created_at FROM chat_messages m2 
@@ -163,20 +165,20 @@ public function getChatDashboardStats() {
             WHERE m1.sender_type = 'admin' 
             AND m1.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
         ");
-        $stats['avg_response_time'] = round($stmt->fetchColumn() ?? 0, 2);
-        
-        // Messages per day (last 7 days)
-        $stmt = $this->conn->query("
+            $stats['avg_response_time'] = round($stmt->fetchColumn() ?? 0, 2);
+
+            // Messages per day (last 7 days)
+            $stmt = $this->conn->query("
             SELECT DATE(created_at) as date, COUNT(*) as count
             FROM chat_messages 
             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
             GROUP BY DATE(created_at)
             ORDER BY date ASC
         ");
-        $stats['messages_per_day'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Top users by message count
-        $stmt = $this->conn->query("
+            $stats['messages_per_day'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Top users by message count
+            $stmt = $this->conn->query("
             SELECT u.name, u.alamat_email, COUNT(m.id) as message_count
             FROM users u
             JOIN chat_rooms r ON u.id = r.user_id
@@ -186,46 +188,47 @@ public function getChatDashboardStats() {
             ORDER BY message_count DESC
             LIMIT 5
         ");
-        $stats['top_users'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        return $stats;
-    } catch (PDOException $e) {
-        error_log("Get chat dashboard stats error: " . $e->getMessage());
-        return [
-            'active_rooms' => 0,
-            'total_messages' => 0,
-            'messages_today' => 0,
-            'unread_messages' => 0,
-            'avg_response_time' => 0,
-            'messages_per_day' => [],
-            'top_users' => []
-        ];
-    }
-}
+            $stats['top_users'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-/**
- * Get all chat rooms with pagination
- */
-public function getChatRooms($page = 1, $limit = 20, $search = '', $status = '') {
-    try {
-        $offset = ($page - 1) * $limit;
-        $where = "WHERE 1=1";
-        $params = [];
-        
-        if ($search) {
-            $where .= " AND (u.name LIKE ? OR u.alamat_email LIKE ? OR a.name LIKE ?)";
-            $searchTerm = "%$search%";
-            $params[] = $searchTerm;
-            $params[] = $searchTerm;
-            $params[] = $searchTerm;
+            return $stats;
+        } catch (PDOException $e) {
+            error_log("Get chat dashboard stats error: " . $e->getMessage());
+            return [
+                'active_rooms' => 0,
+                'total_messages' => 0,
+                'messages_today' => 0,
+                'unread_messages' => 0,
+                'avg_response_time' => 0,
+                'messages_per_day' => [],
+                'top_users' => []
+            ];
         }
-        
-        if ($status) {
-            $where .= " AND r.status = ?";
-            $params[] = $status;
-        }
-        
-        $sql = "SELECT r.*, u.name as user_name, u.alamat_email as user_email,
+    }
+
+    /**
+     * Get all chat rooms with pagination
+     */
+    public function getChatRooms($page = 1, $limit = 20, $search = '', $status = '')
+    {
+        try {
+            $offset = ($page - 1) * $limit;
+            $where = "WHERE 1=1";
+            $params = [];
+
+            if ($search) {
+                $where .= " AND (u.name LIKE ? OR u.alamat_email LIKE ? OR a.name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+
+            if ($status) {
+                $where .= " AND r.status = ?";
+                $params[] = $status;
+            }
+
+            $sql = "SELECT r.*, u.name as user_name, u.alamat_email as user_email,
                        a.name as admin_name,
                        (SELECT COUNT(*) FROM chat_messages m 
                         WHERE m.room_id = r.id AND m.sender_type = 'user' AND m.is_read = FALSE) as unread_count,
@@ -241,61 +244,63 @@ public function getChatRooms($page = 1, $limit = 20, $search = '', $status = '')
                 $where 
                 ORDER BY r.updated_at DESC 
                 LIMIT $limit OFFSET $offset";
-        
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log("Get chat rooms error: " . $e->getMessage());
-        return [];
-    }
-}
 
-/**
- * Count chat rooms
- */
-public function countChatRooms($search = '', $status = '') {
-    try {
-        $where = "WHERE 1=1";
-        $params = [];
-        
-        if ($search) {
-            $where .= " AND (u.name LIKE ? OR u.alamat_email LIKE ? OR a.name LIKE ?)";
-            $searchTerm = "%$search%";
-            $params[] = $searchTerm;
-            $params[] = $searchTerm;
-            $params[] = $searchTerm;
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get chat rooms error: " . $e->getMessage());
+            return [];
         }
-        
-        if ($status) {
-            $where .= " AND r.status = ?";
-            $params[] = $status;
-        }
-        
-        $stmt = $this->conn->prepare("
+    }
+
+    /**
+     * Count chat rooms
+     */
+    public function countChatRooms($search = '', $status = '')
+    {
+        try {
+            $where = "WHERE 1=1";
+            $params = [];
+
+            if ($search) {
+                $where .= " AND (u.name LIKE ? OR u.alamat_email LIKE ? OR a.name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+
+            if ($status) {
+                $where .= " AND r.status = ?";
+                $params[] = $status;
+            }
+
+            $stmt = $this->conn->prepare("
             SELECT COUNT(*) FROM chat_rooms r
             LEFT JOIN users u ON r.user_id = u.id
             LEFT JOIN admin a ON r.admin_id = a.id
             $where
         ");
-        $stmt->execute($params);
-        
-        return $stmt->fetchColumn();
-    } catch (PDOException $e) {
-        error_log("Count chat rooms error: " . $e->getMessage());
-        return 0;
-    }
-}
+            $stmt->execute($params);
 
-/**
- * Get chat messages for a room
- */
-public function getChatMessages($roomId, $page = 1, $limit = 50) {
-    try {
-        $offset = ($page - 1) * $limit;
-        
-        $stmt = $this->conn->prepare("
+            return $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Count chat rooms error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Get chat messages for a room
+     */
+    public function getChatMessages($roomId, $page = 1, $limit = 50)
+    {
+        try {
+            $offset = ($page - 1) * $limit;
+
+            $stmt = $this->conn->prepare("
             SELECT m.*, 
                    CASE 
                        WHEN m.sender_type = 'user' THEN u.name 
@@ -312,105 +317,106 @@ public function getChatMessages($roomId, $page = 1, $limit = 50) {
             ORDER BY m.created_at ASC
             LIMIT ? OFFSET ?
         ");
-        $stmt->execute([$roomId, $limit, $offset]);
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log("Get chat messages error: " . $e->getMessage());
-        return [];
-    }
-}
+            $stmt->execute([$roomId, $limit, $offset]);
 
-/**
- * Delete chat room and all messages
- */
-public function deleteChatRoom($roomId) {
-    try {
-        $this->conn->beginTransaction();
-        
-        // Delete all messages first
-        $stmt = $this->conn->prepare("DELETE FROM chat_messages WHERE room_id = ?");
-        $stmt->execute([$roomId]);
-        
-        // Delete typing indicators
-        $stmt = $this->conn->prepare("DELETE FROM chat_typing WHERE room_id = ?");
-        $stmt->execute([$roomId]);
-        
-        // Delete room
-        $stmt = $this->conn->prepare("DELETE FROM chat_rooms WHERE id = ?");
-        $success = $stmt->execute([$roomId]);
-        
-        if ($success) {
-            $this->conn->commit();
-            return ['success' => true, 'message' => 'Chat room berhasil dihapus'];
-        } else {
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get chat messages error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Delete chat room and all messages
+     */
+    public function deleteChatRoom($roomId)
+    {
+        try {
+            $this->conn->beginTransaction();
+
+            // Delete all messages first
+            $stmt = $this->conn->prepare("DELETE FROM chat_messages WHERE room_id = ?");
+            $stmt->execute([$roomId]);
+
+            // Delete typing indicators
+            $stmt = $this->conn->prepare("DELETE FROM chat_typing WHERE room_id = ?");
+            $stmt->execute([$roomId]);
+
+            // Delete room
+            $stmt = $this->conn->prepare("DELETE FROM chat_rooms WHERE id = ?");
+            $success = $stmt->execute([$roomId]);
+
+            if ($success) {
+                $this->conn->commit();
+                return ['success' => true, 'message' => 'Chat room berhasil dihapus'];
+            } else {
+                $this->conn->rollback();
+                return ['success' => false, 'message' => 'Gagal menghapus chat room'];
+            }
+        } catch (PDOException $e) {
             $this->conn->rollback();
-            return ['success' => false, 'message' => 'Gagal menghapus chat room'];
+            error_log("Delete chat room error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
         }
-    } catch (PDOException $e) {
-        $this->conn->rollback();
-        error_log("Delete chat room error: " . $e->getMessage());
-        return ['success' => false, 'message' => 'Error database: ' . $e->getMessage()];
     }
-}
 
-/**
- * Update system alerts to include chat alerts
- */
-public function getSystemAlerts() {
-    $alerts = [];
-    
-    try {
-        // Check for pending reviews
-        $stmt = $this->conn->query("SELECT COUNT(*) as count FROM reviews WHERE status = 'pending'");
-        $pendingReviews = $stmt->fetchColumn();
-        
-        if ($pendingReviews > 0) {
-            $alerts[] = [
-                'type' => 'warning',
-                'message' => "Ada $pendingReviews review yang menunggu moderasi"
-            ];
+    /**
+     * Update system alerts to include chat alerts
+     */
+    public function getSystemAlerts()
+    {
+        $alerts = [];
+
+        try {
+            // Check for pending reviews
+            $stmt = $this->conn->query("SELECT COUNT(*) as count FROM reviews WHERE status = 'pending'");
+            $pendingReviews = $stmt->fetchColumn();
+
+            if ($pendingReviews > 0) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'message' => "Ada $pendingReviews review yang menunggu moderasi"
+                ];
+            }
+
+            // Check for failed orders
+            $stmt = $this->conn->query("SELECT COUNT(*) as count FROM orders WHERE payment_status = 'failed' AND DATE(created_at) = CURDATE()");
+            $failedOrders = $stmt->fetchColumn();
+
+            if ($failedOrders > 5) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'message' => "Banyak order gagal hari ini: $failedOrders orders"
+                ];
+            }
+
+            // Check for unread chat messages
+            $stmt = $this->conn->query("SELECT COUNT(*) as count FROM chat_messages WHERE sender_type = 'user' AND is_read = FALSE");
+            $unreadChats = $stmt->fetchColumn();
+
+            if ($unreadChats > 10) {
+                $alerts[] = [
+                    'type' => 'info',
+                    'message' => "Ada $unreadChats pesan chat yang belum dibaca"
+                ];
+            }
+
+            // Check for unassigned chat rooms
+            $stmt = $this->conn->query("SELECT COUNT(*) as count FROM chat_rooms WHERE admin_id IS NULL AND status = 'active'");
+            $unassignedChats = $stmt->fetchColumn();
+
+            if ($unassignedChats > 0) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'message' => "Ada $unassignedChats chat room yang belum ditangani admin"
+                ];
+            }
+        } catch (PDOException $e) {
+            error_log("Get system alerts error: " . $e->getMessage());
         }
-        
-        // Check for failed orders
-        $stmt = $this->conn->query("SELECT COUNT(*) as count FROM orders WHERE payment_status = 'failed' AND DATE(created_at) = CURDATE()");
-        $failedOrders = $stmt->fetchColumn();
-        
-        if ($failedOrders > 5) {
-            $alerts[] = [
-                'type' => 'warning',
-                'message' => "Banyak order gagal hari ini: $failedOrders orders"
-            ];
-        }
-        
-        // Check for unread chat messages
-        $stmt = $this->conn->query("SELECT COUNT(*) as count FROM chat_messages WHERE sender_type = 'user' AND is_read = FALSE");
-        $unreadChats = $stmt->fetchColumn();
-        
-        if ($unreadChats > 10) {
-            $alerts[] = [
-                'type' => 'info',
-                'message' => "Ada $unreadChats pesan chat yang belum dibaca"
-            ];
-        }
-        
-        // Check for unassigned chat rooms
-        $stmt = $this->conn->query("SELECT COUNT(*) as count FROM chat_rooms WHERE admin_id IS NULL AND status = 'active'");
-        $unassignedChats = $stmt->fetchColumn();
-        
-        if ($unassignedChats > 0) {
-            $alerts[] = [
-                'type' => 'warning',
-                'message' => "Ada $unassignedChats chat room yang belum ditangani admin"
-            ];
-        }
-        
-    } catch (PDOException $e) {
-        error_log("Get system alerts error: " . $e->getMessage());
+
+        return $alerts;
     }
-    
-    return $alerts;
-}
 
     public function getDetailedStats()
     {
@@ -443,7 +449,7 @@ public function getSystemAlerts() {
         }
     }
 
-    
+
 
     // ==================== USER MANAGEMENT ====================
 
@@ -1792,5 +1798,545 @@ public function getSystemAlerts() {
             error_log("Get recent activities error: " . $e->getMessage());
             return [];
         }
+    }
+
+    // ==================== FEATURES STATISTICS ====================
+
+    public function getWishlistStats()
+    {
+        $query = "SELECT 
+                    COUNT(*) as total,
+                    COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today
+                  FROM wishlists";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getCVStats()
+    {
+        $query = "SELECT 
+                    COUNT(*) as total,
+                    COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today
+                  FROM cv_data";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getTodoStats()
+    {
+        $query = "SELECT 
+                    COUNT(*) as total,
+                    COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+                    COUNT(CASE WHEN status != 'completed' THEN 1 END) as pending
+                  FROM todo_lists";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // ==================== RECENT ACTIVITIES ====================
+
+    public function getRecentWishlists($limit = 10)
+    {
+        $query = "SELECT w.*, u.name as user_name, b.title as bootcamp_title 
+                  FROM wishlists w 
+                  LEFT JOIN users u ON w.user_id = u.id 
+                  LEFT JOIN bootcamps b ON w.bootcamp_id = b.id 
+                  ORDER BY w.created_at DESC 
+                  LIMIT ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getRecentCVs($limit = 10)
+    {
+        $query = "SELECT c.*, u.name as user_name 
+                  FROM cv_data c 
+                  LEFT JOIN users u ON c.user_id = u.id 
+                  ORDER BY COALESCE(c.updated_at, c.created_at) DESC 
+                  LIMIT ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getRecentTodos($limit = 10)
+    {
+        $query = "SELECT t.*, u.name as user_name 
+                  FROM todo_lists t 
+                  LEFT JOIN users u ON t.user_id = u.id 
+                  ORDER BY t.created_at DESC 
+                  LIMIT ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // ==================== EXPORT FUNCTIONS ====================
+
+    public function getWishlistExportData()
+    {
+        $query = "SELECT 
+                    w.id,
+                    u.name as user_name,
+                    u.email as user_email,
+                    b.title as bootcamp_title,
+                    b.price,
+                    c.name as category,
+                    w.created_at
+                  FROM wishlists w
+                  LEFT JOIN users u ON w.user_id = u.id
+                  LEFT JOIN bootcamps b ON w.bootcamp_id = b.id
+                  LEFT JOIN categories c ON b.category_id = c.id
+                  ORDER BY w.created_at DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getCVExportData()
+    {
+        $query = "SELECT 
+                    c.id,
+                    u.name as user_name,
+                    u.email as user_email,
+                    c.created_at,
+                    c.updated_at,
+                    CASE WHEN c.personal_info IS NOT NULL THEN 'Yes' ELSE 'No' END as has_personal_info,
+                    CASE WHEN c.experience IS NOT NULL THEN 'Yes' ELSE 'No' END as has_experience,
+                    CASE WHEN c.education IS NOT NULL THEN 'Yes' ELSE 'No' END as has_education,
+                    CASE WHEN c.skills IS NOT NULL THEN 'Yes' ELSE 'No' END as has_skills
+                  FROM cv_data c
+                  LEFT JOIN users u ON c.user_id = u.id
+                  ORDER BY c.created_at DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getTodoExportData()
+    {
+        $query = "SELECT 
+                    t.id,
+                    u.name as user_name,
+                    u.email as user_email,
+                    t.title,
+                    t.description,
+                    t.status,
+                    t.priority,
+                    t.due_date,
+                    t.created_at,
+                    t.updated_at
+                  FROM todo_lists t
+                  LEFT JOIN users u ON t.user_id = u.id
+                  ORDER BY t.created_at DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // ==================== DELETE/CLEAR FUNCTIONS ====================
+
+    public function clearOldWishlists($days)
+    {
+        $query = "DELETE FROM wishlists WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $days, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            $count = $stmt->rowCount();
+            return [
+                'success' => true,
+                'message' => "Successfully cleared $count old wishlist items",
+                'count' => $count
+            ];
+        }
+        return ['success' => false, 'message' => 'Failed to clear old wishlists'];
+    }
+
+    public function removeWishlistItem($id)
+    {
+        $query = "DELETE FROM wishlists WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $id, PDO::PARAM_INT);
+
+        if ($stmt->execute() && $stmt->rowCount() > 0) {
+            return ['success' => true, 'message' => 'Wishlist item removed successfully'];
+        }
+        return ['success' => false, 'message' => 'Failed to remove wishlist item'];
+    }
+
+    public function clearCompletedTodos()
+    {
+        $query = "DELETE FROM todo_lists WHERE status = 'completed'";
+        $stmt = $this->conn->prepare($query);
+
+        if ($stmt->execute()) {
+            $count = $stmt->rowCount();
+            return [
+                'success' => true,
+                'message' => "Successfully cleared $count completed todos",
+                'count' => $count
+            ];
+        }
+        return ['success' => false, 'message' => 'Failed to clear completed todos'];
+    }
+
+    public function deleteTodoItem($id)
+    {
+        $query = "DELETE FROM todo_lists WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $id, PDO::PARAM_INT);
+
+        if ($stmt->execute() && $stmt->rowCount() > 0) {
+            return ['success' => true, 'message' => 'Todo item deleted successfully'];
+        }
+        return ['success' => false, 'message' => 'Failed to delete todo item'];
+    }
+
+    public function getCVByUserId($userId)
+    {
+        $query = "SELECT c.*, u.name as user_name, u.email as user_email 
+                  FROM cv_data c 
+                  LEFT JOIN users u ON c.user_id = u.id 
+                  WHERE c.user_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function deleteCVByUserId($userId)
+    {
+        $query = "DELETE FROM cv_data WHERE user_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $userId, PDO::PARAM_INT);
+
+        if ($stmt->execute() && $stmt->rowCount() > 0) {
+            return ['success' => true, 'message' => 'CV deleted successfully'];
+        }
+        return ['success' => false, 'message' => 'Failed to delete CV'];
+    }
+
+    public function backupCVData()
+    {
+        // Create backup directory if not exists
+        $backupDir = __DIR__ . '/../backups/cv/';
+        if (!is_dir($backupDir)) {
+            mkdir($backupDir, 0755, true);
+        }
+
+        $filename = 'cv_backup_' . date('Y-m-d_H-i-s') . '.zip';
+        $filepath = $backupDir . $filename;
+
+        try {
+            $zip = new ZipArchive();
+            if ($zip->open($filepath, ZipArchive::CREATE) !== TRUE) {
+                return ['success' => false, 'message' => 'Cannot create backup file'];
+            }
+
+            // Get all CV data
+            $cvData = $this->getCVExportData();
+
+            // Add CSV data to zip
+            $csvContent = $this->arrayToCSV($cvData);
+            $zip->addFromString('cv_data.csv', $csvContent);
+
+            // Get full CV data with JSON details
+            $query = "SELECT * FROM cv_data ORDER BY created_at DESC";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+            $fullData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $jsonContent = json_encode($fullData, JSON_PRETTY_PRINT);
+            $zip->addFromString('cv_data_full.json', $jsonContent);
+
+            $zip->close();
+
+            return [
+                'success' => true,
+                'message' => 'CV backup created successfully',
+                'filename' => $filename,
+                'filepath' => $filepath
+            ];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Backup failed: ' . $e->getMessage()];
+        }
+    }
+
+    private function arrayToCSV($data)
+    {
+        if (empty($data)) return '';
+
+        $output = fopen('php://temp', 'w');
+
+        // Add BOM for UTF-8
+        fwrite($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // Write headers
+        fputcsv($output, array_keys($data[0]));
+
+        // Write data
+        foreach ($data as $row) {
+            fputcsv($output, $row);
+        }
+
+        rewind($output);
+        $csvContent = stream_get_contents($output);
+        fclose($output);
+
+        return $csvContent;
+    }
+
+    // ==================== BULK WISHLIST ACTIONS ====================
+    
+    public function bulkDeleteWishlists($ids)
+    {
+        if (empty($ids)) {
+            return ['success' => false, 'message' => 'No items selected'];
+        }
+
+        $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+        $query = "DELETE FROM wishlists WHERE id IN ($placeholders)";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        if ($stmt->execute($ids)) {
+            $count = $stmt->rowCount();
+            return [
+                'success' => true,
+                'message' => "Successfully deleted $count wishlist items",
+                'count' => $count
+            ];
+        }
+        return ['success' => false, 'message' => 'Failed to delete wishlist items'];
+    }
+
+    public function bulkExportWishlists($ids)
+    {
+        if (empty($ids)) {
+            return ['success' => false, 'message' => 'No items selected'];
+        }
+
+        $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+        $query = "SELECT 
+                    w.id,
+                    u.name as user_name,
+                    u.email as user_email,
+                    b.title as bootcamp_title,
+                    b.price,
+                    c.name as category,
+                    w.created_at
+                  FROM wishlists w
+                  LEFT JOIN users u ON w.user_id = u.id
+                  LEFT JOIN bootcamps b ON w.bootcamp_id = b.id
+                  LEFT JOIN categories c ON b.category_id = c.id
+                  WHERE w.id IN ($placeholders)
+                  ORDER BY w.created_at DESC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($ids);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'success' => true,
+            'message' => 'Export data prepared',
+            'data' => $data
+        ];
+    }
+
+    // ==================== BULK CV ACTIONS ====================
+    
+    public function bulkDeleteCVs($ids)
+    {
+        if (empty($ids)) {
+            return ['success' => false, 'message' => 'No items selected'];
+        }
+
+        $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+        $query = "DELETE FROM cv_data WHERE user_id IN ($placeholders)";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        if ($stmt->execute($ids)) {
+            $count = $stmt->rowCount();
+            return [
+                'success' => true,
+                'message' => "Successfully deleted $count CV records",
+                'count' => $count
+            ];
+        }
+        return ['success' => false, 'message' => 'Failed to delete CV records'];
+    }
+
+    public function bulkBackupCVs($ids)
+    {
+        if (empty($ids)) {
+            return ['success' => false, 'message' => 'No items selected'];
+        }
+
+        try {
+            $backupDir = __DIR__ . '/../backups/cv/';
+            if (!is_dir($backupDir)) {
+                mkdir($backupDir, 0755, true);
+            }
+
+            $filename = 'cv_bulk_backup_' . date('Y-m-d_H-i-s') . '.zip';
+            $filepath = $backupDir . $filename;
+
+            $zip = new ZipArchive();
+            if ($zip->open($filepath, ZipArchive::CREATE) !== TRUE) {
+                return ['success' => false, 'message' => 'Cannot create backup file'];
+            }
+
+            // Get selected CV data
+            $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+            $query = "SELECT c.*, u.name as user_name, u.email as user_email 
+                      FROM cv_data c 
+                      LEFT JOIN users u ON c.user_id = u.id 
+                      WHERE c.user_id IN ($placeholders)";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute($ids);
+            $cvData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Add CSV data to zip
+            $csvContent = $this->arrayToCSV($cvData);
+            $zip->addFromString('cv_bulk_data.csv', $csvContent);
+
+            // Add full JSON data
+            $jsonContent = json_encode($cvData, JSON_PRETTY_PRINT);
+            $zip->addFromString('cv_bulk_data.json', $jsonContent);
+
+            $zip->close();
+
+            return [
+                'success' => true,
+                'message' => 'Bulk CV backup created successfully',
+                'filename' => $filename,
+                'filepath' => $filepath
+            ];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Backup failed: ' . $e->getMessage()];
+        }
+    }
+
+    public function bulkExportCVs($ids)
+    {
+        if (empty($ids)) {
+            return ['success' => false, 'message' => 'No items selected'];
+        }
+
+        $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+        $query = "SELECT 
+                    c.id,
+                    u.name as user_name,
+                    u.email as user_email,
+                    c.created_at,
+                    c.updated_at,
+                    CASE WHEN c.personal_info IS NOT NULL THEN 'Yes' ELSE 'No' END as has_personal_info,
+                    CASE WHEN c.experience IS NOT NULL THEN 'Yes' ELSE 'No' END as has_experience,
+                    CASE WHEN c.education IS NOT NULL THEN 'Yes' ELSE 'No' END as has_education,
+                    CASE WHEN c.skills IS NOT NULL THEN 'Yes' ELSE 'No' END as has_skills
+                  FROM cv_data c
+                  LEFT JOIN users u ON c.user_id = u.id
+                  WHERE c.user_id IN ($placeholders)
+                  ORDER BY c.created_at DESC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($ids);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'success' => true,
+            'message' => 'Export data prepared',
+            'data' => $data
+        ];
+    }
+
+    // ==================== BULK TODO ACTIONS ====================
+    
+    public function bulkDeleteTodos($ids)
+    {
+        if (empty($ids)) {
+            return ['success' => false, 'message' => 'No items selected'];
+        }
+
+        $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+        $query = "DELETE FROM todo_lists WHERE id IN ($placeholders)";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        if ($stmt->execute($ids)) {
+            $count = $stmt->rowCount();
+            return [
+                'success' => true,
+                'message' => "Successfully deleted $count todo items",
+                'count' => $count
+            ];
+        }
+        return ['success' => false, 'message' => 'Failed to delete todo items'];
+    }
+
+    public function bulkCompleteTodos($ids)
+    {
+        if (empty($ids)) {
+            return ['success' => false, 'message' => 'No items selected'];
+        }
+
+        $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+        $query = "UPDATE todo_lists SET status = 'completed', updated_at = NOW() WHERE id IN ($placeholders)";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        if ($stmt->execute($ids)) {
+            $count = $stmt->rowCount();
+            return [
+                'success' => true,
+                'message' => "Successfully completed $count todo items",
+                'count' => $count
+            ];
+        }
+        return ['success' => false, 'message' => 'Failed to complete todo items'];
+    }
+
+    public function bulkExportTodos($ids)
+    {
+        if (empty($ids)) {
+            return ['success' => false, 'message' => 'No items selected'];
+        }
+
+        $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+        $query = "SELECT 
+                    t.id,
+                    u.name as user_name,
+                    u.email as user_email,
+                    t.title,
+                    t.description,
+                    t.status,
+                    t.priority,
+                    t.due_date,
+                    t.created_at,
+                    t.updated_at
+                  FROM todo_lists t
+                  LEFT JOIN users u ON t.user_id = u.id
+                  WHERE t.id IN ($placeholders)
+                  ORDER BY t.created_at DESC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($ids);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'success' => true,
+            'message' => 'Export data prepared',
+            'data' => $data
+        ];
     }
 }

@@ -1552,7 +1552,7 @@ class AdminController
         exit;
     }
 
-    
+
 
     /**
      * Handle AJAX request for chat room details
@@ -1666,11 +1666,11 @@ class AdminController
         }
     }
 
-    
+
     /**
      * Clean old chat messages
      */
-    
+
 
     /**
      * View chat room details
@@ -1851,200 +1851,606 @@ class AdminController
     }
     // ==================== CHAT MANAGEMENT METHODS ====================
 
-/**
- * Show chat management interface
- */
-public function manageChat() {
-    try {
-        require_once 'models/Chat.php';
-        $chat = new Chat();
-        
-        // Get all active chat rooms
-        $rooms = $chat->getAllActiveRooms();
-        
-        // Log activity
-        if (method_exists($this->admin, 'logActivity')) {
-            $this->admin->logActivity(
-                $_SESSION['admin_id'],
-                'view_chat',
-                'Admin melihat halaman chat management',
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null
-            );
-        }
-        
-        // Include the chat view
-        include 'views/admin/chat.php';
-        
-    } catch (Exception $e) {
-        error_log("Manage chat error: " . $e->getMessage());
-        $_SESSION['error'] = 'Gagal memuat halaman chat';
-        header('Location: admin.php?action=dashboard');
-        exit;
-    }
-}
 
-/**
- * Get chat statistics for dashboard
- */
-public function getChatStats() {
-    try {
-        require_once 'models/Chat.php';
-        $chat = new Chat();
-        
-        return $chat->getChatStats();
-        
-    } catch (Exception $e) {
-        error_log("Get chat stats error: " . $e->getMessage());
-        return [
-            'active_rooms' => 0,
-            'messages_today' => 0,
-            'unread_messages' => 0
-        ];
-    }
-}
 
-/**
- * Bulk close chat rooms
- */
-public function bulkCloseChatRooms() {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header('Location: admin.php?action=manage_chat');
-        exit;
-    }
-    
-    try {
-        require_once 'models/Chat.php';
-        $chat = new Chat();
-        
-        // Close all active rooms
-        $database = new Database();
-        $conn = $database->getConnection();
-        
-        $stmt = $conn->prepare("UPDATE chat_rooms SET status = 'closed', updated_at = NOW() WHERE status = 'active'");
-        $success = $stmt->execute();
-        $count = $stmt->rowCount();
-        
-        if ($success) {
-            $_SESSION['success'] = "$count room chat berhasil ditutup";
-            
+    /**
+     * Show chat management interface
+     */
+    public function manageChat()
+    {
+        try {
+            require_once 'models/Chat.php';
+            $chat = new Chat();
+
+            // Get all active chat rooms
+            $rooms = $chat->getAllActiveRooms();
+
             // Log activity
             if (method_exists($this->admin, 'logActivity')) {
                 $this->admin->logActivity(
                     $_SESSION['admin_id'],
-                    'bulk_close_chat',
-                    "Admin menutup $count room chat secara bulk",
+                    'view_chat',
+                    'Admin melihat halaman chat management',
                     $_SERVER['REMOTE_ADDR'] ?? null,
                     $_SERVER['HTTP_USER_AGENT'] ?? null
                 );
             }
-        } else {
+
+            // Include the chat view
+            include 'views/admin/chat.php';
+        } catch (Exception $e) {
+            error_log("Manage chat error: " . $e->getMessage());
+            $_SESSION['error'] = 'Gagal memuat halaman chat';
+            header('Location: admin.php?action=dashboard');
+            exit;
+        }
+    }
+
+    /**
+     * Get chat statistics for dashboard
+     */
+    public function getChatStats()
+    {
+        try {
+            require_once 'models/Chat.php';
+            $chat = new Chat();
+
+            return $chat->getChatStats();
+        } catch (Exception $e) {
+            error_log("Get chat stats error: " . $e->getMessage());
+            return [
+                'active_rooms' => 0,
+                'messages_today' => 0,
+                'unread_messages' => 0
+            ];
+        }
+    }
+
+    /**
+     * Bulk close chat rooms
+     */
+    public function bulkCloseChatRooms()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_chat');
+            exit;
+        }
+
+        try {
+            require_once 'models/Chat.php';
+            $chat = new Chat();
+
+            // Close all active rooms
+            $database = new Database();
+            $conn = $database->getConnection();
+
+            $stmt = $conn->prepare("UPDATE chat_rooms SET status = 'closed', updated_at = NOW() WHERE status = 'active'");
+            $success = $stmt->execute();
+            $count = $stmt->rowCount();
+
+            if ($success) {
+                $_SESSION['success'] = "$count room chat berhasil ditutup";
+
+                // Log activity
+                if (method_exists($this->admin, 'logActivity')) {
+                    $this->admin->logActivity(
+                        $_SESSION['admin_id'],
+                        'bulk_close_chat',
+                        "Admin menutup $count room chat secara bulk",
+                        $_SERVER['REMOTE_ADDR'] ?? null,
+                        $_SERVER['HTTP_USER_AGENT'] ?? null
+                    );
+                }
+            } else {
+                $_SESSION['error'] = 'Gagal menutup room chat';
+            }
+        } catch (Exception $e) {
+            error_log("Bulk close chat rooms error: " . $e->getMessage());
             $_SESSION['error'] = 'Gagal menutup room chat';
         }
-        
-    } catch (Exception $e) {
-        error_log("Bulk close chat rooms error: " . $e->getMessage());
-        $_SESSION['error'] = 'Gagal menutup room chat';
-    }
-    
-    header('Location: admin.php?action=manage_chat');
-}
 
-/**
- * Clean old chat messages
- */
-public function cleanOldChatMessages() {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         header('Location: admin.php?action=manage_chat');
-        exit;
     }
-    
-    $days = intval($_POST['days'] ?? 30);
-    
-    try {
-        $database = new Database();
-        $conn = $database->getConnection();
-        
-        // Delete messages older than specified days
-        $stmt = $conn->prepare("
+
+    /**
+     * Clean old chat messages
+     */
+    public function cleanOldChatMessages()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_chat');
+            exit;
+        }
+
+        $days = intval($_POST['days'] ?? 30);
+
+        try {
+            $database = new Database();
+            $conn = $database->getConnection();
+
+            // Delete messages older than specified days
+            $stmt = $conn->prepare("
             DELETE FROM chat_messages 
             WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)
         ");
-        $stmt->execute([$days]);
-        
-        $deletedMessages = $stmt->rowCount();
-        
-        // Delete empty rooms
-        $stmt = $conn->prepare("
+            $stmt->execute([$days]);
+
+            $deletedMessages = $stmt->rowCount();
+
+            // Delete empty rooms
+            $stmt = $conn->prepare("
             DELETE r FROM chat_rooms r 
             LEFT JOIN chat_messages m ON r.id = m.room_id 
             WHERE m.id IS NULL AND r.status = 'closed'
         ");
-        $stmt->execute();
+            $stmt->execute();
+
+            $deletedRooms = $stmt->rowCount();
+
+            $_SESSION['success'] = "Berhasil menghapus $deletedMessages pesan lama dan $deletedRooms room kosong";
+
+            // Log activity
+            if (method_exists($this->admin, 'logActivity')) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'],
+                    'clean_chat',
+                    "Admin membersihkan $deletedMessages pesan chat lama (>$days hari)",
+                    $_SERVER['REMOTE_ADDR'] ?? null,
+                    $_SERVER['HTTP_USER_AGENT'] ?? null
+                );
+            }
+        } catch (Exception $e) {
+            error_log("Clean old chat messages error: " . $e->getMessage());
+            $_SESSION['error'] = 'Gagal membersihkan pesan lama';
+        }
+
+        header('Location: admin.php?action=manage_chat');
+    }
+
+    /**
+     * AJAX - Get chat unread count
+     */
+    public function ajaxChatUnreadCount()
+    {
+        header('Content-Type: application/json');
+
+        if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        try {
+            require_once 'models/Chat.php';
+            $chat = new Chat();
+
+            $count = $chat->getTotalUnreadForAdmin();
+            echo json_encode(['success' => true, 'count' => $count]);
+        } catch (Exception $e) {
+            error_log("AJAX chat unread count error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Internal error']);
+        }
+    }
+
+    /**
+     * Handle invalid access attempts
+     */
+    public function logInvalidAccess($action)
+    {
+        try {
+            if (method_exists($this->admin, 'logActivity')) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'] ?? 0,
+                    'invalid_access',
+                    "Attempt to access invalid action: $action",
+                    $_SERVER['REMOTE_ADDR'] ?? null,
+                    $_SERVER['HTTP_USER_AGENT'] ?? null
+                );
+            }
+        } catch (Exception $e) {
+            error_log("Log invalid access error: " . $e->getMessage());
+        }
+    }
+
+    // ==================== FEATURES MANAGEMENT ====================
+    
+    public function manageFeatures()
+    {
+        try {
+            // Get statistics for all features
+            $wishlistStats = $this->admin->getWishlistStats();
+            $cvStats = $this->admin->getCVStats();
+            $todoStats = $this->admin->getTodoStats();
+
+            // Get recent activities
+            $recentWishlists = $this->admin->getRecentWishlists(10);
+            $recentCVs = $this->admin->getRecentCVs(10);
+            $recentTodos = $this->admin->getRecentTodos(10);
+
+            $this->includeView('views/admin/manage_features.php', compact(
+                'wishlistStats', 'cvStats', 'todoStats',
+                'recentWishlists', 'recentCVs', 'recentTodos'
+            ));
+        } catch (Exception $e) {
+            error_log("Manage features error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error loading features data';
+            
+            // Set empty defaults
+            $wishlistStats = ['total' => 0, 'today' => 0];
+            $cvStats = ['total' => 0, 'today' => 0];
+            $todoStats = ['total' => 0, 'completed' => 0, 'pending' => 0];
+            $recentWishlists = [];
+            $recentCVs = [];
+            $recentTodos = [];
+            
+            $this->includeView('views/admin/manage_features.php', compact(
+                'wishlistStats', 'cvStats', 'todoStats',
+                'recentWishlists', 'recentCVs', 'recentTodos'
+            ));
+        }
+    }
+
+    // ==================== WISHLIST MANAGEMENT ====================
+    
+    public function exportFeatures()
+    {
+        $type = SecurityHelper::sanitizeInput($_GET['type'] ?? '');
         
-        $deletedRooms = $stmt->rowCount();
-        
-        $_SESSION['success'] = "Berhasil menghapus $deletedMessages pesan lama dan $deletedRooms room kosong";
-        
-        // Log activity
-        if (method_exists($this->admin, 'logActivity')) {
+        if (!in_array($type, ['wishlist', 'cv', 'todo'])) {
+            $_SESSION['error'] = 'Invalid export type';
+            header('Location: admin.php?action=manage_features');
+            exit;
+        }
+
+        try {
+            switch ($type) {
+                case 'wishlist':
+                    $data = $this->admin->getWishlistExportData();
+                    $filename = 'wishlist_export_' . date('Y-m-d_H-i-s') . '.csv';
+                    break;
+                case 'cv':
+                    $data = $this->admin->getCVExportData();
+                    $filename = 'cv_export_' . date('Y-m-d_H-i-s') . '.csv';
+                    break;
+                case 'todo':
+                    $data = $this->admin->getTodoExportData();
+                    $filename = 'todo_export_' . date('Y-m-d_H-i-s') . '.csv';
+                    break;
+            }
+
+            // Set headers for CSV download
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: no-cache, must-revalidate');
+            header('Pragma: no-cache');
+
+            // Create file pointer connected to output stream
+            $output = fopen('php://output', 'w');
+
+            // Add BOM for UTF-8
+            fwrite($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Write headers
+            if (!empty($data)) {
+                fputcsv($output, array_keys($data[0]));
+
+                // Write data
+                foreach ($data as $row) {
+                    fputcsv($output, $row);
+                }
+            }
+
+            fclose($output);
+
             $this->admin->logActivity(
                 $_SESSION['admin_id'],
-                'clean_chat',
-                "Admin membersihkan $deletedMessages pesan chat lama (>$days hari)",
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null
+                'export_features',
+                "Export $type features data"
             );
-        }
-        
-    } catch (Exception $e) {
-        error_log("Clean old chat messages error: " . $e->getMessage());
-        $_SESSION['error'] = 'Gagal membersihkan pesan lama';
-    }
-    
-    header('Location: admin.php?action=manage_chat');
-}
 
-/**
- * AJAX - Get chat unread count
- */
-public function ajaxChatUnreadCount() {
-    header('Content-Type: application/json');
-    
-    if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
-        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        } catch (Exception $e) {
+            error_log("Export features error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error exporting data: ' . $e->getMessage();
+            header('Location: admin.php?action=manage_features');
+            exit;
+        }
+    }
+
+    public function clearOldWishlists()
+    {
+        try {
+            $result = $this->admin->clearOldWishlists(30); // Clear wishlists older than 30 days
+
+            if ($result['success']) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'],
+                    'clear_old_wishlists',
+                    "Cleared " . $result['count'] . " old wishlist items"
+                );
+                $_SESSION['success'] = $result['message'];
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+        } catch (Exception $e) {
+            error_log("Clear old wishlists error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error clearing old wishlists';
+        }
+
+        header('Location: admin.php?action=manage_features');
         exit;
     }
-    
-    try {
-        require_once 'models/Chat.php';
-        $chat = new Chat();
-        
-        $count = $chat->getTotalUnreadForAdmin();
-        echo json_encode(['success' => true, 'count' => $count]);
-        
-    } catch (Exception $e) {
-        error_log("AJAX chat unread count error: " . $e->getMessage());
-        echo json_encode(['success' => false, 'message' => 'Internal error']);
-    }
-}
 
-/**
- * Handle invalid access attempts
- */
-public function logInvalidAccess($action) {
-    try {
-        if (method_exists($this->admin, 'logActivity')) {
-            $this->admin->logActivity(
-                $_SESSION['admin_id'] ?? 0,
-                'invalid_access',
-                "Attempt to access invalid action: $action",
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null
-            );
+    public function removeWishlist()
+    {
+        $id = intval($_GET['id'] ?? 0);
+        if (!$id) {
+            $_SESSION['error'] = 'Invalid wishlist ID';
+            header('Location: admin.php?action=manage_features');
+            exit;
         }
-    } catch (Exception $e) {
-        error_log("Log invalid access error: " . $e->getMessage());
+
+        try {
+            $result = $this->admin->removeWishlistItem($id);
+
+            if ($result['success']) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'],
+                    'remove_wishlist',
+                    "Removed wishlist item ID: $id"
+                );
+                $_SESSION['success'] = $result['message'];
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+        } catch (Exception $e) {
+            error_log("Remove wishlist error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error removing wishlist item';
+        }
+
+        header('Location: admin.php?action=manage_features');
+        exit;
     }
-}
+
+    // ==================== CV MANAGEMENT ====================
+    
+    public function backupCVData()
+    {
+        try {
+            $result = $this->admin->backupCVData();
+
+            if ($result['success']) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'],
+                    'backup_cv_data',
+                    "CV data backup created: " . $result['filename']
+                );
+                
+                // Force download the backup file
+                $filepath = $result['filepath'];
+                if (file_exists($filepath)) {
+                    header('Content-Type: application/zip');
+                    header('Content-Disposition: attachment; filename="' . $result['filename'] . '"');
+                    header('Content-Length: ' . filesize($filepath));
+                    readfile($filepath);
+                    unlink($filepath); // Remove file after download
+                    exit;
+                }
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+        } catch (Exception $e) {
+            error_log("Backup CV data error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error creating CV backup';
+        }
+
+        header('Location: admin.php?action=manage_features');
+        exit;
+    }
+
+    public function viewCV()
+    {
+        $userId = intval($_GET['user_id'] ?? 0);
+        if (!$userId) {
+            $_SESSION['error'] = 'Invalid user ID';
+            header('Location: admin.php?action=manage_features');
+            exit;
+        }
+
+        try {
+            $cvData = $this->admin->getCVByUserId($userId);
+            if (!$cvData) {
+                $_SESSION['error'] = 'CV not found';
+                header('Location: admin.php?action=manage_features');
+                exit;
+            }
+
+            $this->includeView('views/admin/view_cv.php', compact('cvData'));
+        } catch (Exception $e) {
+            error_log("View CV error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error loading CV data';
+            header('Location: admin.php?action=manage_features');
+            exit;
+        }
+    }
+
+    public function deleteCV()
+    {
+        $userId = intval($_GET['user_id'] ?? 0);
+        if (!$userId) {
+            $_SESSION['error'] = 'Invalid user ID';
+            header('Location: admin.php?action=manage_features');
+            exit;
+        }
+
+        try {
+            $result = $this->admin->deleteCVByUserId($userId);
+
+            if ($result['success']) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'],
+                    'delete_cv',
+                    "Deleted CV for user ID: $userId"
+                );
+                $_SESSION['success'] = $result['message'];
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+        } catch (Exception $e) {
+            error_log("Delete CV error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error deleting CV';
+        }
+
+        header('Location: admin.php?action=manage_features');
+        exit;
+    }
+
+    // ==================== TODO MANAGEMENT ====================
+    
+    public function clearCompletedTodos()
+    {
+        try {
+            $result = $this->admin->clearCompletedTodos();
+
+            if ($result['success']) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'],
+                    'clear_completed_todos',
+                    "Cleared " . $result['count'] . " completed todos"
+                );
+                $_SESSION['success'] = $result['message'];
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+        } catch (Exception $e) {
+            error_log("Clear completed todos error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error clearing completed todos';
+        }
+
+        header('Location: admin.php?action=manage_features');
+        exit;
+    }
+
+    public function deleteTodo()
+    {
+        $id = intval($_GET['id'] ?? 0);
+        if (!$id) {
+            $_SESSION['error'] = 'Invalid todo ID';
+            header('Location: admin.php?action=manage_features');
+            exit;
+        }
+
+        try {
+            $result = $this->admin->deleteTodoItem($id);
+
+            if ($result['success']) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'],
+                    'delete_todo',
+                    "Deleted todo item ID: $id"
+                );
+                $_SESSION['success'] = $result['message'];
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+        } catch (Exception $e) {
+            error_log("Delete todo error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error deleting todo item';
+        }
+
+        header('Location: admin.php?action=manage_features');
+        exit;
+    }
+
+    // ==================== BULK ACTIONS ====================
+    
+    public function bulkActionFeatures()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: admin.php?action=manage_features');
+            exit;
+        }
+
+        $action = SecurityHelper::sanitizeInput($_POST['bulk_action'] ?? '');
+        $type = SecurityHelper::sanitizeInput($_POST['type'] ?? '');
+        $ids = $_POST['selected_ids'] ?? [];
+
+        if (empty($action) || empty($type) || empty($ids)) {
+            $_SESSION['error'] = 'Invalid bulk action parameters';
+            header('Location: admin.php?action=manage_features');
+            exit;
+        }
+
+        try {
+            switch ($type) {
+                case 'wishlist':
+                    $result = $this->bulkWishlistAction($action, $ids);
+                    break;
+                case 'cv':
+                    $result = $this->bulkCVAction($action, $ids);
+                    break;
+                case 'todo':
+                    $result = $this->bulkTodoAction($action, $ids);
+                    break;
+                default:
+                    throw new Exception('Invalid feature type');
+            }
+
+            if ($result['success']) {
+                $this->admin->logActivity(
+                    $_SESSION['admin_id'],
+                    "bulk_action_$type",
+                    "Bulk $action on " . count($ids) . " $type items"
+                );
+                $_SESSION['success'] = $result['message'];
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+        } catch (Exception $e) {
+            error_log("Bulk action features error: " . $e->getMessage());
+            $_SESSION['error'] = 'Error performing bulk action';
+        }
+
+        header('Location: admin.php?action=manage_features');
+        exit;
+    }
+
+    private function bulkWishlistAction($action, $ids)
+    {
+        switch ($action) {
+            case 'delete':
+                return $this->admin->bulkDeleteWishlists($ids);
+            case 'export':
+                return $this->admin->bulkExportWishlists($ids);
+            default:
+                return ['success' => false, 'message' => 'Invalid wishlist action'];
+        }
+    }
+
+    private function bulkCVAction($action, $ids)
+    {
+        switch ($action) {
+            case 'delete':
+                return $this->admin->bulkDeleteCVs($ids);
+            case 'backup':
+                return $this->admin->bulkBackupCVs($ids);
+            case 'export':
+                return $this->admin->bulkExportCVs($ids);
+            default:
+                return ['success' => false, 'message' => 'Invalid CV action'];
+        }
+    }
+
+    private function bulkTodoAction($action, $ids)
+    {
+        switch ($action) {
+            case 'delete':
+                return $this->admin->bulkDeleteTodos($ids);
+            case 'complete':
+                return $this->admin->bulkCompleteTodos($ids);
+            case 'export':
+                return $this->admin->bulkExportTodos($ids);
+            default:
+                return ['success' => false, 'message' => 'Invalid todo action'];
+        }
+    }
 }
