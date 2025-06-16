@@ -89,24 +89,45 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                 <div class="flex flex-col md:flex-row gap-6">
                     <!-- Profile Picture -->
                     <div class="text-center">
-                        <?php if (file_exists("../../../assets/images/users/{$user_id}.jpg")): ?>
-                            <img src="../../../assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile Picture" class="profile-img mx-auto">
+                        <?php
+                        $profile_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+                        $profile_image = null;
+
+                        foreach ($profile_extensions as $ext) {
+                            $image_path = "../../../assets/images/users/{$user_id}.{$ext}";
+                            if (file_exists($image_path)) {
+                                $profile_image = "assets/images/users/{$user_id}.{$ext}";
+                                break;
+                            }
+                        }
+                        ?>
+
+                        <?php if ($profile_image): ?>
+                            <img src="../../../<?php echo $profile_image; ?>?v=<?php echo time(); ?>"
+                                alt="Profile Picture"
+                                class="profile-img mx-auto"
+                                style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #e5e7eb;">
                         <?php else: ?>
-                            <div class="profile-img mx-auto bg-blue-500 flex items-center justify-center text-white text-3xl font-bold">
+                            <div class="profile-img mx-auto bg-blue-500 flex items-center justify-center text-white text-3xl font-bold"
+                                style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid #e5e7eb;">
                                 <?php echo strtoupper(substr($name, 0, 1)); ?>
                             </div>
                         <?php endif; ?>
-                        
+
                         <!-- Upload Photo Button -->
-                        <form action="../../../index.php?action=upload_photo" method="post" enctype="multipart/form-data" class="mt-4">
+                        <form action="../../../index.php?action=upload_photo" method="post" enctype="multipart/form-data" class="mt-4" id="photoForm">
                             <label for="photo" class="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 transition duration-200">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5l-2-2H5a2 2 0 00-2 2z"></path>
                                 </svg>
                                 Change Photo
                             </label>
-                            <input type="file" id="photo" name="photo" accept="image/*" class="hidden" onchange="this.form.submit()">
+                            <input type="file" id="photo" name="photo" accept="image/jpeg,image/jpg,image/png,image/gif" class="hidden" onchange="previewAndSubmit(this)">
                         </form>
+
+                        <p class="text-xs text-gray-500 mt-2">
+                            Max 5MB • JPG, PNG, GIF
+                        </p>
                     </div>
 
                     <!-- Profile Info Form -->
@@ -144,7 +165,7 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                                     <div class="flex items-center">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             <svg class="w-2 h-2 mr-1" fill="currentColor" viewBox="0 0 8 8">
-                                                <circle cx="4" cy="4" r="3"/>
+                                                <circle cx="4" cy="4" r="3" />
                                             </svg>
                                             Active
                                         </span>
@@ -172,4 +193,57 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
 </div>
 
 </body>
+
 </html>
+
+<script>
+    function previewAndSubmit(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+
+            // Validasi ukuran file (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File terlalu besar! Maksimal 5MB.');
+                input.value = '';
+                return;
+            }
+
+            // Validasi tipe file
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Format file tidak didukung! Gunakan JPG, PNG, atau GIF.');
+                input.value = '';
+                return;
+            }
+
+            // Preview image
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Update preview image
+                const profileImg = document.querySelector('.profile-img');
+                if (profileImg.tagName === 'IMG') {
+                    profileImg.src = e.target.result;
+                } else {
+                    // Replace div with img
+                    const newImg = document.createElement('img');
+                    newImg.src = e.target.result;
+                    newImg.alt = 'Profile Picture';
+                    newImg.className = 'profile-img mx-auto';
+                    newImg.style.cssText = 'width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #e5e7eb;';
+                    profileImg.parentNode.replaceChild(newImg, profileImg);
+                }
+
+                // Show loading state
+                const form = document.getElementById('photoForm');
+                const label = form.querySelector('label');
+                const originalContent = label.innerHTML;
+                label.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Uploading...';
+                label.style.pointerEvents = 'none';
+
+                // Submit form
+                form.submit();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+</script>

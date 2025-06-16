@@ -9,6 +9,8 @@ require_once 'controllers/CVController.php';
 require_once 'controllers/TodoListController.php';
 require_once 'controllers/ForumController.php';
 require_once 'controllers/ChatController.php';
+require_once 'controllers/AuthController.php';
+require_once 'config/database.php';
 
 // Inisialisasi controllers
 $auth = new AuthController();
@@ -20,6 +22,7 @@ $cv = new CVController();
 $todolist = new TodoListController();
 $forum = new ForumController();
 $chat = new ChatController();
+$authController = new AuthController();
 
 // Router sederhana
 $action = isset($_GET['action']) ? $_GET['action'] : 'home';
@@ -83,11 +86,23 @@ switch ($action) {
         break;
 
     case 'upload_photo':
-        if ($auth->uploadProfilePhoto($_FILES['profile_photo'])) {
-            header('Location: views/auth/dashboard/dashboard.php?success=photo_updated');
-        } else {
-            header('Location: views/auth/dashboard/dashboard.php?error=photo_upload_failed');
+        // Pastikan user sudah login
+        if (!$authController->isLoggedIn()) {
+            header("Location: index.php?action=login");
+            exit();
         }
+
+        // Pastikan request adalah POST dan ada file
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
+            if ($authController->uploadProfilePhoto($_FILES['photo'])) {
+                header("Location: views/auth/dashboard/dashboard.php?success=photo_updated");
+            } else {
+                header("Location: views/auth/dashboard/dashboard.php?error=photo_upload_failed");
+            }
+        } else {
+            header("Location: views/auth/dashboard/dashboard.php?error=no_file");
+        }
+        exit();
         break;
 
     case 'update_password':
@@ -346,6 +361,8 @@ switch ($action) {
     case 'chat_unread_count':
         $chat->getUnreadCount();
         break;
+
+
 
     default:
         // Default action adalah home
