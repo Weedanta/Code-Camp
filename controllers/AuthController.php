@@ -169,10 +169,9 @@ class AuthController
     }
 
     // Upload foto profil
-    // Upload foto profil
+    // Upload foto profil - Line 220-280
     public function uploadProfilePhoto($file)
     {
-        // Memastikan user sudah login
         $this->safeSessionStart();
         if (!isset($_SESSION['user_id'])) {
             return false;
@@ -191,7 +190,7 @@ class AuthController
         // Mendapatkan ekstensi file
         $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
-        // Validasi ekstensi file (hanya izinkan jpg, jpeg, png, gif)
+        // Validasi ekstensi file
         $allowed_extensions = array('jpg', 'jpeg', 'png', 'gif');
         if (!in_array($file_extension, $allowed_extensions)) {
             return false;
@@ -207,7 +206,7 @@ class AuthController
             return false;
         }
 
-        // Set direktori upload (path absolut)
+        // Set direktori upload
         $upload_dir = __DIR__ . '/../assets/images/users/';
 
         // Buat direktori jika belum ada
@@ -215,27 +214,30 @@ class AuthController
             mkdir($upload_dir, 0755, true);
         }
 
-        // Hapus foto lama jika ada
-        $old_files = glob($upload_dir . $_SESSION['user_id'] . '.*');
+        // Hapus foto lama user ini (semua ekstensi)
+        $user_id = $_SESSION['user_id'];
+        $old_files = glob($upload_dir . "user_{$user_id}.*");
         foreach ($old_files as $old_file) {
             if (file_exists($old_file)) {
                 unlink($old_file);
             }
         }
 
-        // Set nama file (gunakan ID user dengan ekstensi asli)
-        $filename = $_SESSION['user_id'] . '.' . $file_extension;
+        // Set nama file unik per user: user_{ID}.{extension}
+        $filename = "user_{$user_id}.{$file_extension}";
         $upload_path = $upload_dir . $filename;
 
         // Upload file
         if (move_uploaded_file($file['tmp_name'], $upload_path)) {
             // Resize image jika terlalu besar
-            $this->resizeImage($upload_path, $upload_path, 300, 300);
+            $this->resizeImage($upload_path, $upload_path, 400, 400);
             return true;
         }
 
         return false;
     }
+
+
 
     // Method tambahan untuk resize image
     private function resizeImage($source, $destination, $max_width, $max_height)

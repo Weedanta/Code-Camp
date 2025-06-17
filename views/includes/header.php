@@ -13,6 +13,25 @@ $user_id = $is_logged_in ? $_SESSION['user_id'] : '';
 if (!isset($current_page)) {
     $current_page = 'home';
 }
+
+// Function untuk get profile image
+function getMainProfileImage($user_id, $base_path = '')
+{
+    if (!$user_id) return null;
+
+    $profile_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+
+    foreach ($profile_extensions as $ext) {
+        $filename = "user_{$user_id}.{$ext}";
+        $image_path = $base_path . "assets/images/users/{$filename}";
+        if (file_exists($image_path)) {
+            return "assets/images/users/{$filename}";
+        }
+    }
+    return null;
+}
+
+$profile_image = $is_logged_in ? getMainProfileImage($user_id, isset($base_url) ? $base_url : '') : null;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -124,6 +143,16 @@ if (!isset($current_page)) {
             background-color: #dbeafe !important;
         }
 
+        /* Navbar profile image styles */
+        .navbar-profile-img {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .navbar-profile-img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+
         /* Smooth body scroll lock */
         .body-scroll-lock {
             overflow: hidden;
@@ -192,41 +221,26 @@ if (!isset($current_page)) {
                             class="<?php echo ($current_page == 'forum') ? 'nav-active' : 'text-gray-700 hover:text-blue-600'; ?> transition-colors duration-300">
                             Forum
                         </a>
-
                     <?php endif; ?>
                 </nav>
 
                 <!-- User Account / Login Buttons -->
                 <div class="flex items-center space-x-3">
-                    <?php if (isset($_SESSION['user_id'])): ?>
-                        <!-- User Menu untuk yang sudah login - Line 60-110 -->
+                    <?php if ($is_logged_in): ?>
+                        <!-- User Menu untuk yang sudah login -->
                         <div class="relative ml-3">
                             <div>
                                 <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                                     id="user-menu-button" aria-expanded="false" aria-haspopup="true">
                                     <span class="sr-only">Open user menu</span>
 
-                                    <?php
-                                    $user_id = $_SESSION['user_id'];
-                                    $profile_extensions = ['jpg', 'jpeg', 'png', 'gif'];
-                                    $profile_image = null;
-
-                                    foreach ($profile_extensions as $ext) {
-                                        $image_path = "assets/images/users/{$user_id}.{$ext}";
-                                        if (file_exists($image_path)) {
-                                            $profile_image = "assets/images/users/{$user_id}.{$ext}";
-                                            break;
-                                        }
-                                    }
-                                    ?>
-
                                     <?php if ($profile_image): ?>
                                         <img class="h-8 w-8 rounded-full object-cover navbar-profile-img"
                                             src="<?php echo $profile_image; ?>?v=<?php echo time(); ?>"
-                                            alt="<?php echo htmlspecialchars($_SESSION['name']); ?>">
+                                            alt="<?php echo htmlspecialchars($user_name); ?>">
                                     <?php else: ?>
                                         <div class="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium navbar-profile-img">
-                                            <?php echo strtoupper(substr($_SESSION['name'], 0, 1)); ?>
+                                            <?php echo strtoupper(substr($user_name, 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </button>
@@ -235,9 +249,9 @@ if (!isset($current_page)) {
                             <!-- Dropdown menu -->
                             <div class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden"
                                 role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1" id="user-menu">
-                                <div class="px-4 py-2 border-b">
-                                    <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($_SESSION['name']); ?></p>
-                                    <p class="text-sm text-gray-500"><?php echo htmlspecialchars($_SESSION['alamat_email']); ?></p>
+                                <div class="px-4 py-2 border-b bg-gray-50">
+                                    <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($user_name); ?></p>
+                                    <p class="text-sm text-gray-500"><?php echo htmlspecialchars($_SESSION['alamat_email'] ?? ''); ?></p>
                                 </div>
                                 <a href="views/auth/dashboard/dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
                                     <i class="fas fa-user mr-2"></i>Profile
@@ -248,7 +262,7 @@ if (!isset($current_page)) {
                             </div>
                         </div>
                     <?php else: ?>
-                        <!-- Login/Register buttons untuk yang belum login - Line 105-110 -->
+                        <!-- Login/Register buttons untuk yang belum login -->
                         <div class="space-x-2">
                             <a href="index.php?action=login" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Login</a>
                             <a href="index.php?action=signup" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">Sign Up</a>
@@ -345,7 +359,6 @@ if (!isset($current_page)) {
                             <span>Todo List</span>
                         </a>
 
-                        <!-- NEW MY REVIEWS LINK IN MOBILE -->
                         <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=my_reviews" class="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 transform hover:translate-x-1">
                             <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
@@ -394,13 +407,67 @@ if (!isset($current_page)) {
     <?php endif; ?>
 
     <script>
-        // Toggle user dropdown menu - Line 120-145
+        // Mobile menu and dropdown functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Mobile menu elements
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const closeMobileMenu = document.getElementById('close-mobile-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburger = document.getElementById('hamburger');
+            const body = document.body;
+
+            // User dropdown elements
             const userMenuButton = document.getElementById('user-menu-button');
             const userMenu = document.getElementById('user-menu');
 
+            // Mobile menu functions
+            function openMobileMenu() {
+                mobileMenu.classList.add('mobile-menu-show');
+                hamburger.classList.add('active');
+                body.classList.add('body-scroll-lock');
+            }
+
+            function closeMobileMenuFunc() {
+                mobileMenu.classList.remove('mobile-menu-show');
+                hamburger.classList.remove('active');
+                body.classList.remove('body-scroll-lock');
+            }
+
+            // Mobile menu event listeners
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (mobileMenu.classList.contains('mobile-menu-show')) {
+                        closeMobileMenuFunc();
+                    } else {
+                        openMobileMenu();
+                    }
+                });
+            }
+
+            if (closeMobileMenu) {
+                closeMobileMenu.addEventListener('click', closeMobileMenuFunc);
+            }
+
+            if (mobileMenu) {
+                mobileMenu.addEventListener('click', function(e) {
+                    if (e.target === mobileMenu) {
+                        closeMobileMenuFunc();
+                    }
+                });
+            }
+
+            // Close mobile menu on window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 768) {
+                    closeMobileMenuFunc();
+                }
+            });
+
+            // User dropdown functionality
             if (userMenuButton && userMenu) {
-                userMenuButton.addEventListener('click', function() {
+                userMenuButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
                     userMenu.classList.toggle('hidden');
                 });
 
@@ -410,6 +477,13 @@ if (!isset($current_page)) {
                         userMenu.classList.add('hidden');
                     }
                 });
+
+                // Close dropdown when opening mobile menu
+                if (mobileMenuButton) {
+                    mobileMenuButton.addEventListener('click', function() {
+                        userMenu.classList.add('hidden');
+                    });
+                }
             }
         });
     </script>

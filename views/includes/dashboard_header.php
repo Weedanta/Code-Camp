@@ -11,9 +11,10 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Ambil data user dari session
+// Ambil data user dari session dengan fallback
 $user_id = $_SESSION['user_id'];
-$name = $_SESSION['name'];
+$name = $_SESSION['name'] ?? 'User';
+$alamat_email = $_SESSION['alamat_email'] ?? '';
 
 // Parameter untuk menentukan halaman aktif dashboard
 // $current_dashboard_page harus di-set sebelum include header ini
@@ -28,6 +29,23 @@ $base_url = '../../../';
 require_once $base_url . 'models/Chat.php';
 $chat = new Chat();
 $unread_count = $chat->getUnreadCount($user_id);
+
+// Function untuk get profile image
+function getProfileImagePath($user_id, $base_path = '../../../')
+{
+    $profile_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+
+    foreach ($profile_extensions as $ext) {
+        $filename = "user_{$user_id}.{$ext}";
+        $full_path = $base_path . "assets/images/users/{$filename}";
+        if (file_exists($full_path)) {
+            return "assets/images/users/{$filename}";
+        }
+    }
+    return null;
+}
+
+$profile_image = getProfileImagePath($user_id, $base_url);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -138,17 +156,6 @@ $unread_count = $chat->getUnreadCount($user_id);
             color: #2563eb;
         }
 
-        .circle-bg {
-            position: absolute;
-            bottom: -150px;
-            left: -150px;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            background-color: #0284c7;
-            z-index: -1;
-        }
-
         /* Profile image styles */
         .profile-img {
             width: 120px;
@@ -157,6 +164,16 @@ $unread_count = $chat->getUnreadCount($user_id);
             border-radius: 50%;
             border: 3px solid #fff;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Navbar profile image styles */
+        .navbar-profile-img {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .navbar-profile-img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
         }
 
         /* Chat notification badge */
@@ -181,19 +198,13 @@ $unread_count = $chat->getUnreadCount($user_id);
             0% {
                 box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
             }
+
             70% {
                 box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
             }
+
             100% {
                 box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-            }
-        }
-
-        /* Touch device improvements */
-        @media (hover: none) and (pointer: coarse) {
-            .mobile-menu-content a:active {
-                background-color: rgba(255, 255, 255, 0.1);
-                transform: translateX(2px);
             }
         }
 
@@ -245,15 +256,21 @@ $unread_count = $chat->getUnreadCount($user_id);
                     <!-- User Profile Icon -->
                     <div class="relative">
                         <button id="profileButton" class="flex items-center focus:outline-none">
-                            <?php if (file_exists("{$base_url}assets/images/users/{$user_id}.jpg")): ?>
-                                <img src="<?php echo $base_url; ?>assets/images/users/<?php echo $user_id; ?>.jpg" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white">
+                            <?php if ($profile_image): ?>
+                                <img src="<?php echo $base_url . $profile_image; ?>?v=<?php echo time(); ?>"
+                                    alt="Profile"
+                                    class="w-10 h-10 rounded-full border-2 border-white object-cover navbar-profile-img">
                             <?php else: ?>
-                                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-white">
+                                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-white navbar-profile-img">
                                     <?php echo strtoupper(substr($name, 0, 1)); ?>
                                 </div>
                             <?php endif; ?>
                         </button>
                         <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-20">
+                            <div class="px-4 py-2 border-b bg-gray-50">
+                                <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($name); ?></p>
+                                <p class="text-xs text-gray-500"><?php echo htmlspecialchars($alamat_email); ?></p>
+                            </div>
                             <a href="dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
@@ -311,16 +328,16 @@ $unread_count = $chat->getUnreadCount($user_id);
                     </div>
 
                     <!-- Navigation Links -->
-                    <a href="<?php echo $base_url; ?>index.php" 
-                       class="flex items-center px-4 py-3 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 transform hover:translate-x-1">
+                    <a href="<?php echo $base_url; ?>index.php"
+                        class="flex items-center px-4 py-3 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 transform hover:translate-x-1">
                         <svg class="w-5 h-5 mr-3 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
                         <span>Home</span>
                     </a>
 
-                    <a href="<?php echo $base_url; ?>index.php?action=bootcamps" 
-                       class="flex items-center px-4 py-3 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 transform hover:translate-x-1">
+                    <a href="<?php echo $base_url; ?>index.php?action=bootcamps"
+                        class="flex items-center px-4 py-3 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 transform hover:translate-x-1">
                         <svg class="w-5 h-5 mr-3 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                         </svg>
@@ -328,8 +345,8 @@ $unread_count = $chat->getUnreadCount($user_id);
                     </a>
 
                     <!-- Chat Link -->
-                    <a href="<?php echo $base_url; ?>index.php?action=chat" 
-                       class="flex items-center px-4 py-3 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 transform hover:translate-x-1 relative">
+                    <a href="<?php echo $base_url; ?>index.php?action=chat"
+                        class="flex items-center px-4 py-3 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 transform hover:translate-x-1 relative">
                         <svg class="w-5 h-5 mr-3 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z"></path>
                         </svg>
@@ -342,25 +359,25 @@ $unread_count = $chat->getUnreadCount($user_id);
                     <!-- Dashboard Section -->
                     <div class="border-t border-blue-700 my-3 pt-3">
                         <p class="text-blue-200 text-sm font-medium px-4 mb-2">Account Settings</p>
-                        
-                        <a href="dashboard.php" 
-                           class="flex items-center px-4 py-3 rounded-lg <?php echo ($current_dashboard_page == 'profile') ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800 hover:text-white'; ?> transition-all duration-200 transform hover:translate-x-1">
+
+                        <a href="dashboard.php"
+                            class="flex items-center px-4 py-3 rounded-lg <?php echo ($current_dashboard_page == 'profile') ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800 hover:text-white'; ?> transition-all duration-200 transform hover:translate-x-1">
                             <svg class="w-5 h-5 mr-3 <?php echo ($current_dashboard_page == 'profile') ? 'text-white' : 'text-blue-200'; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             <span>My Profile</span>
                         </a>
 
-                        <a href="change_password.php" 
-                           class="flex items-center px-4 py-3 rounded-lg <?php echo ($current_dashboard_page == 'change_password') ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800 hover:text-white'; ?> transition-all duration-200 transform hover:translate-x-1">
+                        <a href="change_password.php"
+                            class="flex items-center px-4 py-3 rounded-lg <?php echo ($current_dashboard_page == 'change_password') ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800 hover:text-white'; ?> transition-all duration-200 transform hover:translate-x-1">
                             <svg class="w-5 h-5 mr-3 <?php echo ($current_dashboard_page == 'change_password') ? 'text-white' : 'text-blue-200'; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7 6h-2m-6 0H4a3 3 0 01-3-3V9a3 3 0 013-3h2.25M15 7V4.5A2.5 2.5 0 0012.5 2h-1A2.5 2.5 0 009 4.5V7m6 0v3H9V7"></path>
                             </svg>
                             <span>Change Password</span>
                         </a>
 
-                        <a href="delete_account.php" 
-                           class="flex items-center px-4 py-3 rounded-lg <?php echo ($current_dashboard_page == 'delete_account') ? 'bg-red-600 text-white' : 'text-red-300 hover:bg-red-600 hover:text-white'; ?> transition-all duration-200 transform hover:translate-x-1">
+                        <a href="delete_account.php"
+                            class="flex items-center px-4 py-3 rounded-lg <?php echo ($current_dashboard_page == 'delete_account') ? 'bg-red-600 text-white' : 'text-red-300 hover:bg-red-600 hover:text-white'; ?> transition-all duration-200 transform hover:translate-x-1">
                             <svg class="w-5 h-5 mr-3 <?php echo ($current_dashboard_page == 'delete_account') ? 'text-white' : 'text-red-400'; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                             </svg>
@@ -370,8 +387,8 @@ $unread_count = $chat->getUnreadCount($user_id);
 
                     <!-- Logout -->
                     <div class="border-t border-blue-700 pt-3">
-                        <a href="<?php echo $base_url; ?>index.php?action=logout" 
-                           class="flex items-center px-4 py-3 rounded-lg text-red-300 hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:translate-x-1">
+                        <a href="<?php echo $base_url; ?>index.php?action=logout"
+                            class="flex items-center px-4 py-3 rounded-lg text-red-300 hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:translate-x-1">
                             <svg class="w-5 h-5 mr-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                             </svg>
@@ -467,7 +484,7 @@ $unread_count = $chat->getUnreadCount($user_id);
                     .then(data => {
                         const badge = document.getElementById('chatBadge');
                         const profileBadges = document.querySelectorAll('.chat-badge, .bg-red-500');
-                        
+
                         if (data.count > 0) {
                             if (badge) {
                                 badge.textContent = data.count;
@@ -479,7 +496,7 @@ $unread_count = $chat->getUnreadCount($user_id);
                                 newBadge.textContent = data.count;
                                 chatButton.appendChild(newBadge);
                             }
-                            
+
                             // Update profile dropdown badges
                             profileBadges.forEach(badge => {
                                 if (badge.classList.contains('bg-red-500')) {

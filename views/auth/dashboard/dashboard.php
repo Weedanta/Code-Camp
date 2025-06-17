@@ -88,18 +88,25 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
 
                 <div class="flex flex-col md:flex-row gap-6">
                     <!-- Profile Picture -->
-                    <div class="text-center">
+                    <!-- Profile Picture Section -->
+                    <div class="text-center mb-6">
                         <?php
-                        $profile_extensions = ['jpg', 'jpeg', 'png', 'gif'];
-                        $profile_image = null;
+                        // Function untuk get profile image di dashboard
+                        function getDashboardProfileImage($user_id)
+                        {
+                            $profile_extensions = ['jpg', 'jpeg', 'png', 'gif'];
 
-                        foreach ($profile_extensions as $ext) {
-                            $image_path = "../../../assets/images/users/{$user_id}.{$ext}";
-                            if (file_exists($image_path)) {
-                                $profile_image = "assets/images/users/{$user_id}.{$ext}";
-                                break;
+                            foreach ($profile_extensions as $ext) {
+                                $filename = "user_{$user_id}.{$ext}";
+                                $image_path = "../../../assets/images/users/{$filename}";
+                                if (file_exists($image_path)) {
+                                    return "assets/images/users/{$filename}";
+                                }
                             }
+                            return null;
                         }
+
+                        $profile_image = getDashboardProfileImage($user_id);
                         ?>
 
                         <?php if ($profile_image): ?>
@@ -116,7 +123,7 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
 
                         <!-- Upload Photo Button -->
                         <form action="../../../index.php?action=upload_photo" method="post" enctype="multipart/form-data" class="mt-4" id="photoForm">
-                            <label for="photo" class="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 transition duration-200">
+                            <label for="photo" class="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 transition duration-200 shadow-sm">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5l-2-2H5a2 2 0 00-2 2z"></path>
                                 </svg>
@@ -126,7 +133,7 @@ $no_telepon = isset($_SESSION['no_telepon']) ? $_SESSION['no_telepon'] : '';
                         </form>
 
                         <p class="text-xs text-gray-500 mt-2">
-                            Max 5MB • JPG, PNG, GIF
+                            Max 5MB • JPG, PNG, GIF • User ID: <?php echo $user_id; ?>
                         </p>
                     </div>
 
