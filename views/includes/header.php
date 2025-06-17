@@ -198,42 +198,61 @@ if (!isset($current_page)) {
 
                 <!-- User Account / Login Buttons -->
                 <div class="flex items-center space-x-3">
-                    <?php if ($is_logged_in): ?>
-                        <!-- User Profile Icon When Logged In -->
-                        <div class="relative">
-                            <button id="profileButton" class="flex items-center focus:outline-none">
-                                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white border-2 border-blue-100">
-                                    <?php echo strtoupper(substr($user_name, 0, 1)); ?>
+                    <?php if (isset($_SESSION['user_id'])): ?>
+                        <!-- User Menu untuk yang sudah login - Line 60-110 -->
+                        <div class="relative ml-3">
+                            <div>
+                                <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                                    id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                    <span class="sr-only">Open user menu</span>
+
+                                    <?php
+                                    $user_id = $_SESSION['user_id'];
+                                    $profile_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+                                    $profile_image = null;
+
+                                    foreach ($profile_extensions as $ext) {
+                                        $image_path = "assets/images/users/{$user_id}.{$ext}";
+                                        if (file_exists($image_path)) {
+                                            $profile_image = "assets/images/users/{$user_id}.{$ext}";
+                                            break;
+                                        }
+                                    }
+                                    ?>
+
+                                    <?php if ($profile_image): ?>
+                                        <img class="h-8 w-8 rounded-full object-cover navbar-profile-img"
+                                            src="<?php echo $profile_image; ?>?v=<?php echo time(); ?>"
+                                            alt="<?php echo htmlspecialchars($_SESSION['name']); ?>">
+                                    <?php else: ?>
+                                        <div class="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium navbar-profile-img">
+                                            <?php echo strtoupper(substr($_SESSION['name'], 0, 1)); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </button>
+                            </div>
+
+                            <!-- Dropdown menu -->
+                            <div class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden"
+                                role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1" id="user-menu">
+                                <div class="px-4 py-2 border-b">
+                                    <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($_SESSION['name']); ?></p>
+                                    <p class="text-sm text-gray-500"><?php echo htmlspecialchars($_SESSION['alamat_email']); ?></p>
                                 </div>
-                            </button>
-                            <!-- UPDATED DROPDOWN WITH MY REVIEWS LINK -->
-                            <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-20">
-                                <a href="<?php echo isset($base_url) ? $base_url : ''; ?>views/auth/dashboard/dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-user mr-2"></i>My Profile
+                                <a href="views/auth/dashboard/dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                    <i class="fas fa-user mr-2"></i>Profile
                                 </a>
-                                <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=cv_builder" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-file-alt mr-2"></i>CV Builder
-                                </a>
-                                <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=todolist" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-tasks mr-2"></i>Todo List
-                                </a>
-                                <!-- NEW MY REVIEWS LINK -->
-                                <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=my_reviews" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-star mr-2"></i>My Reviews
-                                </a>
-                                <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=my_orders" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-shopping-bag mr-2"></i>My Orders
-                                </a>
-                                <div class="border-t border-gray-100 my-1"></div>
-                                <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                <a href="index.php?action=logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Sign out
                                 </a>
                             </div>
                         </div>
                     <?php else: ?>
-                        <!-- Login/Signup Buttons When Not Logged In -->
-                        <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=login" class="px-4 py-2 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors duration-300">Login</a>
-                        <a href="<?php echo isset($base_url) ? $base_url : ''; ?>index.php?action=signup" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-300">Sign Up</a>
+                        <!-- Login/Register buttons untuk yang belum login - Line 105-110 -->
+                        <div class="space-x-2">
+                            <a href="index.php?action=login" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                            <a href="index.php?action=signup" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">Sign Up</a>
+                        </div>
                     <?php endif; ?>
 
                     <!-- Mobile Menu Toggle Button -->
@@ -373,3 +392,24 @@ if (!isset($current_page)) {
     <?php if (isset($additional_js_header)): ?>
         <?php echo $additional_js_header; ?>
     <?php endif; ?>
+
+    <script>
+        // Toggle user dropdown menu - Line 120-145
+        document.addEventListener('DOMContentLoaded', function() {
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userMenu = document.getElementById('user-menu');
+
+            if (userMenuButton && userMenu) {
+                userMenuButton.addEventListener('click', function() {
+                    userMenu.classList.toggle('hidden');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!userMenuButton.contains(event.target) && !userMenu.contains(event.target)) {
+                        userMenu.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>

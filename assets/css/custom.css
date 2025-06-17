@@ -150,3 +150,38 @@ select:focus {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* Navbar profile image styles - Line 190-220 */
+.navbar-profile-img {
+  transition: all 0.2s ease-in-out;
+}
+
+.navbar-profile-img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Dropdown animation */
+#user-menu,
+#user-dropdown {
+  transition: all 0.2s ease-in-out;
+  transform-origin: top right;
+}
+
+#user-menu.hidden,
+#user-dropdown.hidden {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+#user-menu:not(.hidden),
+#user-dropdown:not(.hidden) {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* User info in dropdown */
+#user-dropdown .px-4.py-3,
+#user-menu .px-4.py-2.border-b {
+  background-color: #f8fafc;
+}

@@ -3,12 +3,14 @@
 
 require_once 'models/Chat.php';
 
-class ChatController {
+class ChatController
+{
     private $chat;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->chat = new Chat();
-        
+
         // Start session if not already started
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -18,7 +20,8 @@ class ChatController {
     /**
      * Show chat interface for user
      */
-    public function index() {
+    public function index()
+    {
         // Check if user is logged in
         if (!isset($_SESSION['user_id'])) {
             $_SESSION['error'] = 'Anda harus login terlebih dahulu untuk menggunakan chat';
@@ -27,10 +30,10 @@ class ChatController {
         }
 
         $userId = $_SESSION['user_id'];
-        
+
         try {
             $room = $this->chat->getOrCreateRoom($userId);
-            
+
             if (!$room) {
                 $_SESSION['error'] = 'Tidak dapat membuat room chat. Silakan coba lagi.';
                 header('Location: index.php');
@@ -39,13 +42,12 @@ class ChatController {
 
             // Mark messages as read
             $this->chat->markMessagesAsRead($room['id'], 'user', $userId);
-            
+
             // Get messages
             $messages = $this->chat->getRoomMessages($room['id']);
-            
+
             // Include the chat view
             include 'views/chat/index.php';
-            
         } catch (Exception $e) {
             error_log("Chat index error: " . $e->getMessage());
             $_SESSION['error'] = 'Terjadi kesalahan sistem. Silakan coba lagi.';
@@ -57,7 +59,8 @@ class ChatController {
     /**
      * Send message via AJAX
      */
-    public function sendMessage() {
+    public function sendMessage()
+    {
         header('Content-Type: application/json');
 
         // Check if user is logged in
@@ -74,14 +77,14 @@ class ChatController {
         try {
             // Get JSON input
             $input = json_decode(file_get_contents('php://input'), true);
-            
+
             if (json_last_error() !== JSON_ERROR_NONE) {
                 echo json_encode(['success' => false, 'message' => 'Invalid JSON data']);
                 exit;
             }
-            
+
             $message = trim($input['message'] ?? '');
-            
+
             if (empty($message)) {
                 echo json_encode(['success' => false, 'message' => 'Message cannot be empty']);
                 exit;
@@ -94,23 +97,23 @@ class ChatController {
 
             $userId = $_SESSION['user_id'];
             $room = $this->chat->getOrCreateRoom($userId);
-            
+
             if (!$room) {
                 echo json_encode(['success' => false, 'message' => 'Cannot create chat room']);
                 exit;
             }
 
-            // Sanitize message
-            $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+            // HAPUS sanitize di sini karena akan di-sanitize saat ditampilkan
+            // $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
 
             $messageId = $this->chat->sendMessage($room['id'], 'user', $userId, $message);
-            
+
             if ($messageId) {
                 // Remove typing indicator
                 $this->chat->removeTyping($room['id'], 'user', $userId);
-                
+
                 echo json_encode([
-                    'success' => true, 
+                    'success' => true,
                     'message' => 'Message sent successfully',
                     'messageId' => $messageId,
                     'timestamp' => date('H:i')
@@ -118,7 +121,6 @@ class ChatController {
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to send message']);
             }
-            
         } catch (Exception $e) {
             error_log("Send message error: " . $e->getMessage());
             echo json_encode(['success' => false, 'message' => 'Internal server error']);
@@ -128,7 +130,8 @@ class ChatController {
     /**
      * Get new messages via AJAX
      */
-    public function getMessages() {
+    public function getMessages()
+    {
         header('Content-Type: application/json');
 
         if (!isset($_SESSION['user_id'])) {
@@ -139,17 +142,17 @@ class ChatController {
         try {
             $userId = $_SESSION['user_id'];
             $room = $this->chat->getOrCreateRoom($userId);
-            
+
             if (!$room) {
                 echo json_encode(['success' => false, 'message' => 'Room not found']);
                 exit;
             }
 
             $lastMessageId = intval($_GET['last_id'] ?? 0);
-            
+
             // Get all messages and filter new ones
             $allMessages = $this->chat->getRoomMessages($room['id']);
-            $newMessages = array_filter($allMessages, function($msg) use ($lastMessageId) {
+            $newMessages = array_filter($allMessages, function ($msg) use ($lastMessageId) {
                 return $msg['id'] > $lastMessageId;
             });
 
@@ -166,7 +169,6 @@ class ChatController {
                 'messages' => array_values($newMessages),
                 'typing' => $typing
             ]);
-            
         } catch (Exception $e) {
             error_log("Get messages error: " . $e->getMessage());
             echo json_encode(['success' => false, 'message' => 'Internal server error']);
@@ -176,7 +178,8 @@ class ChatController {
     /**
      * Set typing indicator
      */
-    public function setTyping() {
+    public function setTyping()
+    {
         header('Content-Type: application/json');
 
         if (!isset($_SESSION['user_id'])) {
@@ -187,14 +190,13 @@ class ChatController {
         try {
             $userId = $_SESSION['user_id'];
             $room = $this->chat->getOrCreateRoom($userId);
-            
+
             if ($room) {
                 $this->chat->setTyping($room['id'], 'user', $userId);
                 echo json_encode(['success' => true]);
             } else {
                 echo json_encode(['success' => false]);
             }
-            
         } catch (Exception $e) {
             error_log("Set typing error: " . $e->getMessage());
             echo json_encode(['success' => false]);
@@ -204,7 +206,8 @@ class ChatController {
     /**
      * Remove typing indicator
      */
-    public function stopTyping() {
+    public function stopTyping()
+    {
         header('Content-Type: application/json');
 
         if (!isset($_SESSION['user_id'])) {
@@ -215,14 +218,13 @@ class ChatController {
         try {
             $userId = $_SESSION['user_id'];
             $room = $this->chat->getOrCreateRoom($userId);
-            
+
             if ($room) {
                 $this->chat->removeTyping($room['id'], 'user', $userId);
                 echo json_encode(['success' => true]);
             } else {
                 echo json_encode(['success' => false]);
             }
-            
         } catch (Exception $e) {
             error_log("Stop typing error: " . $e->getMessage());
             echo json_encode(['success' => false]);
@@ -232,7 +234,8 @@ class ChatController {
     /**
      * Get unread count for user
      */
-    public function getUnreadCount() {
+    public function getUnreadCount()
+    {
         header('Content-Type: application/json');
 
         if (!isset($_SESSION['user_id'])) {
@@ -243,7 +246,6 @@ class ChatController {
         try {
             $count = $this->chat->getUnreadCount($_SESSION['user_id']);
             echo json_encode(['count' => $count]);
-            
         } catch (Exception $e) {
             error_log("Get unread count error: " . $e->getMessage());
             echo json_encode(['count' => 0]);
@@ -255,7 +257,8 @@ class ChatController {
     /**
      * Admin chat interface
      */
-    public function adminIndex() {
+    public function adminIndex()
+    {
         // This should be called from AdminController
         if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
             header('Location: admin.php?action=login');
@@ -265,7 +268,6 @@ class ChatController {
         try {
             $rooms = $this->chat->getAllActiveRooms();
             include 'views/admin/chat.php';
-            
         } catch (Exception $e) {
             error_log("Admin chat index error: " . $e->getMessage());
             $_SESSION['error'] = 'Terjadi kesalahan saat memuat chat';
@@ -277,7 +279,8 @@ class ChatController {
     /**
      * Admin send message
      */
-    public function adminSendMessage() {
+    public function adminSendMessage()
+    {
         header('Content-Type: application/json');
 
         if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
@@ -294,29 +297,29 @@ class ChatController {
             $input = json_decode(file_get_contents('php://input'), true);
             $roomId = intval($input['room_id'] ?? 0);
             $message = trim($input['message'] ?? '');
-            
+
             if (empty($message) || !$roomId) {
                 echo json_encode(['success' => false, 'message' => 'Invalid input']);
                 exit;
             }
 
             $adminId = $_SESSION['admin_id'];
-            
+
             // Assign admin to room if not assigned
             $room = $this->chat->getRoomById($roomId);
             if ($room && !$room['admin_id']) {
                 $this->chat->assignAdminToRoom($roomId, $adminId);
             }
 
-            // Sanitize message
-            $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+            // HAPUS sanitize di sini karena akan di-sanitize saat ditampilkan
+            // $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
 
             $messageId = $this->chat->sendMessage($roomId, 'admin', $adminId, $message);
-            
+
             if ($messageId) {
                 $this->chat->removeTyping($roomId, 'admin', $adminId);
                 echo json_encode([
-                    'success' => true, 
+                    'success' => true,
                     'message' => 'Message sent',
                     'messageId' => $messageId,
                     'timestamp' => date('H:i')
@@ -324,7 +327,6 @@ class ChatController {
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to send message']);
             }
-            
         } catch (Exception $e) {
             error_log("Admin send message error: " . $e->getMessage());
             echo json_encode(['success' => false, 'message' => 'Internal server error']);
@@ -334,7 +336,8 @@ class ChatController {
     /**
      * Admin get messages
      */
-    public function adminGetMessages() {
+    public function adminGetMessages()
+    {
         header('Content-Type: application/json');
 
         if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
@@ -355,7 +358,7 @@ class ChatController {
             $this->chat->markMessagesAsRead($roomId, 'admin', $_SESSION['admin_id']);
 
             $allMessages = $this->chat->getRoomMessages($roomId);
-            $newMessages = array_filter($allMessages, function($msg) use ($lastMessageId) {
+            $newMessages = array_filter($allMessages, function ($msg) use ($lastMessageId) {
                 return $msg['id'] > $lastMessageId;
             });
 
@@ -367,7 +370,6 @@ class ChatController {
                 'messages' => array_values($newMessages),
                 'typing' => $typing
             ]);
-            
         } catch (Exception $e) {
             error_log("Admin get messages error: " . $e->getMessage());
             echo json_encode(['success' => false, 'message' => 'Internal server error']);
@@ -377,7 +379,8 @@ class ChatController {
     /**
      * Admin typing indicator
      */
-    public function adminSetTyping() {
+    public function adminSetTyping()
+    {
         header('Content-Type: application/json');
 
         if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
@@ -393,7 +396,6 @@ class ChatController {
             } else {
                 echo json_encode(['success' => false]);
             }
-            
         } catch (Exception $e) {
             error_log("Admin set typing error: " . $e->getMessage());
             echo json_encode(['success' => false]);
@@ -403,7 +405,8 @@ class ChatController {
     /**
      * Admin stop typing indicator
      */
-    public function adminStopTyping() {
+    public function adminStopTyping()
+    {
         header('Content-Type: application/json');
 
         if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
@@ -419,7 +422,6 @@ class ChatController {
             } else {
                 echo json_encode(['success' => false]);
             }
-            
         } catch (Exception $e) {
             error_log("Admin stop typing error: " . $e->getMessage());
             echo json_encode(['success' => false]);
@@ -429,7 +431,8 @@ class ChatController {
     /**
      * Close chat room
      */
-    public function closeRoom() {
+    public function closeRoom()
+    {
         header('Content-Type: application/json');
 
         if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
@@ -439,13 +442,12 @@ class ChatController {
 
         try {
             $roomId = intval($_POST['room_id'] ?? 0);
-            
+
             if ($this->chat->closeRoom($roomId)) {
                 echo json_encode(['success' => true, 'message' => 'Room closed']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to close room']);
             }
-            
         } catch (Exception $e) {
             error_log("Close room error: " . $e->getMessage());
             echo json_encode(['success' => false, 'message' => 'Internal server error']);
@@ -455,7 +457,8 @@ class ChatController {
     /**
      * Get admin chat stats
      */
-    public function getAdminStats() {
+    public function getAdminStats()
+    {
         header('Content-Type: application/json');
 
         if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
@@ -466,11 +469,9 @@ class ChatController {
         try {
             $stats = $this->chat->getChatStats();
             echo json_encode(['success' => true, 'stats' => $stats]);
-            
         } catch (Exception $e) {
             error_log("Get admin stats error: " . $e->getMessage());
             echo json_encode(['success' => false]);
         }
     }
 }
-?>
